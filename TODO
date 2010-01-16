@@ -1,0 +1,20 @@
+Object types
+
+       binding			record
+x       boolean			immediate
+       bytevector		built-in
+       character		immediate
+       eof			immediate
+       fixnum			immediate
+       frame			built-in or record
+       pair			built-in
+       procedure		built-in
+       string			built-in
+       symbol			record (name, hash)
+       syntax			record
+       vector			built-in
+
+       rtd			built-in
+       condition		record
+       compound condition 	record (not derived from condition)
+

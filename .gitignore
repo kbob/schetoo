@@ -1,0 +1,14 @@
+ATTIC
+TAGS
+scheme
+ucd_data.h
+a.out
+core
+*/Makefile
+*.[oa]
+*~
+*.pyc
+.*.d
+.*.d.[0-9]*
+*.a
+*.so

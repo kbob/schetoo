@@ -1,0 +1,8 @@
+Note 1: Give up on saving a word on pairs.  Just give them a normal
+type record.  Revisit later if you really want to.
+
+Note 2: Unify the rdt and the mem_ops_t.  Give them the same layout,
+maybe with some fields unused.  Then the heap copying code doesn't
+have to special case record instances.  Add an "I am not in the heap"
+flag somewhere, so the copier can ignore out-of-heap rdts.
+
