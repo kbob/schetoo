@@ -5,8 +5,8 @@
 # test_scripts := selftest.sh
 
 scheme_cfiles := except.c main.c roots.c \
-	obj_bytevector.c \
-	mem.c mem_scalar.c
+	obj_bytevector.c obj_pair.c \
+	mem.c mem_fixvec.c mem_scalar.c
 
 
 

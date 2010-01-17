@@ -98,6 +98,7 @@ typedef intptr_t           word_t;
 #define BOOLEAN_TAG        0x0E
 #define SPECIAL_TAG        0x16
 
+#define FIXNUM_SHIFT          1
 #define CHARACTER_SHIFT       8
 #define BOOLEAN_SHIFT         8
 
@@ -112,11 +113,6 @@ typedef intptr_t           word_t;
 static inline word_t obj_bits(const obj_t o)
 {
     return (word_t)o;
-}
-
-static inline bool is_fixnum(const obj_t o)
-{
-    return (obj_bits(o) & FIXNUM_TAG_MASK) == FIXNUM_TAG;
 }
 
 static inline bool is_normal(const obj_t o)
@@ -134,19 +130,24 @@ static inline bool is_immediate(const obj_t o)
     return (obj_bits(o) & SHORT_TAG_MASK) == IMMEDIATE_TAG;
 }
 
-static inline bool is_character(const obj_t o)
-{
-    return (obj_bits(o) & LONG_TAG_MASK) == CHARACTER_TAG;
-}
-
-static inline bool is_boolean(const obj_t o)
-{
-    return (obj_bits(o) & LONG_TAG_MASK) == BOOLEAN_TAG;
-}
-
 static inline bool is_special(const obj_t o)
 {
     return (obj_bits(o) & LONG_TAG_MASK) == SPECIAL_TAG;
+}
+
+static inline bool is_null(const obj_t o)
+{
+    return o == EMPTY_LIST;
+}
+
+static inline bool is_undefined(const obj_t o)
+{
+    return o == UNDEFINED;
+}
+
+static inline bool is_EOF(const obj_t o)
+{
+    return o == END_OF_FILE;
 }
 
 static inline word_t obj_fixnum_value(const obj_t p)

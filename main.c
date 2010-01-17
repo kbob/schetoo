@@ -4,6 +4,9 @@
 #include "except.h"
 #include "obj_boolean.h"
 #include "obj_bytevector.h"
+#include "obj_character.h"
+#include "obj_fixnum.h"
+#include "obj_pair.h"
 #include "record.h"
 
 int main(int argc, char *argv[])
@@ -19,5 +22,7 @@ int main(int argc, char *argv[])
     bytevector_set(p, 1, 'j');
     printf("p[0] = 0%o = '%c'\n", bytevector_get(p, 0), bytevector_get(p, 0));
     printf("p[1] = 0%o = '%c'\n", bytevector_get(p, 1), bytevector_get(p, 1));
+    while (1)
+	make_bytevector(3, 'k');
     return 0;
 }

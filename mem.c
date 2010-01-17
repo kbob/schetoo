@@ -4,14 +4,15 @@
 #include <stdlib.h>
 
 #include "except.h"
+#include "obj_fixnum.h"
 #include "roots.h"
 
-#define DEBUG_HEAP 0
+#define DEBUG_HEAP 1
 #if DEBUG_HEAP
 #include <stdio.h>
 #endif /* DEBUG_HEAP */
 
-#define INITIAL_HEAP_WORDS (1 << 19)
+#define INITIAL_HEAP_WORDS (1 << 8)
 #define INITIAL_HEAP_BYTES (INITIAL_HEAP_WORDS * sizeof (word_t))
 
 static void *the_heap;
@@ -48,11 +49,6 @@ static size_t aligned_size(size_t size)
     static const mem_ops_t *known_ops[KNOWN_OPS_SIZE];
     static size_t n_known_ops = 0;
 
-void check_ops(const mem_ops_t *ops)
-{
-    ASSERT(
-}
-
     bool is_known_ops(const mem_ops_t *ops)
     {
 	int i;
@@ -65,7 +61,7 @@ void check_ops(const mem_ops_t *ops)
     void remember_ops(const mem_ops_t *ops)
     {
 	if (!is_known_ops(ops)) {
-	    assert(n_known_ops < KNOWN_OPS_SIZE - 1);
+	    ASSERT(n_known_ops < KNOWN_OPS_SIZE - 1);
 	    known_ops[n_known_ops++] = ops;
 	}
     }
@@ -73,21 +69,22 @@ void check_ops(const mem_ops_t *ops)
     static void verify_object(obj_t obj, bool scanned)
     {
 	if (scanned)
-	    assert(!OBJ_IS_FWD(obj));
-	mem_ops_t *ops = OBJ_MEM_OPS(obj);
-	assert(is_known_ops(ops));
-	size_t i, nptr = ops->mo_ptr_count(obj);
+	    ASSERT(!is_forward(obj));
+	obj_header_t *hdr = obj_header(obj);
+	mem_ops_t *ops = obj_mem_ops(obj);
+	ASSERT(is_known_ops(ops));
+	size_t i, nptr = ops->mo_ptr_count(hdr);
 	for (i = 0; i < nptr; i++) {
-	    obj_t ptr = ops->mo_get_ptr(obj, i);
+	    obj_t ptr = ops->mo_get_ptr(hdr, i);
 	    if (scanned || !fromspace) {
-		assert(is_in_tospace(ptr));
+		ASSERT(is_in_tospace(ptr));
 		if (!is_null(ptr))
-		    assert(is_known_ops(OBJ_MEM_OPS(ptr)));
+		    ASSERT(is_known_ops(obj_mem_ops(ptr)));
 	    }
 	    else {
-		assert(is_in_tospace(ptr) || IS_IN_FROMSPACE(ptr));
+		ASSERT(is_in_tospace(ptr) || IS_IN_FROMSPACE(ptr));
 		if (!is_null(ptr))
-		    assert(OBJ_IS_FWD(ptr) || is_known_ops(OBJ_MEM_OPS(ptr)));
+		    ASSERT(is_forward(ptr) || is_known_ops(obj_mem_ops(ptr)));
 	    }
 	}
     }
@@ -99,8 +96,9 @@ void check_ops(const mem_ops_t *ops)
 	void *p = tospace;
 	while (p < next_scan) {
 	    obj_t obj = (obj_t)p;
-	    mem_ops_t *ops = OBJ_MEM_OPS(obj);
-	    size_t size = aligned_size(ops->mo_size(obj));
+	    obj_header_t *hdr = obj_header(p);
+	    mem_ops_t *ops = header_mem_ops(hdr);
+	    size_t size = aligned_size(ops->mo_size(hdr));
 	    verify_object(obj, true);
 	    p += size;
 	}
@@ -112,16 +110,17 @@ void check_ops(const mem_ops_t *ops)
 	    printf("         to_space_end=%p\n", tospace_end);
 	    printf("            alloc_end=%p\n", alloc_end);
 	}
-	assert(p == next_scan);
+	ASSERT(p == next_scan);
 	while (p < next_alloc) {
 	    obj_t obj = (obj_t)p;
-	    mem_ops_t *ops = OBJ_MEM_OPS(obj);
-	    assert(is_known_ops(ops));
+	    obj_header_t *hdr = obj_header(obj);
+	    mem_ops_t *ops = header_mem_ops(hdr);
+	    ASSERT(is_known_ops(ops));
 	    verify_object(obj, false);
-	    size_t size = aligned_size(ops->mo_size(obj));
-	    size_t i, nptr = ops->mo_ptr_count(obj);
+	    size_t size = aligned_size(ops->mo_size(hdr));
+	    size_t i, nptr = ops->mo_ptr_count(hdr);
 	    for (i = 0; i < nptr; i++)
-		ops->mo_get_ptr(obj, i);
+		ops->mo_get_ptr(hdr, i);
 	    p += size;
 	}
     }

@@ -2,12 +2,12 @@ Object types
 
        binding			record
 x       boolean			immediate
-       bytevector		built-in
-       character		immediate
-       eof			immediate
-       fixnum			immediate
+x       bytevector		built-in
+x       character		immediate
+x       eof			immediate
+x       fixnum			immediate
        frame			built-in or record
-       pair			built-in
+x       pair			built-in
        procedure		built-in
        string			built-in
        symbol			record (name, hash)
