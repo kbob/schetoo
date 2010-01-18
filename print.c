@@ -2,7 +2,6 @@
 
 #include <wctype.h>
 
-//#include "obj_binding.h"
 #include "types.h"
 #include "unicode.h"
 
@@ -213,7 +212,7 @@ static void print_form(obj_t obj, outstream_t *out)
     } else if (is_bytevector(obj)) {
 	print_bytevector(obj, out);
     } else {
-	outstream_printf(out, L"#<%ls-%p>", object_type_name(obj), obj);
+	outstream_printf(out, L"#<%ls-%p>", obj_type_name(obj), obj);
     }
 }
 

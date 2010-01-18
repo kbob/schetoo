@@ -11,3 +11,53 @@ flag somewhere, so the copier can ignore out-of-heap rdts.
 
 If we're going to use the C reader with Scheme I/O, we need a general
 way for C to call Scheme.  I think.
+
+----------------------------------
+2010.01.18
+
+Time to refactor mem.h.  First cut: three kinds of data -- whole heap
+operations, things that are needed for obj definitions, and things
+that are needed throughout the interpreter.
+
+Whole heap stuff (heap.h?)
+	set_heap_size_bytes()
+	init_heap()
+	
+Obj definition stuff (mem.h?):
+	heap_object_t
+	OBJ_ALIGN
+	obj_bits()
+	is_heap()
+	is_forward()
+	is_immediate()
+	is_special()
+	obj_heap_ptr()
+	obj_fwd_ptr()
+	heap_object_set_fwd_ptr()
+	mem ops
+	mem_ops_t definition
+	heap_object
+	obj_heap_object()
+	heap_obect_mem_ops()
+	obj_mem_ops()
+	is_primitive_obj()
+	is_record_instance()
+	CHECK_OBJ, check_obj
+	mem_alloc_obj
+
+Global stuff (obj.h? object.h?):
+	obj_t
+	word_t
+	masks, tags, shifts, and bits
+	macros to create chars, bools, and reader constants
+	FALSE_OBJ (obj_boolean.h?)
+	TRUE_OBJ (obj_boolean.h?)
+	EMPTY_LIST (obj_null.h?)
+	UNDEFINED (obj_undefined.h?)
+	END_OF_FILE (obj_???)
+	MEM_OPS_PRIMITIVE
+	READER_CONSTANT - rename to READER_ACTION?
+	is_null() (obj_null.h?)
+	is_undefined (obj_undefined.h)
+	mem_ops_t declaration
+	obj_type_name()

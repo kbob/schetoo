@@ -154,11 +154,6 @@ static inline bool is_undefined(const obj_t o)
     return o == UNDEFINED;
 }
 
-static inline word_t obj_fixnum_value(const obj_t p)
-{
-    return obj_bits(p) >> FIXNUM_TAG_BITS;
-}
-
 static inline heap_object_t *obj_heap_ptr(obj_t o)
 {
     return (heap_object_t *)o;
@@ -273,6 +268,6 @@ extern void init_heap(void);
 
 extern heap_object_t *mem_alloc_obj(mem_ops_t *, size_t size_bytes);
 
-extern const wchar_t *object_type_name(const obj_t);
+extern const wchar_t *obj_type_name(const obj_t);
 
 #endif /* !MEM_INCLUDED */
