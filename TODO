@@ -4,7 +4,7 @@ DONE	Verify all ASSERTs are needed.
 DONE	Remove all #include <assert.h>.
 DONE	Enable selftest.
 DONE	Align function declarations in *.h.
-	Rename all "hdr" to "hobj".
+DONE	Rename all "hdr" to "hobj".
 	Rename "normal pointer" to "heap object".
 	Rename check_obj() to CHECK_OBJ().
 	Refactor mem.h.
