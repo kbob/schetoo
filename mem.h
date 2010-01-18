@@ -19,8 +19,8 @@
  * There are four kinds of object pointers in the heap.  They can be
  * distinguished by their low-order three bits.
  *
- * - "Normal" pointers point to heap objects.  All heap objects are
- *      8-byte aligned, so the bottom three bits of a normal pointer
+ * - "Heap" pointers point to heap objects.  All heap objects are
+ *      8-byte aligned, so the bottom three bits of a heap pointer
  *      are 000.
  *
  * - "Fixnum" pointers don't point to memory.  Instead, the value is
@@ -62,7 +62,7 @@
  *
  * To summarize:
  *              1 - fixnum
- *            000 - normal object pointer
+ *            000 - heap object pointer
  *            010 - forwarding pointer
  *            100 - (reserved)
  *            110 - immediate non-fixnum
@@ -95,7 +95,7 @@ typedef intptr_t           word_t;
 
 #define SHORT_TAG_MASK     0x07
 #define SHORT_TAG_BITS        3
-#define NORMAL_TAG         0x00
+#define HEAP_TAG           0x00
 #define FORWARD_TAG        0x02
 #define IMMEDIATE_TAG      0x06
 
@@ -124,9 +124,9 @@ static inline word_t obj_bits(const obj_t o)
     return (word_t)o;
 }
 
-static inline bool is_normal(const obj_t o)
+static inline bool is_heap(const obj_t o)
 {
-    return (obj_bits(o) & SHORT_TAG_MASK) == NORMAL_TAG;
+    return (obj_bits(o) & SHORT_TAG_MASK) == HEAP_TAG;
 }
 
 static inline bool is_forward(const obj_t o)
@@ -159,7 +159,7 @@ static inline word_t obj_fixnum_value(const obj_t p)
     return obj_bits(p) >> FIXNUM_TAG_BITS;
 }
 
-static inline heap_object_t *obj_normal_ptr(obj_t o)
+static inline heap_object_t *obj_heap_ptr(obj_t o)
 {
     return (heap_object_t *)o;
 }
@@ -175,7 +175,7 @@ static inline void heap_object_set_fwd_ptr(heap_object_t *dst, obj_t fwd)
 }
 
 /*
- * Normal objects can be further subdivided into primitives and record
+ * Heap objects can be further subdivided into primitives and record
  * instances.
  *
  * Each primitive object has a pointer to a mem_ops_t structure as its

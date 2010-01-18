@@ -29,7 +29,7 @@ static bool heap_is_initialized;
 static inline bool is_in_tospace(const obj_t obj)
 {
     const void *vobj = obj;
-    return !is_normal(obj) || (vobj >= tospace && vobj < next_alloc);
+    return !is_heap(obj) || (vobj >= tospace && vobj < next_alloc);
 }
 
 static inline size_t aligned_size(size_t size)
@@ -79,7 +79,7 @@ static inline size_t aligned_size(size_t size)
 	    obj_t ptr = ops->mo_get_ptr(hobj, i);
 	    if (scanned || !fromspace) {
 		ASSERT(is_in_tospace(ptr));
-		if (is_normal(ptr))
+		if (is_heap(ptr))
 		    ASSERT(is_known_ops(obj_mem_ops(ptr)));
 	    }
 	    else {

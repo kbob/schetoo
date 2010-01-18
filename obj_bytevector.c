@@ -73,7 +73,7 @@ obj_t make_bytevector_from_list(obj_t list)
 bool is_bytevector(obj_t obj)
 {
     check_obj(obj);
-    return is_normal(obj) && obj_mem_ops(obj) == &bytevector_ops;
+    return is_heap(obj) && obj_mem_ops(obj) == &bytevector_ops;
 }
 
 size_t bytevector_len(obj_t obj)

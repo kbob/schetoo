@@ -106,7 +106,7 @@ obj_t make_vector_from_list(obj_t list)
 bool is_vector(obj_t obj)
 {
     check_obj(obj);
-    return is_normal(obj) && obj_mem_ops(obj) == &vector_ops;
+    return is_heap(obj) && obj_mem_ops(obj) == &vector_ops;
 }
 
 size_t vector_len(obj_t obj)

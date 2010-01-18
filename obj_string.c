@@ -56,7 +56,7 @@ obj_t make_string_from_chars(const char_t *value, size_t len)
 bool is_string(obj_t obj)
 {
     check_obj(obj);
-    return is_normal(obj) && obj_mem_ops(obj) == &string_ops;
+    return is_heap(obj) && obj_mem_ops(obj) == &string_ops;
 }
 
 size_t string_len(obj_t string)

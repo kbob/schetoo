@@ -67,7 +67,7 @@ obj_t make_anonymous_symbol(void)
 bool is_symbol(obj_t obj)
 {
     check_obj(obj);
-    return is_normal(obj) && obj_mem_ops(obj) == &symbol_ops;
+    return is_heap(obj) && obj_mem_ops(obj) == &symbol_ops;
 }
 
 obj_t symbol_name(obj_t symbol)
