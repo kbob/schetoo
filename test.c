@@ -9,7 +9,6 @@ void self_test()
 
 #define TEST_TRACE 0
 
-#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -33,7 +32,7 @@ static char *phase_name(test_phase_t phase)
     switch (phase) {
     case TP_READ: return "read";
     case TP_EVAL: return "eval";
-    default:      assert(0);
+    default:      ASSERT(0);
 		  return NULL;
     }
 }
@@ -51,7 +50,8 @@ static int read_driver(const test_case_descriptor_t *tc)
 	make_string_instream(tc->tcd_input, wcslen(tc->tcd_input));
     obj_t obj;
     bool ok = read_stream(in, &obj);
-    assert(ok);
+    ok = ok;
+    ASSERT(ok);
     delete_instream(in);
     const size_t out_size = 100;
     wchar_t actual[out_size + 1];

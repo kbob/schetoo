@@ -166,7 +166,6 @@ static obj_t move_obj(obj_t obj)
     ASSERT(next_alloc + size <= alloc_end);
     obj_t new_obj = next_alloc;
     next_alloc += size;
-    ASSERT(next_alloc <= alloc_end);
     heap_object_mem_ops(header)->mo_move(header, obj_heap_object(new_obj));
     header_set_fwd_ptr(header, new_obj);
     return new_obj;

@@ -17,6 +17,7 @@ static void scalar_move_op(const heap_object_t *src, heap_object_t *dst)
 static obj_t scalar_get_ptr_op(const heap_object_t *obj, size_t index)
 {
     ASSERT(false);
+    return 0;
 }
 
 static void scalar_set_ptr_op(heap_object_t *obj, size_t index, obj_t ptr)

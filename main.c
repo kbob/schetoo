@@ -3,14 +3,8 @@
 #include "mem.h"
 #include "except.h"
 #include "io.h"
-#include "read.h"
-#include "obj_boolean.h"
-#include "obj_bytevector.h"
-#include "obj_character.h"
-#include "obj_fixnum.h"
-#include "obj_pair.h"
 #include "print.h"
-#include "record.h"
+#include "read.h"
 #include "roots.h"
 
 static void repl(void)

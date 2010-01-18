@@ -31,6 +31,7 @@ obj_t make_string_uninitialized(size_t len)
     heap_object_t *hdr = mem_alloc_obj(&string_ops, len_to_bytes(len));
     string_obj_t *sp = (string_obj_t *)hdr;
     sp->string_len = len;
+    sp->string_value[len] = L'\0';
     return (obj_t)hdr;
 }
 
@@ -41,7 +42,6 @@ obj_t make_string_fill(size_t len, char_t fill)
     int i;
     for (i = 0; i < len; i++)
 	sp->string_value[i] = fill;
-    sp->string_value[len] = L'\0';
     return obj;
 }
 

@@ -1,6 +1,5 @@
 #include "read.h"
 
-#include <assert.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -71,7 +70,7 @@
     {									\
 	size_t index = var##_size;					\
 	var##_size += n;						\
-	assert(var##_size <= (size));					\
+	ASSERT(var##_size <= (size));					\
 	return index;							\
     }									\
 									\
@@ -120,25 +119,6 @@ static inline obj_t stack_top(obj_t stack)
     return pair_car(stack);
 }
 
-#if 0
-/*
- * Special actions are implemented as anonymous pairs.
- * They are initialized by build() when it's called with init=true.
- */
-static bool build(obj_t actions, obj_t *obj_out);
-
-ROOT(ACTION_BEGIN_LIST);
-ROOT(ACTION_BEGIN_VECTOR);
-ROOT(ACTION_BEGIN_BYTEVEC);
-ROOT(ACTION_END_SEQUENCE);
-ROOT(ACTION_DOT_END);
-ROOT(ACTION_ABBREV);
-ROOT_CONSTRUCTOR(ACTION_DISCARD)
-{
-    build(true, NIL, NULL);		/* Initialize all action roots. */
-    return ACTION_DISCARD;
-}
-#else
 #define ACTION_BEGIN_LIST	(READER_CONSTANT(0))
 #define ACTION_BEGIN_VECTOR	(READER_CONSTANT(1))
 #define ACTION_BEGIN_BYTEVEC	(READER_CONSTANT(2))
@@ -146,7 +126,6 @@ ROOT_CONSTRUCTOR(ACTION_DISCARD)
 #define ACTION_DOT_END		(READER_CONSTANT(4))
 #define ACTION_ABBREV		(READER_CONSTANT(5))
 #define ACTION_DISCARD		(READER_CONSTANT(6))
-#endif
 
 /*
  * Let's define some character classes and indices.
@@ -347,14 +326,14 @@ static void init_symbols(void)
 	for (p = grammar[i].p_rhs; *p; p++)
 	    if (charmap[(uint_fast8_t)*p] == CT_NONE)
 		charmap[(uint_fast8_t)*p] = CT_TERMINAL;
-    assert(charmap['$'] == CT_NONE);
+    ASSERT(charmap['$'] == CT_NONE);
     charmap['$'] = CT_TERMINAL;
-    assert(charmap['-'] == CT_NONE);
+    ASSERT(charmap['-'] == CT_NONE);
     for (i = j = 0; i < token_pairs_size; i++, j++) {
 	token_pair_t *tpp = &token_pairs[i];
-	assert(tpp->tm_ttype < token_pairs_size);
+	ASSERT(tpp->tm_ttype < token_pairs_size);
 	uint_fast8_t *cmp = &charmap[(uint_fast8_t)tpp->tm_term];
-	assert(*cmp == CT_TERMINAL);
+	ASSERT(*cmp == CT_TERMINAL);
 	*cmp |= tpp->tm_ttype;
 	*next_symbols(1) = tpp->tm_term;
     }
@@ -369,7 +348,7 @@ static void init_symbols(void)
 	    *next_symbols(1) = i;
 	}
     nonterminals_size = symbols_size - exterminals_size;
-    assert(symbols_size < CTMASK);
+    ASSERT(symbols_size < CTMASK);
 
 #if DUMP_TABLES
     printf("start_symbol = '%c'\n", start_symbol);
@@ -395,7 +374,7 @@ static void init_symbols(void)
 static inline size_t sym_index(char sym)
 {
     uint_fast8_t cm = charmap[(size_t)sym];
-    assert(cm & CTMASK);
+    ASSERT(cm & CTMASK);
     return cm & SYMMASK;
 }
 
@@ -403,7 +382,7 @@ static inline size_t sym_index(char sym)
 static inline size_t term_index(char term)
 {
     uint_fast8_t cm = charmap[(size_t)term];
-    assert(cm & CT_TERMINAL);
+    ASSERT(cm & CT_TERMINAL);
     return cm & SYMMASK;
 }
 
@@ -411,21 +390,21 @@ static inline size_t term_index(char term)
 static inline size_t nonterm_index(char nonterm)
 {
     uint_fast8_t cm = charmap[(size_t)nonterm];
-    assert((cm & CTMASK) == CT_NONTERMINAL);
+    ASSERT((cm & CTMASK) == CT_NONTERMINAL);
     return (cm & SYMMASK) - exterminals_size;
 }
 
 /* map a terminal index to its representation character. */
 static inline char terminal(size_t term_index)
 {
-    assert(term_index < terminals_size);
+    ASSERT(term_index < terminals_size);
     return symbols[term_index];
 }
 
 /* map a nonterminal index to its representation character. */
 static inline char nonterminal(size_t nonterm_index)
 {
-    assert(nonterm_index < nonterminals_size);
+    ASSERT(nonterm_index < nonterminals_size);
     return symbols[nonterm_index + exterminals_size];
 }
 
@@ -463,11 +442,8 @@ static void init_first(void)
 	    for (j = 0; pp->p_rhs[j]; j++) {
 		exterminal_set_t *y = &sym_first[sym_index(pp->p_rhs[j])];
 		if (*y & ~*x) {
-		    exterminal_set_t b = *x;
+		    ASSERT(*x != (*x | *y));
 		    *x |= *y;
-		    exterminal_set_t a = *x;
-		    assert(b != a);
-		    assert(a & ~b);
 		    done = false;
 		}
 		if (!(*y & 1 << epsilon))
@@ -593,11 +569,11 @@ static int pt_entry(char A, char a)
 	if (pp->p_lhs == A) {
 	    exterminal_set_t fig = first(pp->p_rhs);
 	    if (fig & 1 << ia) {
-		assert(found == NO_RULE && "grammar not LL(1)");
+		ASSERT(found == NO_RULE && "grammar not LL(1)");
 		found = i;
 	    }
 	    if (a_follows_A && (fig & 1 << epsilon)) {
-		assert(found == NO_RULE && "grammar not LL(1)");
+		ASSERT(found == NO_RULE && "grammar not LL(1)");
 		found = i;
 	    }		
 	}
@@ -607,8 +583,8 @@ static int pt_entry(char A, char a)
 
 static uint_fast8_t parsing_table_entry(size_t i, size_t j)
 {
-    assert(i < nonterminals_size);
-    assert(j < terminals_size);
+    ASSERT(i < nonterminals_size);
+    ASSERT(j < terminals_size);
     return parsing_table[i * terminals_size + j];
 }
 
@@ -691,7 +667,7 @@ static obj_t parse(instream_t *in)
     int tok = yylex(&yylval, in);
     while (true) {
 	int sym = fixnum_value(stack_pop(&stack));
-	assert(0 <= sym && sym < symbols_size);
+	ASSERT(0 <= sym && sym < symbols_size);
 	uint_fast8_t rule = get_rule(symbols[sym], tok);
 	if (rule != NO_RULE) {
 	    const production_t *pp = &grammar[rule];
@@ -705,8 +681,8 @@ static obj_t parse(instream_t *in)
 	} else {
 	    if (sym == TOK_EOF)
 		break;
-	    /* XXX raise an exception here. */
-	    assert(sym == tok && "syntax error");
+	    if (sym != tok)
+		raise(&syntax, make_fixnum(tok), "syntax error", sym);
 	    if (!is_null(yylval))
 		stack_push(&actions, yylval);
 	    if (!stack_is_empty(actions) &&
@@ -739,21 +715,6 @@ static obj_t build_vector(obj_t list)
 /* Build a Scheme expression from an action stack. */
 static bool build(obj_t actions, obj_t *obj_out)
 {
-#if 0
-    if (init) {
-	ACTION_BEGIN_LIST    = make_C_procedure(&&begin_list,       NIL, NIL);
-	ACTION_BEGIN_VECTOR  = make_C_procedure(&&begin_vector,     NIL, NIL);
-	ACTION_BEGIN_BYTEVEC = make_C_procedure(&&begin_bytevector, NIL, NIL);
-	ACTION_ABBREV        = make_C_procedure(&&abbrev,           NIL, NIL);
-	ACTION_END_SEQUENCE  = make_C_procedure(&&end_sequence,     NIL, NIL);
-	ACTION_DOT_END       = make_C_procedure(&&dot_end,          NIL, NIL);
-	ACTION_DISCARD       = make_C_procedure(&&discard,          NIL, NIL);
-	return false;
-    }
-#else
-    
-    
-#endif
     obj_t vstack = EMPTY_LIST;
     obj_t reg = EMPTY_LIST;
     obj_t tmp = EMPTY_LIST;
@@ -800,11 +761,11 @@ static bool build(obj_t actions, obj_t *obj_out)
 	    continue;
 	}
     }
-    assert(stack_is_empty(vstack));
+    ASSERT(stack_is_empty(vstack));
 
     bool success = false;
     if (!is_null(reg)) {
-	assert(is_null(pair_cdr(reg)));
+	ASSERT(is_null(pair_cdr(reg)));
 	*obj_out = pair_car(reg);
 	success = true;
     }

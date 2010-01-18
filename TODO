@@ -1,20 +1,27 @@
 Little things
 DONE	Change all make_foo() to make_foo_fill().
-	Remove all #include <assert.h>
-	Verify all ASSERTs are needed.
+DONE	Verify all ASSERTs are needed.
+DONE	Remove all #include <assert.h>.
+	Enable selftest.
+	Align function declarations in *.h.
+	Rename all "hdr" to "hobj".
 	Rename "normal pointer" to "heap object".
+	Rename check_obj() to CHECK_OBJ().
 	Refactor mem.h.
+	Rationalize wchar_t and char_t.
 
 Heap
 	Implement records.
-	Hook GC into setjmp.
+	Hook GC into setjmp (after eval).
+	Reintroduce debug GC on every allocation.
+	Automatically grow heap when out of memory.
 	Speed up symbol lookup.
 	Speed up environments -- two kinds.
 
 Eval
 	Design eval main loop.
 	  -- setjmp and exceptions
-	  -- multiple values?
+	  -- multiple values
 	  -- arg lists
 	  -- nice calling convention for primitive procs
 

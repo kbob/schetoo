@@ -1,6 +1,5 @@
 #include "scan.h"
 
-#include <assert.h>
 #include <string.h>
 #include <wctype.h>
 
@@ -96,7 +95,7 @@ static inline bool is_ident_initial(wchar_t wc)
     return false;
 }
 
-static inline bool is_ident_subsequent(wchar_t wc)
+static bool is_ident_subsequent(wchar_t wc)
 {
     if (is_ident_initial(wc) || wcschr(L"+-.@", wc))
 	return true;
@@ -115,7 +114,7 @@ static int digit_value(wchar_t wc)
 	return wc - L'0';
     if (L'a'<= wc && wc <= L'f')
 	return wc - L'a' + 0xa;
-    assert(L'A'<= wc && wc <= L'F');
+    ASSERT(L'A'<= wc && wc <= L'F');
     return wc - L'A' + 0xA;
 }
 
@@ -151,7 +150,8 @@ static token_type_t scan_ident(const wchar_t *prefix,
 	    wc = instream_getwc(in);
 	    if (wc == L'x' || wc == L'X') {
 		if (!inline_hex_scalar(in, &wc, L';'))
-		    assert(false && "bad hex scalar");
+		    raise(&syntax,
+			  charbuf_make_string(&buf), "bad hex scalar");
 	    } else if (wc != WEOF) {
 		instream_ungetwc(wc, in);
 		break;
@@ -254,7 +254,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    case L']':
 		return TOK_RBRACKET;
 	    default:
-		assert(0);
+		ASSERT(0);
 	    }
 	}
 	if (wc == L'.') {
@@ -345,7 +345,8 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 		    while (depth) {
 			w2 = instream_getwc(in);
 			if (w2 == WEOF)
-			    assert(0 && "unterminated block comment");
+			    raise(&syntax,
+				  FALSE_OBJ, "unterminated block comment");
 			if (w2 == L'|' && state == 0)
 			    state = 1;
 			else if (w2 == L'|' && state == 1) {
@@ -436,7 +437,8 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    while (true) {
 		w2 = instream_getwc(in);
 		if (w2 == WEOF)
-		    assert(false && "unterminated string");
+		    raise(&syntax,
+			  charbuf_make_string(&buf), "unterminated string");
 		if (w2 == L'"')
 		    break;
 		if (w2 == L'\\') {
@@ -454,21 +456,28 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 		    case L'x': 
 		    case L'X':
 			if (!inline_hex_scalar(in, (wchar_t *)&w2, L';'))
-			    assert(false && "bad hex escape");
+			    raise(&syntax,
+				  charbuf_make_string(&buf), "bad hex escape");
 			break;
 		    default:
 			while (is_intraline_whitespace(w2)) {
 			    w2 = instream_getwc(in);
 			    if (w2 == WEOF)
-				assert(false && "unterminated string");
+				raise(&syntax,
+				      charbuf_make_string(&buf),
+				      "unterminated string");
 			}
 			if (!is_line_ending(w2))
-			    assert(false && "bad backslash escape");
+			    raise(&syntax,
+				  charbuf_make_string(&buf),
+				  "bad backslash escape");
 			w2 = instream_getwc(in);
 			while (is_intraline_whitespace(w2)) {
 			    w2 = instream_getwc(in);
 			    if (w2 == WEOF)
-				assert(false && "unterminated string");
+				raise(&syntax,
+				      charbuf_make_string(&buf),
+				      "unterminated string");
 			}
 			instream_ungetwc(w2, in);
 			continue;
@@ -498,8 +507,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    instream_ungetwc(wc, in);
 	    return scan_ident(L"", lvalp, in);
 	}
-	fprintf(stderr, "unexpected char L'\\x%08x' = %d = %lc\n", wc, wc, wc);
-	assert(0);
+	raise(&syntax, make_character(wc), "unexpected input character");
     }
     return TOK_EOF;
 }
@@ -522,7 +530,8 @@ const char *token_name(token_type_t tok)
 	CASE(TOK_RBRACKET)
 #undef CASE
     default:
-	assert(false && "unknown token type");
+	ASSERT(false && "unknown token type");
+	return NULL;
     }
 }
 

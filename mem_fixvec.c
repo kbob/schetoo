@@ -30,9 +30,8 @@
     static obj_t fv##N##_get_ptr_op(const heap_object_t *obj, size_t index)\
     { 									\
 	fixvec##N##_t *vec = (fixvec##N##_t *)obj; 			\
-	if (index < N) 							\
-	    return vec->fv##N##_ptrs[index]; 				\
-	ASSERT(false); 							\
+	ASSERT(index < N);						\
+	return vec->fv##N##_ptrs[index]; 				\
     } 									\
  									\
     static void fv##N##_set_ptr_op(heap_object_t *obj,			\
@@ -40,10 +39,8 @@
 				   obj_t ptr)				\
     { 									\
 	fixvec##N##_t *vec = (fixvec##N##_t *)obj; 			\
-	if (index < N) 							\
-	    vec->fv##N##_ptrs[index] = ptr; 				\
-	else 								\
-	    ASSERT(false); 						\
+	ASSERT(index < N);						\
+	vec->fv##N##_ptrs[index] = ptr; 				\
     } 									\
  									\
     static mem_ops_t fixvec##N##_ops = { 				\
@@ -90,6 +87,7 @@ void mem_fixvec_create_ops(mem_ops_t *ops, wchar_t *name, size_t len)
 
     default:
 	ASSERT(false);
+	super = NULL;
     }
 
     *ops = *super;

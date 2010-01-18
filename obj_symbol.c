@@ -1,6 +1,5 @@
 #include "obj_symbol.h"
 
-#include <assert.h>
 #include <unistd.h>
 #include <wchar.h>
 
@@ -27,16 +26,15 @@ static obj_t find_symbol(obj_t name)
     obj_t p, sym;
     obj_t sym_name;
 
-    assert(is_string(name));
+    CHECK(is_string(name), name, "find-symbol: must be symbol");
     for (p = all_symbols_list; !is_null(p); p = pair_cdr(p)) {
-	assert(is_pair(p));
+	ASSERT(is_pair(p));
 	sym = pair_car(p);
-	assert(is_symbol(sym));
+	ASSERT(is_symbol(sym));
 	sym_name = symbol_name(sym);
-	assert(is_string(sym_name));
-	if (strings_are_equal(sym_name, name)) {
+	ASSERT(is_string(sym_name));
+	if (strings_are_equal(sym_name, name))
 	    return sym;
-	}
     }
     return EMPTY_LIST;
 }
@@ -84,7 +82,7 @@ obj_t symbol_name(obj_t symbol)
 	while (true) {
 	    name_len = swprintf(name_buf, max_len,
 				L"g%04d", ++gen_name_counter);
-	    assert(0 <= name_len && name_len < max_len);
+	    ASSERT(0 <= name_len && name_len < max_len);
 	    name = make_string_from_chars(name_buf, name_len);
 	    if (!is_null(find_symbol(name)))
 		continue;
