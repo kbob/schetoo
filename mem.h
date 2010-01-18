@@ -169,7 +169,7 @@ static inline heap_object_t *obj_fwd_ptr(obj_t o)
     return (heap_object_t *)(obj_bits(o) & ~SHORT_TAG_MASK);
 }
 
-static inline void header_set_fwd_ptr(heap_object_t *dst, obj_t fwd)
+static inline void heap_object_set_fwd_ptr(heap_object_t *dst, obj_t fwd)
 {
     *(word_t *)dst = obj_bits(fwd) | FORWARD_TAG;
 }
@@ -238,9 +238,9 @@ static inline heap_object_t *obj_heap_object(obj_t obj)
     return (heap_object_t *) obj;
 }
 
-static inline mem_ops_t *heap_object_mem_ops(heap_object_t *header)
+static inline mem_ops_t *heap_object_mem_ops(heap_object_t *hobj)
 {
-    return header->oh_ops;
+    return hobj->oh_ops;
 }
 
 static inline mem_ops_t *obj_mem_ops(obj_t obj)
@@ -248,14 +248,14 @@ static inline mem_ops_t *obj_mem_ops(obj_t obj)
     return heap_object_mem_ops(obj_heap_object(obj));
 }
 
-static inline bool is_primitive_obj(heap_object_t *header)
+static inline bool is_primitive_obj(heap_object_t *hobj)
 {
-    return header->oh_ops->mo_start_marker == MEM_OPS_PRIMITIVE;
+    return hobj->oh_ops->mo_start_marker == MEM_OPS_PRIMITIVE;
 }
 
-static inline bool is_record_instance(heap_object_t *header)
+static inline bool is_record_instance(heap_object_t *hobj)
 {
-    return !is_primitive_obj(header);
+    return !is_primitive_obj(hobj);
 }
 
 /* set_heap_size_bytes must be called  before init_heap. */

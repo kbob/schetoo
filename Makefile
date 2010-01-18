@@ -2,7 +2,7 @@
 
 #         dirs := lib
      programs := scheme
-# test_scripts := selftest.sh
+ test_scripts := selftest.sh
 
 scheme_cfiles := main.c charbuf.c except.c io.c print.c read.c roots.c scan.c \
 	test.c unicode.c \

@@ -9,7 +9,7 @@
 									\
     typedef struct fixvec##N { 						\
         heap_object_t fv##N##_header; 					\
-        obj_t        fv##N##_ptrs[N]; 					\
+        obj_t         fv##N##_ptrs[N]; 					\
     } fixvec##N##_t;							\
 									\
     static size_t fv##N##_size_op(const heap_object_t *obj)		\
@@ -98,19 +98,19 @@ void mem_fixvec_create_ops(mem_ops_t *ops, wchar_t *name, size_t len)
 obj_t alloc_fixvec1(mem_ops_t *ops, obj_t ptr0)
 {
     check_obj(ptr0);
-    heap_object_t *hdr = mem_alloc_obj(ops, sizeof (fixvec1_t));
-    fixvec1_t *vec = (fixvec1_t *)hdr;
+    heap_object_t *hobj = mem_alloc_obj(ops, sizeof (fixvec1_t));
+    fixvec1_t *vec = (fixvec1_t *)hobj;
     vec->fv1_ptrs[0] = ptr0;
-    return (obj_t)hdr;
+    return (obj_t)hobj;
 }
 
 obj_t alloc_fixvec2(mem_ops_t *ops, obj_t ptr0, obj_t ptr1)
 {
     check_obj(ptr0);
     check_obj(ptr1);
-    heap_object_t *hdr = mem_alloc_obj(ops, sizeof (fixvec2_t));
-    fixvec2_t *vec = (fixvec2_t *)hdr;
+    heap_object_t *hobj = mem_alloc_obj(ops, sizeof (fixvec2_t));
+    fixvec2_t *vec = (fixvec2_t *)hobj;
     vec->fv2_ptrs[0] = ptr0;
     vec->fv2_ptrs[1] = ptr1;
-    return (obj_t)hdr;
+    return (obj_t)hobj;
 }

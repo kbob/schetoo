@@ -10,7 +10,7 @@
 
 typedef struct bytevector_obj {
     heap_object_t v_header;
-    size_t       v_size;
+    size_t        v_size;
 } bytevector_obj_t;
 
 static inline size_t len_to_bytes(size_t len)

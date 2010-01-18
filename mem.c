@@ -71,12 +71,12 @@ static inline size_t aligned_size(size_t size)
     {
 	if (scanned)
 	    ASSERT(!is_forward(obj));
-	heap_object_t *hdr = obj_heap_object(obj);
+	heap_object_t *hobj = obj_heap_object(obj);
 	mem_ops_t *ops = obj_mem_ops(obj);
 	ASSERT(is_known_ops(ops));
-	size_t i, nptr = ops->mo_ptr_count(hdr);
+	size_t i, nptr = ops->mo_ptr_count(hobj);
 	for (i = 0; i < nptr; i++) {
-	    obj_t ptr = ops->mo_get_ptr(hdr, i);
+	    obj_t ptr = ops->mo_get_ptr(hobj, i);
 	    if (scanned || !fromspace) {
 		ASSERT(is_in_tospace(ptr));
 		if (is_normal(ptr))
@@ -97,9 +97,9 @@ static inline size_t aligned_size(size_t size)
 	void *p = tospace;
 	while (p < next_scan) {
 	    obj_t obj = (obj_t)p;
-	    heap_object_t *hdr = obj_heap_object(p);
-	    mem_ops_t *ops = heap_object_mem_ops(hdr);
-	    size_t size = aligned_size(ops->mo_size(hdr));
+	    heap_object_t *hobj = obj_heap_object(p);
+	    mem_ops_t *ops = heap_object_mem_ops(hobj);
+	    size_t size = aligned_size(ops->mo_size(hobj));
 	    verify_object(obj, true);
 	    p += size;
 	}
@@ -114,14 +114,14 @@ static inline size_t aligned_size(size_t size)
 	ASSERT(p == next_scan);
 	while (p < next_alloc) {
 	    obj_t obj = (obj_t)p;
-	    heap_object_t *hdr = obj_heap_object(obj);
-	    mem_ops_t *ops = heap_object_mem_ops(hdr);
+	    heap_object_t *hobj = obj_heap_object(obj);
+	    mem_ops_t *ops = heap_object_mem_ops(hobj);
 	    ASSERT(is_known_ops(ops));
 	    verify_object(obj, false);
-	    size_t size = aligned_size(ops->mo_size(hdr));
-	    size_t i, nptr = ops->mo_ptr_count(hdr);
+	    size_t size = aligned_size(ops->mo_size(hobj));
+	    size_t i, nptr = ops->mo_ptr_count(hobj);
 	    for (i = 0; i < nptr; i++)
-		ops->mo_get_ptr(hdr, i);
+		ops->mo_get_ptr(hobj, i);
 	    p += size;
 	}
     }
@@ -161,27 +161,27 @@ static obj_t move_obj(obj_t obj)
 	return obj;
     if (is_forward(obj))
 	return (obj_t)obj_fwd_ptr(obj);
-    heap_object_t *header = obj_heap_object(obj);
+    heap_object_t *hobj = obj_heap_object(obj);
     ASSERT(is_known_ops(obj_mem_ops(obj)));
-    size_t size = aligned_size(obj_mem_ops(obj)->mo_size(header));
+    size_t size = aligned_size(obj_mem_ops(obj)->mo_size(hobj));
     ASSERT(next_alloc + size <= alloc_end);
     obj_t new_obj = next_alloc;
     next_alloc += size;
-    heap_object_mem_ops(header)->mo_move(header, obj_heap_object(new_obj));
-    header_set_fwd_ptr(header, new_obj);
+    heap_object_mem_ops(hobj)->mo_move(hobj, obj_heap_object(new_obj));
+    heap_object_set_fwd_ptr(hobj, new_obj);
     return new_obj;
 }
 
-static void *scan_obj(heap_object_t *header)
+static void *scan_obj(heap_object_t *hobj)
 {
-    mem_ops_t *ops = heap_object_mem_ops(header);
+    mem_ops_t *ops = heap_object_mem_ops(hobj);
     ASSERT(is_known_ops(ops));
-    size_t size = aligned_size(ops->mo_size(header));
-    size_t i, n_ptrs = ops->mo_ptr_count(header);
+    size_t size = aligned_size(ops->mo_size(hobj));
+    size_t i, n_ptrs = ops->mo_ptr_count(hobj);
     for (i = 0; i < n_ptrs; i++) {
-	ops->mo_set_ptr(header, i, move_obj(ops->mo_get_ptr(header, i)));
+	ops->mo_set_ptr(hobj, i, move_obj(ops->mo_get_ptr(hobj, i)));
     }
-    return (void *)header + size;
+    return (void *)hobj + size;
 }
 
 static void copy_heap()
