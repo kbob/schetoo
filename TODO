@@ -5,8 +5,8 @@ DONE	Remove all #include <assert.h>.
 DONE	Enable selftest.
 DONE	Align function declarations in *.h.
 DONE	Rename all "hdr" to "hobj".
-	Rename "normal pointer" to "heap object".
-	Rename check_obj() to CHECK_OBJ().
+DONE	Rename "normal pointer" to "heap object".
+DONE	Rename check_obj() to CHECK_OBJ().
 	Refactor mem.h.
 	Rationalize wchar_t and char_t.
 

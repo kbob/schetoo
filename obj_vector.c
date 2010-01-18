@@ -79,7 +79,7 @@ obj_t make_vector_fill(size_t size, obj_t fill)
 {
     size_t i;
 
-    check_obj(fill);
+    CHECK_OBJ(fill);
     obj_t obj = make_vector_uninitialized(size);
     vector_obj_t *vec = (vector_obj_t *)obj;
     for (i = 0; i < size; i++)
@@ -105,20 +105,20 @@ obj_t make_vector_from_list(obj_t list)
 
 bool is_vector(obj_t obj)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     return is_heap(obj) && obj_mem_ops(obj) == &vector_ops;
 }
 
 size_t vector_len(obj_t obj)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     vector_obj_t *vec = (vector_obj_t *)obj;
     return vec->v_size;
 }
 
 obj_t vector_ref(obj_t obj, size_t index)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     CHECK(is_vector(obj), obj, "vector-ref: must be vector");
     vector_obj_t *vec = (vector_obj_t *)obj;
     CHECK(index < vec->v_size,
@@ -128,7 +128,7 @@ obj_t vector_ref(obj_t obj, size_t index)
 
 void vector_set(obj_t obj, size_t index, obj_t elem)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     CHECK(is_vector(obj), obj, "vector-set! must be vector");
     vector_obj_t *vec = (vector_obj_t *)obj;
     CHECK(index < vec->v_size,

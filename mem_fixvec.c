@@ -57,14 +57,14 @@
 									\
     obj_t fixvec##N##_get_ptr(obj_t obj, size_t index)			\
     {									\
-	check_obj(obj);						\
+	CHECK_OBJ(obj);						\
 	ASSERT(index < N);						\
 	return ((fixvec##N##_t *)obj)->fv##N##_ptrs[index];		\
     }									\
 									\
     void fixvec##N##_set_ptr(obj_t obj, size_t index, obj_t ptr)	\
     {									\
-	check_obj(obj);							\
+	CHECK_OBJ(obj);							\
 	ASSERT(index < N);						\
 	((fixvec##N##_t *)obj)->fv##N##_ptrs[index] = ptr;		\
     }
@@ -97,7 +97,7 @@ void mem_fixvec_create_ops(mem_ops_t *ops, wchar_t *name, size_t len)
 
 obj_t alloc_fixvec1(mem_ops_t *ops, obj_t ptr0)
 {
-    check_obj(ptr0);
+    CHECK_OBJ(ptr0);
     heap_object_t *hobj = mem_alloc_obj(ops, sizeof (fixvec1_t));
     fixvec1_t *vec = (fixvec1_t *)hobj;
     vec->fv1_ptrs[0] = ptr0;
@@ -106,8 +106,8 @@ obj_t alloc_fixvec1(mem_ops_t *ops, obj_t ptr0)
 
 obj_t alloc_fixvec2(mem_ops_t *ops, obj_t ptr0, obj_t ptr1)
 {
-    check_obj(ptr0);
-    check_obj(ptr1);
+    CHECK_OBJ(ptr0);
+    CHECK_OBJ(ptr1);
     heap_object_t *hobj = mem_alloc_obj(ops, sizeof (fixvec2_t));
     fixvec2_t *vec = (fixvec2_t *)hobj;
     vec->fv2_ptrs[0] = ptr0;

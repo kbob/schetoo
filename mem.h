@@ -265,8 +265,9 @@ extern void set_heap_size_bytes(size_t usable_size_bytes);
 extern void init_heap(void);
 
 #ifdef NDEBUG
-    #define check_obj(obj) ((void)0)
+    #define CHECK_OBJ(obj) ((void)0)
 #else
+    #define CHECK_OBJ check_obj
     extern void check_obj(const obj_t);
 #endif
 

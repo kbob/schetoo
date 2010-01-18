@@ -55,27 +55,27 @@ obj_t make_string_from_chars(const char_t *value, size_t len)
 
 bool is_string(obj_t obj)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     return is_heap(obj) && obj_mem_ops(obj) == &string_ops;
 }
 
 size_t string_len(obj_t string)
 {
-    check_obj(string);
+    CHECK_OBJ(string);
     CHECK(is_string(string), string, "string-length: must be string");
     return ((string_obj_t *)string)->string_len;
 }
 
 const char_t *string_value(obj_t string)
 {
-    check_obj(string);
+    CHECK_OBJ(string);
     CHECK(is_string(string), string, "string-value: must be string");
     return ((string_obj_t *)string)->string_value;
 }
 
 void string_set_char(obj_t string, size_t index, char_t c)
 {
-    check_obj(string);
+    CHECK_OBJ(string);
     CHECK(is_string(string), string, "string-set! must be string");
     string_obj_t *sp = (string_obj_t *)string;
     CHECK(index < sp->string_len,
@@ -91,7 +91,7 @@ void string_set_substring(obj_t         string,
 			  size_t        len,
 			  const char_t *substring)
 {
-    check_obj(string);
+    CHECK_OBJ(string);
     CHECK(is_string(string), string, "string-set-substring! must be string");
     string_obj_t *sp = (string_obj_t *)string;
     CHECK(pos + len <= sp->string_len,

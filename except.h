@@ -23,10 +23,12 @@ extern condition_type_t condition, warning, serious, message, irritants, who;
 extern condition_type_t error, violation, assertion, non_continuable;
 extern condition_type_t implementation_restriction, lexical, syntax, undefined;
 
+#ifndef NDEBUG
 extern void assertion_failed(const char *file,
 			     int	 line,
 			     const char *fn,
 			     const char *expr) __attribute__ ((noreturn));
+#endif
 
 extern void raise_error     (obj_t       who,
 			     const char *message,

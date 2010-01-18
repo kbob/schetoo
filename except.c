@@ -22,6 +22,8 @@ condition_type_t undefined		    = { "undefined" };
 static const char *program_name;
 static const char *program_short_name;
 
+#ifndef NDEBUG
+
 void assertion_failed(const char *file,
 		      int	 line,
 		      const char *fn,
@@ -31,6 +33,8 @@ void assertion_failed(const char *file,
 	    program_short_name, file, line, fn, expr);
     abort();
 }
+
+#endif
 
 void raise(condition_type_t *ct, obj_t obj, const char *msg, ...)
 {

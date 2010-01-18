@@ -66,13 +66,13 @@ obj_t make_anonymous_symbol(void)
 
 bool is_symbol(obj_t obj)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     return is_heap(obj) && obj_mem_ops(obj) == &symbol_ops;
 }
 
 obj_t symbol_name(obj_t symbol)
 {
-    check_obj(symbol);
+    CHECK_OBJ(symbol);
     CHECK(is_symbol(symbol), symbol, "symbol->string: must be symbol");
     obj_t name = fixvec1_get_ptr(symbol, 0);
     if (is_null(name)) {

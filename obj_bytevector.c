@@ -72,20 +72,20 @@ obj_t make_bytevector_from_list(obj_t list)
 
 bool is_bytevector(obj_t obj)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     return is_heap(obj) && obj_mem_ops(obj) == &bytevector_ops;
 }
 
 size_t bytevector_len(obj_t obj)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
     return vec->v_size;
 }
 
 byte_t bytevector_get(obj_t obj, size_t index)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
     CHECK(index < vec->v_size, obj, "bytevector_get: index out of range");
     return *elem_addr(vec, index);
@@ -93,7 +93,7 @@ byte_t bytevector_get(obj_t obj, size_t index)
 
 void bytevector_set(obj_t obj, size_t index, byte_t elem)
 {
-    check_obj(obj);
+    CHECK_OBJ(obj);
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
     CHECK(index < vec->v_size, obj, "bytevector_set: index out of range");
     *elem_addr(vec, index) = elem;
