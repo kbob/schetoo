@@ -1,6 +1,7 @@
 #include "obj_vector.h"
 
 #include "except.h"
+#include "mem.h"
 #include "obj_fixnum.h"
 #include "obj_pair.h"
 

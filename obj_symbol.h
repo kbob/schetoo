@@ -1,7 +1,7 @@
 #ifndef OBJ_SYMBOL_INCLUDED
 #define OBJ_SYMBOL_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 
 extern obj_t make_symbol           (obj_t name);
 extern obj_t make_symbol_from_C_str(const wchar_t *name);

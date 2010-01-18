@@ -2,7 +2,7 @@
 #define SCAN_INCLUDED
 
 #include "io.h"
-#include "mem.h"
+#include "obj.h"
 
 typedef enum token_type {
     TOK_EXACT_NUMBER,

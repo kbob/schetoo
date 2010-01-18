@@ -1,7 +1,7 @@
 #ifndef ROOTS_INCLUDED
 #define ROOTS_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 #include "uniq.h"
 
 #define ROOT             STATIC_ROOT

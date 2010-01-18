@@ -1,7 +1,7 @@
 #ifndef CHARBUF_INCLUDED
 #define CHARBUF_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 
 typedef struct charbuf {
     obj_t  cb_buf;

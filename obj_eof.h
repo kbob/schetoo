@@ -1,7 +1,7 @@
 #ifndef OBJ_EOF_INCLUDED
 #define OBJ_EOF_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 
 static inline obj_t make_eof(void)
 {

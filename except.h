@@ -1,7 +1,7 @@
 #ifndef EXCEPT_INCLUDED
 #define EXCEPT_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 
 #ifdef NDEBUG
     #define ASSERT(expr) ((void)0)

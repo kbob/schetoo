@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "mem.h"
 #include "except.h"
+#include "heap.h"
 #include "io.h"
 #include "print.h"
 #include "read.h"

@@ -1,7 +1,7 @@
 #ifndef OBJ_VECTOR_INCLUDED
 #define OBJ_VECTOR_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 
 extern obj_t  make_vector_uninitialized(size_t len);
 extern obj_t  make_vector_fill         (size_t len, obj_t fill);

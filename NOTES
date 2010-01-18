@@ -26,7 +26,6 @@ Whole heap stuff (heap.h?)
 Obj definition stuff (mem.h?):
 	heap_object_t
 	OBJ_ALIGN
-	obj_bits()
 	is_heap()
 	is_forward()
 	is_immediate()
@@ -49,6 +48,7 @@ Global stuff (obj.h? object.h?):
 	obj_t
 	word_t
 	masks, tags, shifts, and bits
+	obj_bits()
 	macros to create chars, bools, and reader constants
 	FALSE_OBJ (obj_boolean.h?)
 	TRUE_OBJ (obj_boolean.h?)

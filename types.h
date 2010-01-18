@@ -1,7 +1,7 @@
 #ifndef TYPES_INCLUDED
 #define TYPES_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 #include "obj_boolean.h"
 #include "obj_character.h"
 #include "obj_fixnum.h"

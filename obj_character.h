@@ -2,7 +2,7 @@
 #define OBJ_CHARACTER_INCLUDED
 
 #include "char.h"
-#include "mem.h"
+#include "obj.h"
 #include "except.h"
 
 static inline obj_t make_character(char_t value)

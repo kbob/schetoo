@@ -1,7 +1,7 @@
 #ifndef OBJ_BYTEVECTOR_INCLUDED
 #define OBJ_BYTEVECTOR_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 
 typedef unsigned char byte_t;
 

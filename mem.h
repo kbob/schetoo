@@ -1,10 +1,7 @@
 #ifndef MEM_INCLUDED
 #define MEM_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include "bool.h"
+#include "obj.h"
 
 /*
  * Low-level memory manager definitions.
@@ -78,51 +75,14 @@
  *         1 1100 - (reserved)
  */
 
-typedef struct object     *obj_t;
 typedef struct heap_object heap_object_t;
-typedef intptr_t           word_t;
 
 #ifdef __GNUC__
-#define max(a, b)          ((a) > (b) ? (a) : (b))
-#define OBJ_ALIGN          (max(8, __alignof__(obj_t)))
+#define oamax_(a, b)          ((a) > (b) ? (a) : (b))
+#define OBJ_ALIGN          (oamax_(8, __alignof__(obj_t)))
 #else
 #define OBJ_ALIGN             8
 #endif
-
-#define FIXNUM_TAG_MASK    0x01
-#define FIXNUM_TAG_BITS       1
-#define FIXNUM_TAG         0x01
-
-#define SHORT_TAG_MASK     0x07
-#define SHORT_TAG_BITS        3
-#define HEAP_TAG           0x00
-#define FORWARD_TAG        0x02
-#define IMMEDIATE_TAG      0x06
-
-#define LONG_TAG_MASK      0x1F
-#define LONG_TAG_BITS         5
-#define CHARACTER_TAG      0x06
-#define BOOLEAN_TAG        0x0E
-#define SPECIAL_TAG        0x16
-
-#define FIXNUM_SHIFT          1
-#define CHARACTER_SHIFT       8
-#define BOOLEAN_SHIFT         8
-
-#define FALSE_OBJ          ((obj_t)0x00E)
-#define TRUE_OBJ           ((obj_t)0x10E)
-
-#define EMPTY_LIST         ((obj_t)0x016)
-#define UNDEFINED          ((obj_t)0x116)
-#define END_OF_FILE        ((obj_t)0x216)
-#define MEM_OPS_PRIMITIVE          0x316
-
-#define READER_CONSTANT(n) ((n) << 8 | 0x816)
-
-static inline word_t obj_bits(const obj_t o)
-{
-    return (word_t)o;
-}
 
 static inline bool is_heap(const obj_t o)
 {
@@ -142,16 +102,6 @@ static inline bool is_immediate(const obj_t o)
 static inline bool is_special(const obj_t o)
 {
     return (obj_bits(o) & LONG_TAG_MASK) == SPECIAL_TAG;
-}
-
-static inline bool is_null(const obj_t o)
-{
-    return o == EMPTY_LIST;
-}
-
-static inline bool is_undefined(const obj_t o)
-{
-    return o == UNDEFINED;
 }
 
 static inline heap_object_t *obj_heap_ptr(obj_t o)
@@ -211,7 +161,6 @@ typedef void   mem_set_ptr_op(heap_object_t *, size_t index, obj_t);
 
 typedef struct mem_end_marker { } mem_end_marker_t;
 
-typedef struct mem_ops mem_ops_t;
 struct mem_ops {
     word_t                mo_start_marker;
     const wchar_t        *mo_name;	/* object class's name */
@@ -253,12 +202,6 @@ static inline bool is_record_instance(heap_object_t *hobj)
     return !is_primitive_obj(hobj);
 }
 
-/* set_heap_size_bytes must be called  before init_heap. */
-extern void set_heap_size_bytes(size_t usable_size_bytes);
-
-/* init_heap must be called before mem_alloc_obj. */
-extern void init_heap(void);
-
 #ifdef NDEBUG
     #define CHECK_OBJ(obj) ((void)0)
 #else
@@ -267,7 +210,5 @@ extern void init_heap(void);
 #endif
 
 extern heap_object_t *mem_alloc_obj(mem_ops_t *, size_t size_bytes);
-
-extern const wchar_t *obj_type_name(const obj_t);
 
 #endif /* !MEM_INCLUDED */

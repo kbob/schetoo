@@ -2,7 +2,7 @@
 #define OBJ_STRING_INCLUDED
 
 #include "char.h"
-#include "mem.h"
+#include "obj.h"
 
 extern obj_t         make_string_uninitialized
                                          (size_t len);

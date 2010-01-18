@@ -1,7 +1,7 @@
 #ifndef OBJ_PAIR_INCLUDED
 #define OBJ_PAIR_INCLUDED
 
-#include "mem.h"
+#include "obj.h"
 
 extern obj_t make_pair   (obj_t car, obj_t cdr);
 extern bool  is_pair     (obj_t);
