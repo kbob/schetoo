@@ -42,6 +42,13 @@
 #define END_OF_FILE        ((obj_t)0x216)
 #define MEM_OPS_PRIMITIVE          0x316
 
+#define OBJ_TYPE_PREDICATE(type)					\
+    static inline bool is_##type(obj_t obj)				\
+    {									\
+	extern mem_ops_t type##_ops;					\
+	return is_heap(obj) && *(mem_ops_t **)obj == &type##_ops;	\
+    }
+
 #define READER_CONSTANT(n) ((n) << 8 | 0x816)
 
 /*
@@ -61,14 +68,9 @@ static inline word_t obj_bits(const obj_t o)
     return (word_t)o;
 }
 
-static inline bool is_null(const obj_t o)
+static inline bool is_heap(const obj_t o)
 {
-    return o == EMPTY_LIST;
-}
-
-static inline bool is_undefined(const obj_t o)
-{
-    return o == UNDEFINED;
+    return (obj_bits(o) & SHORT_TAG_MASK) == HEAP_TAG;
 }
 
 extern const wchar_t *obj_type_name(const obj_t);

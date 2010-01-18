@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "mem_scalar.h"
 #include "obj_fixnum.h"
+#include "obj_null.h"
 #include "obj_pair.h"
 
 typedef struct bytevector_obj {
@@ -29,7 +30,7 @@ static size_t bytevector_size_op(const heap_object_t *oh)
     return len_to_bytes(vec->v_size);
 }
 
-static mem_ops_t bytevector_ops;
+mem_ops_t bytevector_ops;
 
 obj_t make_bytevector_uninitialized(size_t size)
 {
@@ -68,12 +69,6 @@ obj_t make_bytevector_from_list(obj_t list)
 	p = pair_cdr(p);
     }
     return bvec;
-}
-
-bool is_bytevector(obj_t obj)
-{
-    CHECK_OBJ(obj);
-    return is_heap(obj) && obj_mem_ops(obj) == &bytevector_ops;
 }
 
 size_t bytevector_len(obj_t obj)

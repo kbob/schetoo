@@ -3,6 +3,7 @@
 #include "except.h"
 #include "mem.h"
 #include "obj_fixnum.h"
+#include "obj_null.h"
 #include "obj_pair.h"
 
 typedef struct vector_obj {
@@ -56,7 +57,7 @@ static void vector_set_ptr_op(heap_object_t *obj, size_t index, obj_t ptr)
     *elem_addr(vec, index) = ptr;
 }
 
-static mem_ops_t vector_ops = {
+mem_ops_t vector_ops = {
     MEM_OPS_PRIMITIVE,
     L"vector",
     NULL,
@@ -102,12 +103,6 @@ obj_t make_vector_from_list(obj_t list)
 	p = pair_cdr(p);
     }
     return vec;
-}
-
-bool is_vector(obj_t obj)
-{
-    CHECK_OBJ(obj);
-    return is_heap(obj) && obj_mem_ops(obj) == &vector_ops;
 }
 
 size_t vector_len(obj_t obj)

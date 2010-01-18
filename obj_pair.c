@@ -3,7 +3,7 @@
 #include "except.h"
 #include "mem_fixvec.h"
 
-static mem_ops_t pair_ops;
+mem_ops_t pair_ops;
 
 extern obj_t make_pair(obj_t car, obj_t cdr)
 {
@@ -12,12 +12,6 @@ extern obj_t make_pair(obj_t car, obj_t cdr)
     if (!pair_ops.mo_super)
 	mem_fixvec_create_ops(&pair_ops, L"pair", 2);
     return alloc_fixvec2(&pair_ops, car, cdr);
-}
-
-bool is_pair(obj_t obj)
-{
-    CHECK_OBJ(obj);
-    return is_heap(obj) && obj_mem_ops(obj) == &pair_ops;
 }
 
 obj_t pair_car(obj_t pair)

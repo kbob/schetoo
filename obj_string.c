@@ -12,7 +12,7 @@ typedef struct string_obj {
     char_t        string_value[1];	/* NUL-terminated */
 } string_obj_t;
 
-static mem_ops_t string_ops;
+mem_ops_t string_ops;
 
 static inline size_t len_to_bytes(size_t len)
 {
@@ -51,12 +51,6 @@ obj_t make_string_from_chars(const char_t *value, size_t len)
     string_obj_t *sp = (string_obj_t *)obj;
     memcpy(sp->string_value, value, len * sizeof *value);
     return obj;
-}
-
-bool is_string(obj_t obj)
-{
-    CHECK_OBJ(obj);
-    return is_heap(obj) && obj_mem_ops(obj) == &string_ops;
 }
 
 size_t string_len(obj_t string)

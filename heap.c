@@ -7,6 +7,8 @@
 #include "mem.h"
 #include "obj_eof.h"
 #include "obj_fixnum.h"
+#include "obj_null.h"
+#include "obj_undefined.h"
 #include "roots.h"
 
 #define DEBUG_HEAP 0
@@ -85,8 +87,8 @@ static inline size_t aligned_size(size_t size)
 	    }
 	    else {
 		ASSERT(is_in_tospace(ptr) || IS_IN_FROMSPACE(ptr));
-		if (!is_null(ptr))
-		    ASSERT(is_forward(ptr) || is_known_ops(obj_mem_ops(ptr)));
+		if (is_heap(ptr))
+		    ASSERT(is_known_ops(obj_mem_ops(ptr)));
 	    }
 	}
     }

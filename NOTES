@@ -26,7 +26,6 @@ Whole heap stuff (heap.h?)
 Obj definition stuff (mem.h?):
 	heap_object_t
 	OBJ_ALIGN
-	is_heap()
 	is_forward()
 	is_immediate()
 	is_special()
@@ -57,6 +56,7 @@ Global stuff (obj.h? object.h?):
 	END_OF_FILE (obj_???)
 	MEM_OPS_PRIMITIVE
 	READER_CONSTANT - rename to READER_ACTION?
+	is_heap()
 	is_null() (obj_null.h?)
 	is_undefined (obj_undefined.h)
 	mem_ops_t declaration

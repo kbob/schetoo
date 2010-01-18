@@ -5,11 +5,12 @@
 
 #include "except.h"
 #include "mem_fixvec.h"
+#include "obj_null.h"
 #include "obj_pair.h"
 #include "obj_string.h"
 #include "roots.h"
 
-static mem_ops_t symbol_ops;
+mem_ops_t symbol_ops;
 static int gen_name_counter;
 
 ROOT(all_symbols_list);
@@ -62,12 +63,6 @@ obj_t make_symbol_from_C_str(const wchar_t *C_name)
 obj_t make_anonymous_symbol(void)
 {
     return alloc_symbol(UNDEFINED);
-}
-
-bool is_symbol(obj_t obj)
-{
-    CHECK_OBJ(obj);
-    return is_heap(obj) && obj_mem_ops(obj) == &symbol_ops;
 }
 
 obj_t symbol_name(obj_t symbol)

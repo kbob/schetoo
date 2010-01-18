@@ -84,11 +84,6 @@ typedef struct heap_object heap_object_t;
 #define OBJ_ALIGN             8
 #endif
 
-static inline bool is_heap(const obj_t o)
-{
-    return (obj_bits(o) & SHORT_TAG_MASK) == HEAP_TAG;
-}
-
 static inline bool is_forward(const obj_t o)
 {
     return (obj_bits(o) & SHORT_TAG_MASK) == FORWARD_TAG;
