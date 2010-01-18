@@ -119,13 +119,13 @@ static inline obj_t stack_top(obj_t stack)
     return pair_car(stack);
 }
 
-#define ACTION_BEGIN_LIST	(READER_CONSTANT(0))
-#define ACTION_BEGIN_VECTOR	(READER_CONSTANT(1))
-#define ACTION_BEGIN_BYTEVEC	(READER_CONSTANT(2))
-#define ACTION_END_SEQUENCE	(READER_CONSTANT(3))
-#define ACTION_DOT_END		(READER_CONSTANT(4))
-#define ACTION_ABBREV		(READER_CONSTANT(5))
-#define ACTION_DISCARD		(READER_CONSTANT(6))
+#define ACTION_BEGIN_LIST    ((word_t)READ_ACTION_OBJ(0))
+#define ACTION_BEGIN_VECTOR  ((word_t)READ_ACTION_OBJ(1))
+#define ACTION_BEGIN_BYTEVEC ((word_t)READ_ACTION_OBJ(2))
+#define ACTION_END_SEQUENCE  ((word_t)READ_ACTION_OBJ(3))
+#define ACTION_DOT_END       ((word_t)READ_ACTION_OBJ(4))
+#define ACTION_ABBREV        ((word_t)READ_ACTION_OBJ(5))
+#define ACTION_DISCARD       ((word_t)READ_ACTION_OBJ(6))
 
 /*
  * Let's define some character classes and indices.

@@ -14,33 +14,41 @@
  * See the long comment in mem.h for the meanings of these constants.
  */
 
-#define FIXNUM_TAG_MASK    0x01
 #define FIXNUM_TAG_BITS       1
+#define FIXNUM_TAG_MASK    0x01
 #define FIXNUM_TAG         0x01
 
-#define SHORT_TAG_MASK     0x07
 #define SHORT_TAG_BITS        3
+#define SHORT_TAG_MASK     0x07
 #define HEAP_TAG           0x00
 #define FORWARD_TAG        0x02
 #define IMMEDIATE_TAG      0x06
 
-#define LONG_TAG_MASK      0x1F
-#define LONG_TAG_BITS         5
+#define LONG_TAG_BITS         8
+#define LONG_TAG_MASK      0xFF
 #define CHARACTER_TAG      0x06
 #define BOOLEAN_TAG        0x0E
-#define SPECIAL_TAG        0x16
+#define READ_ACTION_TAG    0x16
+#define SPECIAL_TAG        0x1E
 
 #define FIXNUM_SHIFT          1
 #define CHARACTER_SHIFT       8
 #define BOOLEAN_SHIFT         8
+#define READ_ACTION_SHIFT     8
+#define SPECIAL_SHIFT         8
 
-#define FALSE_OBJ          ((obj_t)0x00E)
-#define TRUE_OBJ           ((obj_t)0x10E)
+#define FIXNUM_OBJ(n)      ((obj_t)((n) << FIXNUM_SHIFT      | FIXNUM_TAG))
+#define CHARACTER_OBJ(n)   ((obj_t)((n) << CHARACTER_SHIFT   | CHARACTER_TAG))
+#define BOOLEAN_OBJ(n)     ((obj_t)((n) << BOOLEAN_SHIFT     | BOOLEAN_TAG))
+#define READ_ACTION_OBJ(n) ((obj_t)((n) << READ_ACTION_SHIFT | READ_ACTION_TAG))
+#define SPECIAL_OBJ(n)     ((obj_t)((n) << SPECIAL_SHIFT     | SPECIAL_TAG))
 
-#define EMPTY_LIST         ((obj_t)0x016)
-#define UNDEFINED          ((obj_t)0x116)
-#define END_OF_FILE        ((obj_t)0x216)
-#define MEM_OPS_PRIMITIVE          0x316
+#define FALSE_OBJ (BOOLEAN_OBJ(0))
+#define TRUE_OBJ  (BOOLEAN_OBJ(1))
+#define EMPTY_LIST (SPECIAL_OBJ(0))
+#define UNDEFINED (SPECIAL_OBJ(1))
+#define END_OF_FILE (SPECIAL_OBJ(2))
+#define MEM_OPS_PRIMITIVE (SPECIAL_OBJ(3))
 
 #define OBJ_TYPE_PREDICATE(type)					\
     static inline bool is_##type(obj_t obj)				\
@@ -48,8 +56,6 @@
 	extern mem_ops_t type##_ops;					\
 	return is_heap(obj) && *(mem_ops_t **)obj == &type##_ops;	\
     }
-
-#define READER_CONSTANT(n) ((n) << 8 | 0x816)
 
 /*
  * The unit of heap allocation is the word_t.  A word_t is an integer

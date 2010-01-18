@@ -32,22 +32,23 @@
  *      special constants.  The bottom three bits of an immediate
  *      pointer are 110.
  *
- *      Non-fixnum immediate value are further subdivided thus.
+ *      Immediate value are further subdivided thus.
  *
  *         0000 0110 - character.  The character value is stored in
- *                 bits 8-31 if Unicode, or bits 8-15 if ASCII.
+ *                     bits 8-31 if Unicode, or bits 8-15 if ASCII.
  *
  *         0000 1110 - Boolean.
  *              0 0000 1010 - false
  *              1 0000 1010 - true
  *
- *         0001 0110 - special constant
- *           0000 0001 0110 - nil (the empty list)
- *           0001 0001 0110 - undefined
- *           0010 0001 0110 - end of file
- *           0011 0001 0110 - mem ops primitive (see below)
+ *         0001 0110 - read action.  Used internally by the reader.
+ *                     See read.c.
  *
- *           1xxx 0001 0110 - reader constants (see read.c)
+ *         0001 1110 - Special constant.
+ *           0000 0001 1110 - nil (the empty list)
+ *           0001 0001 1110 - undefined
+ *           0010 0001 1110 - end of file
+ *           0011 0001 1110 - mem ops primitive (see below)
  *
  * - "Forwarding" pointers are used by the garbage collector, and
  *      are never seen by the mutator.  While a heap region is being
@@ -63,16 +64,16 @@
  *            010 - forwarding pointer
  *            100 - (reserved)
  *            110 - immediate non-fixnum
- *         0 0110 - character
- *         0 1110 - Boolean
+ *      0000 0110 - character
+ *      0000 1110 - Boolean
  *    0 0000 1110 - false
  *    1 0000 1110 - true
- *         1 0110 - special constant
- *   00 0001 0110 - nil
- *   01 0001 0110 - undefined
- *   10 0001 0110 - end of file
- *   11 0001 0110 - memory ops primitive
- *         1 1100 - (reserved)
+ *      0001 0110 - read action (see read.c)
+ *      0001 1100 - special constant
+ *   00 0001 1110 - empty list
+ *   01 0001 1110 - undefined
+ *   10 0001 1110 - end of file
+ *   11 0001 1110 - mem ops primitive (see below)
  */
 
 typedef struct heap_object heap_object_t;
@@ -157,7 +158,7 @@ typedef void   mem_set_ptr_op(heap_object_t *, size_t index, obj_t);
 typedef struct mem_end_marker { } mem_end_marker_t;
 
 struct mem_ops {
-    word_t                mo_start_marker;
+    obj_t                 mo_start_marker;
     const wchar_t        *mo_name;	/* object class's name */
     mem_ops_t            *mo_super;	/* superclass pointer */
     mem_size_op          *mo_size;
