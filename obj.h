@@ -43,12 +43,10 @@
 #define READ_ACTION_OBJ(n) ((obj_t)((n) << READ_ACTION_SHIFT | READ_ACTION_TAG))
 #define SPECIAL_OBJ(n)     ((obj_t)((n) << SPECIAL_SHIFT     | SPECIAL_TAG))
 
-#define FALSE_OBJ (BOOLEAN_OBJ(0))
-#define TRUE_OBJ  (BOOLEAN_OBJ(1))
-#define EMPTY_LIST (SPECIAL_OBJ(0))
-#define UNDEFINED (SPECIAL_OBJ(1))
-#define END_OF_FILE (SPECIAL_OBJ(2))
-#define MEM_OPS_PRIMITIVE (SPECIAL_OBJ(3))
+#define EMPTY_LIST         (SPECIAL_OBJ(0))
+#define UNDEFINED_OBJ      (SPECIAL_OBJ(1))
+#define END_OF_FILE        (SPECIAL_OBJ(2))
+#define MEM_OPS_PRIMITIVE  (SPECIAL_OBJ(3))
 
 #define OBJ_TYPE_PREDICATE(type)					\
     static inline bool is_##type(obj_t obj)				\

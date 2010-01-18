@@ -5,12 +5,12 @@
 
 static inline obj_t make_undefined(void)
 {
-    return UNDEFINED;
+    return UNDEFINED_OBJ;
 }
 
 static inline bool is_undefined(obj_t obj)
 {
-    return obj == UNDEFINED;
+    return obj == UNDEFINED_OBJ;
 }
 
 #endif /* !OBJ_UNDEF_INCLUDED */

@@ -4,6 +4,9 @@
 #include "except.h"
 #include "obj.h"
 
+#define FALSE_OBJ (BOOLEAN_OBJ(0))
+#define TRUE_OBJ  (BOOLEAN_OBJ(1))
+
 static inline obj_t make_boolean(bool value)
 {
     return value ? TRUE_OBJ : FALSE_OBJ;
