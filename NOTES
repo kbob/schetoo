@@ -6,3 +6,8 @@ maybe with some fields unused.  Then the heap copying code doesn't
 have to special case record instances.  Add an "I am not in the heap"
 flag somewhere, so the copier can ignore out-of-heap rdts.
 
+----------------------------------
+2010.01.17
+
+If we're going to use the C reader with Scheme I/O, we need a general
+way for C to call Scheme.  I think.

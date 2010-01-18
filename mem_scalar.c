@@ -4,22 +4,22 @@
 
 #include "except.h"
 
-static size_t scalar_ptr_count_op(const obj_header_t *obj)
+static size_t scalar_ptr_count_op(const heap_object_t *obj)
 {
     return 0;
 }
 
-static void scalar_move_op(const obj_header_t *src, obj_header_t *dst)
+static void scalar_move_op(const heap_object_t *src, heap_object_t *dst)
 {
-    memcpy(dst, src, header_mem_ops((obj_header_t *)src)->mo_size(src));
+    memcpy(dst, src, heap_object_mem_ops((heap_object_t *)src)->mo_size(src));
 }
 
-static obj_t scalar_get_ptr_op(const obj_header_t *obj, size_t index)
+static obj_t scalar_get_ptr_op(const heap_object_t *obj, size_t index)
 {
     ASSERT(false);
 }
 
-static void scalar_set_ptr_op(obj_header_t *obj, size_t index, obj_t ptr)
+static void scalar_set_ptr_op(heap_object_t *obj, size_t index, obj_t ptr)
 {
     ASSERT(false);
 }

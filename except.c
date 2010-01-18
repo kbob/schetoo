@@ -32,7 +32,7 @@ void assertion_failed(const char *file,
     abort();
 }
 
-void raise(condition_type_t *ct, obj_t obj, const char *msg)
+void raise(condition_type_t *ct, obj_t obj, const char *msg, ...)
 {
     fprintf(stderr, "%s: condition &%s: %s\n",
 	    program_short_name, ct->ct_name, msg);

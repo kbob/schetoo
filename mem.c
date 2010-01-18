@@ -12,7 +12,7 @@
 #include <stdio.h>
 #endif /* DEBUG_HEAP */
 
-#define INITIAL_HEAP_WORDS (1 << 8)
+#define INITIAL_HEAP_WORDS (1 << 18)
 #define INITIAL_HEAP_BYTES (INITIAL_HEAP_WORDS * sizeof (word_t))
 
 static void *the_heap;
@@ -25,17 +25,17 @@ static void *next_scan;
 static void *fromspace, *fromspace_end;
 static bool heap_is_initialized;
 
-static bool is_in_tospace(const obj_t obj)
+static inline bool is_in_tospace(const obj_t obj)
 {
     const void *vobj = obj;
-    return is_immediate(obj) || (vobj >= tospace && vobj < next_alloc);
+    return !is_normal(obj) || (vobj >= tospace && vobj < next_alloc);
 }
 
-static size_t aligned_size(size_t size)
+static inline size_t aligned_size(size_t size)
 {
-    size_t asm1 = OBJ_ALIGN - 1;
-    size_t mask = ~asm1;
-    return (size + asm1) & mask;
+    size_t oam1 = OBJ_ALIGN - 1;
+    size_t mask = ~oam1;
+    return (size + oam1) & mask;
 }
 
 #if DEBUG_HEAP
@@ -70,7 +70,7 @@ static size_t aligned_size(size_t size)
     {
 	if (scanned)
 	    ASSERT(!is_forward(obj));
-	obj_header_t *hdr = obj_header(obj);
+	heap_object_t *hdr = obj_heap_object(obj);
 	mem_ops_t *ops = obj_mem_ops(obj);
 	ASSERT(is_known_ops(ops));
 	size_t i, nptr = ops->mo_ptr_count(hdr);
@@ -78,7 +78,7 @@ static size_t aligned_size(size_t size)
 	    obj_t ptr = ops->mo_get_ptr(hdr, i);
 	    if (scanned || !fromspace) {
 		ASSERT(is_in_tospace(ptr));
-		if (!is_null(ptr))
+		if (is_normal(ptr))
 		    ASSERT(is_known_ops(obj_mem_ops(ptr)));
 	    }
 	    else {
@@ -96,8 +96,8 @@ static size_t aligned_size(size_t size)
 	void *p = tospace;
 	while (p < next_scan) {
 	    obj_t obj = (obj_t)p;
-	    obj_header_t *hdr = obj_header(p);
-	    mem_ops_t *ops = header_mem_ops(hdr);
+	    heap_object_t *hdr = obj_heap_object(p);
+	    mem_ops_t *ops = heap_object_mem_ops(hdr);
 	    size_t size = aligned_size(ops->mo_size(hdr));
 	    verify_object(obj, true);
 	    p += size;
@@ -113,8 +113,8 @@ static size_t aligned_size(size_t size)
 	ASSERT(p == next_scan);
 	while (p < next_alloc) {
 	    obj_t obj = (obj_t)p;
-	    obj_header_t *hdr = obj_header(obj);
-	    mem_ops_t *ops = header_mem_ops(hdr);
+	    heap_object_t *hdr = obj_heap_object(obj);
+	    mem_ops_t *ops = heap_object_mem_ops(hdr);
 	    ASSERT(is_known_ops(ops));
 	    verify_object(obj, false);
 	    size_t size = aligned_size(ops->mo_size(hdr));
@@ -160,21 +160,21 @@ static obj_t move_obj(obj_t obj)
 	return obj;
     if (is_forward(obj))
 	return (obj_t)obj_fwd_ptr(obj);
-    obj_header_t *header = obj_header(obj);
+    heap_object_t *header = obj_heap_object(obj);
     ASSERT(is_known_ops(obj_mem_ops(obj)));
     size_t size = aligned_size(obj_mem_ops(obj)->mo_size(header));
     ASSERT(next_alloc + size <= alloc_end);
     obj_t new_obj = next_alloc;
     next_alloc += size;
     ASSERT(next_alloc <= alloc_end);
-    header_mem_ops(header)->mo_move(header, obj_header(new_obj));
+    heap_object_mem_ops(header)->mo_move(header, obj_heap_object(new_obj));
     header_set_fwd_ptr(header, new_obj);
     return new_obj;
 }
 
-static void *scan_obj(obj_header_t *header)
+static void *scan_obj(heap_object_t *header)
 {
-    mem_ops_t *ops = header_mem_ops(header);
+    mem_ops_t *ops = heap_object_mem_ops(header);
     ASSERT(is_known_ops(ops));
     size_t size = aligned_size(ops->mo_size(header));
     size_t i, n_ptrs = ops->mo_ptr_count(header);
@@ -200,9 +200,9 @@ static void copy_heap()
 	    verify_heap();
 	}
 	ASSERT(next_scan == next_alloc);
-	if (debug_heap)
-	    alloc_end = next_alloc;
-	else if (alloc_end - next_alloc < (tospace_end - tospace) / 2)
+	/* if (debug_heap)
+	 *     alloc_end = next_alloc;
+	 *else*/ if (alloc_end - next_alloc < (tospace_end - tospace) / 2)
 		 fprintf(stderr, "increase heap size\n");
     }
 }
@@ -223,29 +223,47 @@ void init_heap(void)
     alloc_end = tospace_end = the_heap + heap_size_bytes / 2;
     next_alloc = the_heap;
     next_scan = the_heap;
-    if (debug_heap)
-	alloc_end = next_alloc;
+    // if (debug_heap)
+    //     alloc_end = next_alloc;
 
     heap_is_initialized = true;
 }
 
-obj_header_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
+heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
 {
     ASSERT(heap_is_initialized);
     verify_heap();
     remember_ops(ops);
     size_t alloc_size = aligned_size(size_bytes);
     if (next_alloc > alloc_end - alloc_size) {
+	ASSERT(false && "implement longjmp to GC");
 	copy_heap();
 	ASSERT(next_alloc <= tospace_end - alloc_size && "out of memory");
     }
-    obj_header_t *p;
+    heap_object_t *p;
     /* with lock */ {
         p = next_alloc;
         next_alloc += alloc_size;
     }
     p->oh_ops = ops;
     return p;
+}
+
+const wchar_t *object_type_name(const obj_t obj)
+{
+    if (is_fixnum(obj))
+	return L"fixnum";
+    if (is_forward(obj))
+	return L"forward";
+    if (is_null(obj))
+        return L"null";
+    if (is_undefined(obj))
+	return L"undefined";
+    if (is_EOF(obj))
+	return L"eof-object";
+    if (is_special(obj))
+	return L"special";
+    return obj_mem_ops(obj)->mo_name;
 }
 
 #ifndef NDEBUG

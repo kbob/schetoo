@@ -45,10 +45,12 @@
  *              1 0000 1010 - true
  *
  *         0001 0110 - special constant
- *             00 0001 0110 - nil (the empty list)
- *             01 0001 0110 - undefined
- *             10 0001 0110 - end of file
- *             11 0001 0110 - mem ops primitive (see below)
+ *           0000 0001 0110 - nil (the empty list)
+ *           0001 0001 0110 - undefined
+ *           0010 0001 0110 - end of file
+ *           0011 0001 0110 - mem ops primitive (see below)
+ *
+ *           1xxx 0001 0110 - reader constants (see read.c)
  *
  * - "Forwarding" pointers are used by the garbage collector, and
  *      are never seen by the mutator.  While a heap region is being
@@ -77,10 +79,15 @@
  */
 
 typedef struct object     *obj_t;
-typedef struct obj_header  obj_header_t;
+typedef struct heap_object heap_object_t;
 typedef intptr_t           word_t;
 
+#ifdef __GNUC__
+#define max(a, b)          ((a) > (b) ? (a) : (b))
+#define OBJ_ALIGN          (max(8, __alignof__(obj_t)))
+#else
 #define OBJ_ALIGN             8
+#endif
 
 #define FIXNUM_TAG_MASK    0x01
 #define FIXNUM_TAG_BITS       1
@@ -109,6 +116,8 @@ typedef intptr_t           word_t;
 #define UNDEFINED          ((obj_t)0x116)
 #define END_OF_FILE        ((obj_t)0x216)
 #define MEM_OPS_PRIMITIVE          0x316
+
+#define READER_CONSTANT(n) ((n) << 8 | 0x816)
 
 static inline word_t obj_bits(const obj_t o)
 {
@@ -155,17 +164,17 @@ static inline word_t obj_fixnum_value(const obj_t p)
     return obj_bits(p) >> FIXNUM_TAG_BITS;
 }
 
-static inline obj_header_t *obj_normal_ptr(obj_t o)
+static inline heap_object_t *obj_normal_ptr(obj_t o)
 {
-    return (obj_header_t *)o;
+    return (heap_object_t *)o;
 }
 
-static inline obj_header_t *obj_fwd_ptr(obj_t o)
+static inline heap_object_t *obj_fwd_ptr(obj_t o)
 {
-    return (obj_header_t *)(obj_bits(o) & ~SHORT_TAG_MASK);
+    return (heap_object_t *)(obj_bits(o) & ~SHORT_TAG_MASK);
 }
 
-static inline void header_set_fwd_ptr(obj_header_t *dst, obj_t fwd)
+static inline void header_set_fwd_ptr(heap_object_t *dst, obj_t fwd)
 {
     *(word_t *)dst = obj_bits(fwd) | FORWARD_TAG;
 }
@@ -196,19 +205,19 @@ static inline void header_set_fwd_ptr(obj_header_t *dst, obj_t fwd)
  */
 
 /* return the object's size in bytes. */
-typedef size_t mem_size_op(const obj_header_t *);
+typedef size_t mem_size_op(const heap_object_t *);
 
 /* return the number of object pointers in the object. */
-typedef size_t mem_ptr_count_op(const obj_header_t *);
+typedef size_t mem_ptr_count_op(const heap_object_t *);
 
 /* move the object to the new location. */
-typedef void   mem_move_op(const obj_header_t *src, obj_header_t *dst);
+typedef void   mem_move_op(const heap_object_t *src, heap_object_t *dst);
 
 /* return the object's i'th heap pointer. */
-typedef obj_t  mem_get_ptr_op(const obj_header_t *, size_t index);
+typedef obj_t  mem_get_ptr_op(const heap_object_t *, size_t index);
 
 /* set the object's i'th heap pointer. */
-typedef void   mem_set_ptr_op(obj_header_t *, size_t index, obj_t);
+typedef void   mem_set_ptr_op(heap_object_t *, size_t index, obj_t);
 
 typedef struct mem_end_marker { } mem_end_marker_t;
 
@@ -225,31 +234,31 @@ struct mem_ops {
     mem_end_marker_t      mo_end_marker;
 };
 
-struct obj_header {
+struct heap_object {
     mem_ops_t *oh_ops;
 };
 
-static inline obj_header_t *obj_header(obj_t obj)
+static inline heap_object_t *obj_heap_object(obj_t obj)
 {
-    return (obj_header_t *) obj;
+    return (heap_object_t *) obj;
 }
 
-static inline mem_ops_t *header_mem_ops(obj_header_t *header)
+static inline mem_ops_t *heap_object_mem_ops(heap_object_t *header)
 {
     return header->oh_ops;
 }
 
 static inline mem_ops_t *obj_mem_ops(obj_t obj)
 {
-    return header_mem_ops(obj_header(obj));
+    return heap_object_mem_ops(obj_heap_object(obj));
 }
 
-static inline bool is_primitive_obj(obj_header_t *header)
+static inline bool is_primitive_obj(heap_object_t *header)
 {
     return header->oh_ops->mo_start_marker == MEM_OPS_PRIMITIVE;
 }
 
-static inline bool is_record_instance(obj_header_t *header)
+static inline bool is_record_instance(heap_object_t *header)
 {
     return !is_primitive_obj(header);
 }
@@ -266,6 +275,8 @@ extern void init_heap(void);
     extern void check_obj(const obj_t);
 #endif
 
-extern obj_header_t *mem_alloc_obj(mem_ops_t *, size_t size_bytes);
+extern heap_object_t *mem_alloc_obj(mem_ops_t *, size_t size_bytes);
+
+extern const wchar_t *object_type_name(const obj_t);
 
 #endif /* !MEM_INCLUDED */

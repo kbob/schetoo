@@ -8,11 +8,12 @@
 #else
     #define ASSERT(expr)                                                       \
         ((expr) ? (void)0                                                      \
-                : assertion_failed(__FILE__, __LINE__, __FUNCTION__, # expr))
+                : assertion_failed(__FILE__, __LINE__, __func__, # expr))
 #endif
 
-#define CHECK(expr, who, msg, ...) \
-    ((expr) ? (void)0 : raise(&violation, (who), (msg) __VA_ARGS__))
+// CHECK(expr, who, msg, irritants...)
+#define CHECK(expr, who, ...) \
+    ((expr) ? (void)0 : raise(&violation, (who), __VA_ARGS__))
 
 typedef struct condition_type {
     const char *ct_name;
@@ -29,7 +30,7 @@ extern void assertion_failed(const char *file,
 
 extern void raise_error(obj_t who, const char *message, obj_t irritants, ...);
 
-extern void raise(condition_type_t *, obj_t obj, const char *msg);
+extern void raise(condition_type_t *, obj_t obj, const char *msg, ...);
     
 extern void raise_continuable(condition_type_t *, obj_t obj, const char *msg);
 

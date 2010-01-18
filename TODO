@@ -1,3 +1,23 @@
+Little things
+DONE	Change all make_foo() to make_foo_fill().
+	Remove all #include <assert.h>
+	Verify all ASSERTs are needed.
+	Rename "normal pointer" to "heap object".
+	Refactor mem.h.
+
+Heap
+	Implement records.
+	Hook GC into setjmp.
+	Speed up symbol lookup.
+	Speed up environments -- two kinds.
+
+Eval
+	Design eval main loop.
+	  -- setjmp and exceptions
+	  -- multiple values?
+	  -- arg lists
+	  -- nice calling convention for primitive procs
+
 Object types
 
        binding			record

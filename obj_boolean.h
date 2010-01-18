@@ -1,6 +1,7 @@
 #ifndef OBJ_BOOL_INCLUDED
 #define OBJ_BOOL_INCLUDED
 
+#include "except.h"
 #include "mem.h"
 
 static inline obj_t make_boolean(bool value)
