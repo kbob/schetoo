@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "mem.h"
 #include "except.h"
@@ -6,6 +7,7 @@
 #include "print.h"
 #include "read.h"
 #include "roots.h"
+#include "test.h"
 
 static void repl(void)
 {
@@ -22,6 +24,9 @@ int main(int argc, char *argv[])
     set_program_name(argv[0]);
     init_heap();
     init_roots();
-    repl();
+    if (argc == 2 && !strcmp(argv[1], "-t"))
+	self_test();
+    else
+	repl();
     return 0;
 }

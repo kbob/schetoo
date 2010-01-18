@@ -7,7 +7,7 @@
 #include "obj_fixnum.h"
 #include "roots.h"
 
-#define DEBUG_HEAP 1
+#define DEBUG_HEAP 0
 #if DEBUG_HEAP
 #include <stdio.h>
 #endif /* DEBUG_HEAP */

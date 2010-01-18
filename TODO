@@ -2,7 +2,7 @@ Little things
 DONE	Change all make_foo() to make_foo_fill().
 DONE	Verify all ASSERTs are needed.
 DONE	Remove all #include <assert.h>.
-	Enable selftest.
+DONE	Enable selftest.
 	Align function declarations in *.h.
 	Rename all "hdr" to "hobj".
 	Rename "normal pointer" to "heap object".
