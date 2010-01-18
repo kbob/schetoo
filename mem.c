@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "except.h"
+#include "obj_eof.h"
 #include "obj_fixnum.h"
 #include "roots.h"
 
@@ -258,7 +259,7 @@ const wchar_t *object_type_name(const obj_t obj)
         return L"null";
     if (is_undefined(obj))
 	return L"undefined";
-    if (is_EOF(obj))
+    if (is_eof(obj))
 	return L"eof-object";
     if (is_special(obj))
 	return L"special";

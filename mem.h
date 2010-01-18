@@ -154,11 +154,6 @@ static inline bool is_undefined(const obj_t o)
     return o == UNDEFINED;
 }
 
-static inline bool is_EOF(const obj_t o)
-{
-    return o == END_OF_FILE;
-}
-
 static inline word_t obj_fixnum_value(const obj_t p)
 {
     return obj_bits(p) >> FIXNUM_TAG_BITS;

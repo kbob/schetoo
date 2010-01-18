@@ -21,7 +21,7 @@ typedef enum token_type {
     TOKEN_TYPE_COUNT
 } token_type_t;
 
-extern token_type_t yylex(obj_t *lvalp, instream_t *in);
+extern token_type_t yylex    (obj_t *lvalp, instream_t *in);
 extern const char *token_name(token_type_t tok);
 
 #endif /* !SCAN_INCLUDED */

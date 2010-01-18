@@ -20,10 +20,6 @@ void self_test()
 #include "read.h"
 #include "roots.h"
 
-//test_exception_t exception;
-//test_exception_t syntax;
-//test_exception_t lexical;
-
 typedef int (*test_driver_t)(const test_case_descriptor_t *);
 static test_case_descriptor_t *test_case_descriptors;
 

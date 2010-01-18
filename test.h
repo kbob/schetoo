@@ -49,14 +49,6 @@ struct test_case_descriptor {
     test_case_descriptor_t *tcd_next;
 };
 
-#if 0
-typedef const wchar_t test_exception_t;
-
-extern test_exception_t exception;
-extern test_exception_t syntax;
-extern test_exception_t lexical;
-#endif
-
 extern void register_test(test_case_descriptor_t *);
 extern void self_test();
 

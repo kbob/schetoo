@@ -695,23 +695,6 @@ static obj_t parse(instream_t *in)
     return actions;
 }
 
-/* Build a vector from a list.  XXX move this to obj_vector.c. */
-static obj_t build_vector(obj_t list)
-{
-    obj_t p = list;
-    size_t i, size = 0;
-    while (!is_null(p)) {
-	size++;
-	p = pair_cdr(p);
-    }
-    obj_t vec = make_vector_uninitialized(size);
-    for (i = 0, p = list; i < size; i++) {
-	vector_set(vec, i, pair_car(p));
-	p = pair_cdr(p);
-    }
-    return vec;
-}
-
 /* Build a Scheme expression from an action stack. */
 static bool build(obj_t actions, obj_t *obj_out)
 {
@@ -731,7 +714,7 @@ static bool build(obj_t actions, obj_t *obj_out)
 	    continue;
 
 	case ACTION_BEGIN_VECTOR:
-	    reg = build_vector(reg);
+	    reg = make_vector_from_list(reg);
 	    reg = make_pair(reg, stack_pop(&vstack));
 	    continue;
 

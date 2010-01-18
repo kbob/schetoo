@@ -8,7 +8,7 @@ static inline obj_t make_eof(void)
     return END_OF_FILE;
 }
 
-static inline bool is_eof(obj_t *obj)
+static inline bool is_eof(obj_t obj)
 {
     return obj == END_OF_FILE;
 }

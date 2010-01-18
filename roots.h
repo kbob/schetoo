@@ -41,7 +41,7 @@
     }
 
 typedef struct root_descriptor root_descriptor_t;
-typedef obj_t root_constructor_t(void);
+typedef obj_t                  root_constructor_t(void);
 
 struct root_descriptor {
     const wchar_t      *rd_name;
@@ -51,11 +51,8 @@ struct root_descriptor {
     root_descriptor_t  *rd_next;
 };
 
-extern void record_static_root(root_descriptor_t *);
-//extern void push_root(root_descriptor_t *);
-//extern void pop_root(const wchar_t *);
-//extern void pop_function_roots(const char *func_name);
+extern void               record_static_root(root_descriptor_t *);
 extern root_descriptor_t *get_thread_roots(void);
-extern void init_roots(void);
+extern void               init_roots(void);
 
 #endif /* !ROOTS_INCLUDED */
