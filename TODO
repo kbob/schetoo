@@ -10,7 +10,7 @@ DONE	Rename check_obj() to CHECK_OBJ().
 DONE	Refactor mem.h.
 DONE	Make is_TYPE() inline by exporting the mem_ops_t structures.
 DONE	Move is_null() and is_undefined() to their own files.
-	Find better names for EMPTY_LIST and UNDEFINED.
+DONE	Find better names for EMPTY_LIST and UNDEFINED.
 	Rationalize wchar_t and char_t.
 
 Heap

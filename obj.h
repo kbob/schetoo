@@ -67,6 +67,9 @@ typedef struct object *obj_t;
 typedef intptr_t       word_t;
 typedef struct mem_ops mem_ops_t;
 
+#define WORD_MIN (INTPTR_MIN)
+#define WORD_MAX (INTPTR_MAX)
+
 static inline word_t obj_bits(const obj_t o)
 {
     return (word_t)o;

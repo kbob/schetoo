@@ -16,7 +16,7 @@
 #include <stdio.h>
 #endif /* DEBUG_HEAP */
 
-#define INITIAL_HEAP_WORDS (1 << 18)
+#define INITIAL_HEAP_WORDS (1 << 16)
 #define INITIAL_HEAP_BYTES (INITIAL_HEAP_WORDS * sizeof (word_t))
 
 static void *the_heap;
@@ -239,9 +239,8 @@ heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
     remember_ops(ops);
     size_t alloc_size = aligned_size(size_bytes);
     if (next_alloc > alloc_end - alloc_size) {
-	ASSERT(false && "implement longjmp to GC");
 	copy_heap();
-	ASSERT(next_alloc <= tospace_end - alloc_size && "out of memory");
+	ASSERT(false && "longjmp to top of eval from here.");
     }
     heap_object_t *p;
     /* with lock */ {
