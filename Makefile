@@ -5,8 +5,8 @@
      programs := scheme
  test_scripts := selftest.sh
 
-scheme_cfiles := main.c charbuf.c eval.c except.c heap.c io.c print.c	\
-		 read.c roots.c scan.c test.c unicode.c			\
+scheme_cfiles := main.c charbuf.c eval.c except.c heap.c io.c low_ex.c	\
+		 print.c read.c roots.c scan.c test.c unicode.c		\
 									\
 		 obj_bytevector.c obj_boolean.c obj_cont.c obj_pair.c	\
 		 obj_string.c obj_symbol.c obj_vector.c			\

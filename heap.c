@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "except.h"
+#include "low_ex.h"
 #include "mem.h"
 #include "obj_eof.h"
 #include "obj_fixnum.h"
@@ -16,7 +17,7 @@
 #include <stdio.h>
 #endif /* DEBUG_HEAP */
 
-#define INITIAL_HEAP_WORDS (1 << 16)
+#define INITIAL_HEAP_WORDS (1 << 12)
 #define INITIAL_HEAP_BYTES (INITIAL_HEAP_WORDS * sizeof (word_t))
 
 static void *the_heap;
@@ -239,8 +240,7 @@ heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
     remember_ops(ops);
     size_t alloc_size = aligned_size(size_bytes);
     if (next_alloc > alloc_end - alloc_size) {
-	copy_heap();
-	ASSERT(false && "longjmp to top of eval from here.");
+	send_heap_full();
     }
     heap_object_t *p;
     /* with lock */ {
@@ -253,6 +253,7 @@ heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
 
 void collect_garbage(void)
 {
+    printf("Collect garbage.\n");
     copy_heap();
 }
 

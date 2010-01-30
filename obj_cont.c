@@ -2,6 +2,11 @@
 
 #include "mem_mixvec.h"
 
+/* 
+ * Someday, there may be various sizes of continuations.  Currently,
+ * the only size is cont3.
+ */
+
 mem_ops_t cont3_ops;
 
 obj_t make_continuation3(cont_proc_t proc, obj_t cont, obj_t arg)

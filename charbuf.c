@@ -35,6 +35,9 @@ size_t charbuf_len(const charbuf_t *cbp)
 
 const wchar_t *charbuf_C_str(const charbuf_t *cbp)
 {
+    // Ensure string is NUL-terminated.
+    charbuf_append_char((charbuf_t *)cbp, L'\0');
+    ((charbuf_t *)cbp)->cb_pos--;
     return string_value(cbp->cb_buf);
 }
 
