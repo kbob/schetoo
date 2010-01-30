@@ -23,9 +23,6 @@ void charbuf_append_char(charbuf_t *cbp, wchar_t wc)
 	cbp->cb_len *= 2;
 	obj_t tmp = make_string_fill(cbp->cb_len, L'\0');
 	string_set_substring(tmp, 0, cbp->cb_pos, string_value(cbp->cb_buf));
-	//size_t i, pos = cbp->cb_pos;
-	//for (i = 0; i < pos; i++)
-	//    string_set_char(tmp, i, string_value(cbp->cb_buf)[i]);
 	cbp->cb_buf = tmp;
     }
     string_set_char(cbp->cb_buf, cbp->cb_pos++, wc);
@@ -43,7 +40,7 @@ const wchar_t *charbuf_C_str(const charbuf_t *cbp)
 
 obj_t charbuf_make_string(charbuf_t *cbp)
 {
-    const wchar_t *p = string_value(cbp->cb_buf);
+    const char_t *p = string_value(cbp->cb_buf);
     obj_t string = make_string_from_chars(p, cbp->cb_pos);
     return string;
 }

@@ -11,7 +11,7 @@ extern obj_t make_pair(obj_t car, obj_t cdr)
     CHECK_OBJ(cdr);
     if (!pair_ops.mo_super)
 	mem_fixvec_create_ops(&pair_ops, L"pair", 2);
-    return alloc_fixvec2(&pair_ops, car, cdr);
+    return make_fixvec2(&pair_ops, car, cdr);
 }
 
 obj_t pair_car(obj_t pair)

@@ -9,4 +9,6 @@ extern void set_heap_size_bytes(size_t usable_size_bytes);
 /* init_heap must be called before mem_alloc_obj. */
 extern void init_heap(void);
 
+extern void collect_garbage(void);
+
 #endif /* !HEAP_INCLUDED */

@@ -61,3 +61,176 @@ Global stuff (obj.h? object.h?):
 	is_undefined (obj_undefined.h)
 	mem_ops_t declaration
 	obj_type_name()
+
+----------------------------------
+2010.01.25
+
+Work interferes.
+
+Trying to decide what the next big step should be.  I wanted to
+implement continuations as records, which means I need records next.
+Or I could just do continuations ad-hoc and move on to eval.
+
+I've been thinking about the problem of calling Scheme from C.  I
+can't just call eval() from arbitrary places because (a) eval() uses a
+static jmp_buf to recover from exceptions, and (b) I'm trying to have
+a hard bound on C stack size.
+
+So I reviewed the C coroutine literature.
+http://en.wikipedia.org/wiki/Coroutine#Implementations_for_C
+http://www.chiark.greenend.org.uk/~sgtatham/coroutines.html
+
+Nothing there appears to be directly applicable.  So for now, the rule
+is, C does not call Scheme (except once at the top level).
+
+So let's talk about eval.  One question to answer is, what happens
+when a procedure is applied to some arguments?  The old Scheme
+interpreter had some complex mumbo-jumbo where it built the arg list
+in place as each arg was evaluated, and then the procedure was called.
+
+I'm envisioning four registers.
+
+    CONT is the continuation register.  It points to the current
+    eval's continuation.  Think of it as a return PC.
+
+    TBE is to-be-evaluated.  It points to a LIFO list of expressions
+    to evaluate.
+
+    VALUES points to a LIFO list of values of past evaluations.
+
+    ENV is the current environment.
+
+Eval's basic operation is to pop one item off TBE, evaluate it,
+push the result onto VALUES, and then jump to CONT.
+
+For self-evaluating expressions, that's pretty easy.
+
+    def eval(expr):
+        expr = TBE.pop()
+        if expr.is_self_evaluating():
+            VALUES = cons(expr, VALUES)
+        elif ...
+            ...
+        goto CONT
+
+For symbols, it's just a lookup in the current environment.
+
+        ...
+        elif expr.is_symbol():
+            VALUES = cons(ENV.lookup(expr), VALUES)
+        ...
+
+For applications (aka procedure calls), we need to push a continuation
+to apply the operator to its args and then push more continuations to
+evaluate each of the arguments.  (Ignore special forms for now.)
+
+        ...
+        elif expr.is_application():
+            CONT = make_continuation(code=apply,
+                                     arg=expr,
+                                     arg2=VALUES,
+                                     env=ENV,
+                                     cont=CONT)
+            for arg in expr.arguments():
+                CONT = make_continuation(code=eval,
+                                         arg=arg,
+                                         env=ENV,
+                                         cont=CONT)
+        ...
+
+Then apply looks something like this.
+
+    def apply(expr, eoargs):
+        # Reverse and null-terminate the argument list
+        args = nil
+        while VALUES != eoargs:
+            args = cons(car(VALUES), args)
+            VALUES = cdr(VALUES)
+        CONT = make_continuation(code=expr.operator(),
+                                 env=push_env(expr.arglist, args, ENV),
+                                 cont=CONT)
+
+Something like that.
+
+Meanwhile, there is a large number of primitives.  It would be grand
+if we had a simple ABI for simple primitives.  Something like this.
+
+    obj_t my_primitive(obj_t arg1, obj_t arg2)
+    {
+         return <return value>;
+    }
+
+Maybe wrap a macro around that to bind a symbol to the procedure.
+
+    DEFINE_SIMPLE_PROC("my-primitive", 2)(obj_t arg1, obj_t arg2)
+    {
+        return <return value>;
+    }
+
+----------------------------------
+2010.01.29
+
+Alternative eval VM.
+
+An "instruction" has a varying number of fields (operands).  Two
+fields are always included: proc is the C procedure that implements
+the instruction, and cont is the address of the next instruction
+(continuation).
+
+An instruction manipulates the three global registers, VALUES, ENV,
+and CONT.  VALUES is a list of values of previously evaluated
+expressions.  ENV is the current environment.  CONT points to the
+next instruction.
+
+A self-eval instruction evaluates a self-evaluating expression.  It
+has three fields. proc = eval_const, expr = the self-evaluated
+expresion, and cont = whatever.  The self_eval procedure looks like
+this.
+
+    void eval_const(obj_t inst)
+    {
+        VALUES.push(inst.arg);
+	CONT = CONT.cont
+    }
+
+Each instruction the result of evaluating its expression.
+
+A eval_symbol instruction evaluates a symbol.  It uses the global
+register ENV.  The three fields are proc = eval_sym, arg = the symbol,
+and cont.
+
+    void eval_sym(obj_t inst)
+    {
+        VALUES.push(lookup(inst.arg, ENV);)
+    }
+
+An application instruction applies a procedure to a symbol.  It has
+three fields: proc = eval_app, arg = VALUES, and cont = whatever.
+eval_app looks like this.
+
+    void eval_app(obj_t inst)
+    {
+        CONT = make_instruction(finish_apply, VALUES, CONT);
+	/* go on to evaluate the first arg which pushes onto VALUES. */
+    }
+
+    void finish_apply(obj_t inst)
+    {
+        obj_t proc = VALUES.pop();
+        ENV.push(make_env(proc.arglist, VALUES, inst.arg));
+	proc = VALUES.pop();
+    }
+
+This doesn't work.  Need to check, after proc has been evaluated, whether
+its args should be evaluated.
+
+----------------------------------
+2010.01.30
+
+Need a new layer between except and eval.  Something to handle
+all the various reasons to call longjmp().  Call it low-level
+exceptions.  lowex.h.
+
+Considering yesterday's idea.  Wondering whether "instruction" is the
+right term.  Might also be appropriate to call it a "continuation".
+

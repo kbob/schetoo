@@ -7,11 +7,6 @@
 
 #define DEFINE_FIXVEC_TYPE(N)						\
 									\
-    typedef struct fixvec##N { 						\
-        heap_object_t fv##N##_header; 					\
-        obj_t         fv##N##_ptrs[N]; 					\
-    } fixvec##N##_t;							\
-									\
     static size_t fv##N##_size_op(const heap_object_t *obj)		\
     { 									\
 	return sizeof (fixvec##N##_t); 					\
@@ -53,21 +48,7 @@
 	fv##N##_get_ptr_op, 						\
 	fv##N##_set_ptr_op, 						\
 	{ } 								\
-    };									\
-									\
-    obj_t fixvec##N##_get_ptr(obj_t obj, size_t index)			\
-    {									\
-	CHECK_OBJ(obj);						\
-	ASSERT(index < N);						\
-	return ((fixvec##N##_t *)obj)->fv##N##_ptrs[index];		\
-    }									\
-									\
-    void fixvec##N##_set_ptr(obj_t obj, size_t index, obj_t ptr)	\
-    {									\
-	CHECK_OBJ(obj);							\
-	ASSERT(index < N);						\
-	((fixvec##N##_t *)obj)->fv##N##_ptrs[index] = ptr;		\
-    }
+    };
 
 DEFINE_FIXVEC_TYPE(1)
 DEFINE_FIXVEC_TYPE(2)
@@ -95,7 +76,7 @@ void mem_fixvec_create_ops(mem_ops_t *ops, wchar_t *name, size_t len)
     ops->mo_super = super;
 }
 
-obj_t alloc_fixvec1(mem_ops_t *ops, obj_t ptr0)
+obj_t make_fixvec1(mem_ops_t *ops, obj_t ptr0)
 {
     CHECK_OBJ(ptr0);
     heap_object_t *hobj = mem_alloc_obj(ops, sizeof (fixvec1_t));
@@ -104,7 +85,7 @@ obj_t alloc_fixvec1(mem_ops_t *ops, obj_t ptr0)
     return (obj_t)hobj;
 }
 
-obj_t alloc_fixvec2(mem_ops_t *ops, obj_t ptr0, obj_t ptr1)
+obj_t make_fixvec2(mem_ops_t *ops, obj_t ptr0, obj_t ptr1)
 {
     CHECK_OBJ(ptr0);
     CHECK_OBJ(ptr1);

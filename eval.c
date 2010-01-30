@@ -17,9 +17,9 @@ enum RESTART_REASON {
     RR_HEAP_FULL,
 };
 
-static bool       restart_buffers_valid;
-static sigjmp_buf eval_sigrestart;
-static jmp_buf    eval_restart;
+static __thread bool       restart_buffers_valid;
+static __thread sigjmp_buf eval_sigrestart;
+static __thread jmp_buf    eval_restart;
 
 THREAD_ROOT(cont_root);
 THREAD_ROOT(values_root);

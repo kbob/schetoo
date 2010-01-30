@@ -61,5 +61,4 @@ static inline obj_t pair_cdadddr(obj_t pair)
     return pair_cdr(pair_car(pair_cdr(pair_cdr(pair_cdr(pair)))));
 }
 
-
 #endif /* !OBJ_PAIR_INCLUDED */

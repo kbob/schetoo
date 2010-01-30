@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "eval.h"
 #include "except.h"
 #include "heap.h"
 #include "io.h"
@@ -15,7 +16,7 @@ static void repl(void)
     outstream_t *out = make_file_outstream(stdout);
     obj_t expr;
     while (read_stream(in, &expr))
-	print(expr, out);
+	print(core_eval(expr, EMPTY_LIST), out);
     printf("\n");
 }
 

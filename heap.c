@@ -251,6 +251,11 @@ heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
     return p;
 }
 
+void collect_garbage(void)
+{
+    copy_heap();
+}
+
 const wchar_t *obj_type_name(const obj_t obj)
 {
     if (is_fixnum(obj))

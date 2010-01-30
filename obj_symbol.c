@@ -20,7 +20,7 @@ static inline obj_t alloc_symbol(obj_t name)
 {
     if (!symbol_ops.mo_super)
 	mem_fixvec_create_ops(&symbol_ops, L"symbol", 1);
-    return alloc_fixvec1(&symbol_ops, name);
+    return make_fixvec1(&symbol_ops, name);
 }
 
 static obj_t find_symbol(obj_t name)

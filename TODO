@@ -28,6 +28,7 @@ Data
 	Implement procedure.
 	Implement condition as record.
 	Implement compound condition as record (not derived from condition).
+	Check whether Unicode data is current rev.
 
 Eval
 	Design eval main loop.
