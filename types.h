@@ -2,6 +2,7 @@
 #define TYPES_INCLUDED
 
 #include "obj.h"
+#include "obj_binding.h"
 #include "obj_boolean.h"
 #include "obj_bytevector.h"
 #include "obj_character.h"

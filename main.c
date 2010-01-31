@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "env.h"
 #include "eval.h"
 #include "except.h"
 #include "heap.h"
@@ -9,14 +10,28 @@
 #include "read.h"
 #include "roots.h"
 #include "test.h"
+#include "types.h"
+
+static obj_t toy_environment(void)
+{
+    obj_t env = make_env(EMPTY_LIST);
+    env_bind(env,
+	     make_symbol_from_C_str(L"answer"),
+	     BT_LEXICAL,
+	     M_IMMUTABLE,
+	     make_fixnum(42));
+    return env;
+}
 
 static void repl(void)
 {
     instream_t *in = make_readline_instream();
     outstream_t *out = make_file_outstream(stdout);
     obj_t expr;
+    /* make a silly environment for testing. */
+    obj_t env = toy_environment();
     while (read_stream(in, &expr))
-	print(core_eval(expr, EMPTY_LIST), out);
+	print(core_eval(expr, env), out);
     printf("\n");
 }
 

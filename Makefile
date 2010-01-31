@@ -5,11 +5,13 @@
      programs := scheme
  test_scripts := selftest.sh
 
-scheme_cfiles := main.c charbuf.c eval.c except.c heap.c io.c low_ex.c	\
-		 print.c read.c roots.c scan.c test.c unicode.c		\
+scheme_cfiles := main.c charbuf.c env.c eval.c except.c heap.c io.c	\
+		 low_ex.c print.c read.c roots.c scan.c test.c		\
+		 unicode.c						\
 									\
-		 obj_bytevector.c obj_boolean.c obj_cont.c obj_pair.c	\
-		 obj_string.c obj_symbol.c obj_vector.c			\
+		 obj_binding.c obj_bytevector.c obj_boolean.c		\
+		 obj_cont.c obj_pair.c obj_string.c obj_symbol.c	\
+		 obj_vector.c						\
 									\
 		 mem.c mem_fixvec.c mem_mixvec.c mem_scalar.c
 
@@ -18,9 +20,12 @@ scheme_cfiles := main.c charbuf.c eval.c except.c heap.c io.c low_ex.c	\
 scheme_ldlibs := -lreadline
 
 
-#      CFLAGS := -O2 -std=c99 $(FEATURES) -D_XOPEN_SOURCE -DNDEBUG -DNOTEST -iquote.
-       CFLAGS := -g -Wall -Werror -Winline -std=c99 $(FEATURES) -D_XOPEN_SOURCE -iquote.
+     CPPFLAGS := -std=c99 -D_XOPEN_SOURCE -iquote. $(FEATURES)
+       CFLAGS := -g -Wall -Werror -Winline -std=c99
       libtype := static
+
+#    CPPFLAGS += -DNDEBUG -DNOTEST
+#      CFLAGS := -O2
 
 default: all
 

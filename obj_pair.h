@@ -3,7 +3,11 @@
 
 #include "obj.h"
 
-OBJ_TYPE_PREDICATE(pair)		//  bool is_pair(obj_t);
+#define CONS(a, b) (make_pair((a), (b)))
+#define CAR(a)     (pair_car((a)))
+#define CDR(a)     (pair_cdr((a)))
+
+OBJ_TYPE_PREDICATE(pair)		// bool is_pair(obj_t);
 
 extern obj_t make_pair   (obj_t car, obj_t cdr);
 extern obj_t pair_car    (obj_t);

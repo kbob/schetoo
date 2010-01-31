@@ -5,7 +5,7 @@
 
 #include "mem_mixvec.h"
 
-typedef obj_t (*cont_proc_t)(obj_t cont, obj_t *values);
+typedef obj_t (*cont_proc_t)(obj_t cont, obj_t *p_values, obj_t *p_env);
 
 extern obj_t make_continuation3(cont_proc_t proc, obj_t cont, obj_t arg);
 
