@@ -234,3 +234,123 @@ exceptions.  lowex.h.
 Considering yesterday's idea.  Wondering whether "instruction" is the
 right term.  Might also be appropriate to call it a "continuation".
 
+
+---
+
+Condition Index.  Every place in r6rs that mentions raising an exception.
+
+r6rs 4.2.6: &lexical  - #\x0001z
+                      - #\[lambda]x
+		      - #\alarmx
+		      - #\Alarm
+		      - #\alert
+		      - #\(x)
+		      - #\(x
+		      - #\x00110000
+		      - #\xD800
+r6rs 4.2.7: &lexical  - "\x41"
+     	    	      - "\x;"
+		      - "\x41bx;"
+		      - "\x00110000;"
+		      - "\xD800;"
+r6rs 5.10: &assertion - writing immutable object.
+     	   	      - writing literal constant
+		      - writing symbol name
+		      - writing record w/ no mutable field
+r6rs 6.1: &syntax     - syntax called with wrong kind of argument
+     	  	      - syntax called with wrong shape of form
+r6rs 6.2: &assertion  - procedure called with wrong kind of argument
+     	  	      - procedure called with wrong number of arguments
+r6rs 6.6: &assertion  - (integer->char #xD800)
+r6rs 9.1: &assertion  - operator of application is not a procedure
+r6rs 9.1: &assertion  - application wrong number of arguments
+r6rs 11.2.1: &assertion - continuation of rhs of define invoked more than once
+r6rs 11.4.6: &assertion - <init> in letrec refers to other variable
+     	     	      - <init> in letrec* refers to later variable
+		      - <init> in letrec* invoked more than once
+		      - <formals> doesn't match <init> in let-values
+r6rs 11.7.2: &no-infinities - if FPU doesn't support Inf
+             &no-nans - if FPU doesn't support NaN
+r6rs 11.7.4: &implementation-violation - if exact->inexact fails
+     	     	      - if inexact->exact fails
+		      - if min or max fails to compare exact vs inexact
+		      - if + or * called with mixed non-rational real and
+		        non-real complex arguments
+		      - if - called with mixed non-rational real and
+		        non-real complex arguments
+		      - if / called with mixed non-rational real and
+		        non-real complex arguments
+	   &assertion - (/ 0 0)
+	   	      - (/ 3 0)
+	   &assertion - if divisor is zero or dividend is Nan or Inf.
+	   	      - (log 0.0)
+	   &implementation-restriction - if can't raise 0.0 to negative power
+	   			       - if can't convert float to string
+r6rs 11.9: &assertion  - on (car '())
+     	   	       - on (cdr '())
+r6rs 11.11: &assertion - (integer->char #\xD800)
+r6rs 11.13: &assertion - if vector-set! passed an immutable vector
+     	    	       - (vector-set! '#(0 1 2) 1 "doe")
+r6rs 11.14: &assertion - if user assertion fails
+	 	       - (fac 4.5)
+     		       - (fac -3)
+r6rs 11.19: &syntax    - (set! p.car 15)
+r6rs-lib 3: &assertion - (for-all even? '(2 4 14 . 9))
+	    	       - (exist even? '(3 1 1 5 9 . 2))
+r6rs-lib 5: &assertion - if case-lambda doesn't match
+r6rs-lib 6.2: &assertion - if two nongenerative record types don't match
+r6rs-lib 6.3: &assertion - if a sealed record type is subclassed
+	      		 - if two nongenerative record types don't match
+			 - if record-rtd called for opaque record
+			 - if mutator for immutable record field requested
+			 - if record-mutator called for immutable field
+			 - if record-rtd called for opaque record
+r6rs-lib 7.1: &non-continuable - if exception handler returns
+r6rs-lib 7.3: &undefined - unbound identifier
+r6rs-lib 8.1: &i/o-read - read error
+	      &i/o-write - write error
+	      &i/o-invalid-position - seek error
+	      &i/o-filename - error on a named file
+	      &i/o-file-protection - EPERM
+	      &i/o-file-is-read-only - tried to write read-only file
+	      &i/o-file-already-exists - tried to create existing file
+	      &i/o-file-does-not-exist - tried to open nonexistent file
+	      &i/o-port - procedures accepting a port as an argument
+r6rs-lib 8.2.2: &i/o-file-already-exists - sometimes when output file opened
+                &i/o-file-does-not-exist - sometimes when output file opened
+r6rs-lib 8.2.4: &i/o-decoding - on character decoding error
+	 	&i/o-encoding - on character encoding error
+r6rs-lib 8.2.6: &assertion - ftell on unseekable port
+	 		   - fseek on unseekable port
+                &i/o-invalid-position - seek to invalid position
+				      - seek on non-binary file
+r6rs-lib 8.2.9: &lexical + &i/o-read - char decoding error in get-datum
+	 		   	     - intra-char EOF in get-datum
+r6rs-lib 9: &i/o-filename - delete nonexistent or undeletable file
+r6rs-lib 11.2: &implementation-restriction - fixnum arithmetic overflow
+	       				   - fx+ or fx* overflow
+					   - fx- overflow
+	       &assertion		   - (fx- (least-fixnum))
+	       &implementation-restriction - fxarithmetic-shift overflow
+r6rs-lib 11.3: &no-infinities - if FPU can't represent Inf
+	       *no-nans - if FPU can't represent NaN
+r6rs-lib 12.4: &syntax  - (set! p.car 15)
+r6rs-lib 12.5: &syntax  - (rec 5 (lambda (x) x))
+	       		- (let ([a 3] [a 4]) (+ a a))
+			- (let ([else #f])
+			    (case 0 [else (write "oops")]))
+r6rs-lib 12.9: &syntax  - raised by syntax-violation
+r5rs-lib 14: &syntax    - (color purpel)
+r6rs-lib 16: &syntax    - if eval passed a non-expression
+	     	        - if eval passed a definition or splicing begin 
+		          containing a definition
+	     &assertion - if eval assigns to its environment
+r6rs-lib 17: &assertion - (set-car! (g) 3)
+	     		- if set-car! passed immutable pair
+	     		- if set-cdr! passed immutable pair
+r6rs-lib 18: &assertion - if string-st! passed immutable string
+	     		- (string-set! (g) 0 #\?)
+			- (string-set! (symbol->string 'immutable)
+			               0
+				       #\?)
+

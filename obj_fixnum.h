@@ -15,7 +15,7 @@ static inline bool is_fixnum(obj_t obj)
 
 static inline word_t fixnum_value(obj_t n)
 {
-    CHECK(is_fixnum(n), n, "fixnum_value: must be fixnum");
+    CHECK(is_fixnum(n), NULL, "must be fixnum", n);
     return obj_bits(n) >> FIXNUM_SHIFT;
 }
 

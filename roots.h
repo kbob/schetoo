@@ -22,7 +22,7 @@
     GENERAL_ROOT_(storage_class, name, init_root_##name)		\
     DECLARE_ROOT_CONSTRUCTOR_(name)
     
-#define DECLARE_ROOT_CONSTRUCTOR_(name) \
+#define DECLARE_ROOT_CONSTRUCTOR_(name)					\
     static obj_t init_root_##name(void)
 
 #define GENERAL_ROOT_(storage_class, name, init) 			\

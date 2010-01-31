@@ -42,5 +42,5 @@ obj_t env_lookup(obj_t env, obj_t var)
 	}
 	env = env_parent(env);
     }
-    raise(&assertion, var, "unbound variable");
+    raise(&undefined, var, "unbound variable");
 }

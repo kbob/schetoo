@@ -28,7 +28,7 @@ static obj_t find_symbol(obj_t name)
     obj_t p, sym;
     obj_t sym_name;
 
-    CHECK(is_string(name), name, "find-symbol: must be symbol");
+    CHECK(is_string(name), NULL, "must be string", name);
     for (p = all_symbols_list; !is_null(p); p = pair_cdr(p)) {
 	ASSERT(is_pair(p));
 	sym = pair_car(p);
@@ -69,7 +69,7 @@ obj_t make_anonymous_symbol(void)
 obj_t symbol_name(obj_t symbol)
 {
     CHECK_OBJ(symbol);
-    CHECK(is_symbol(symbol), symbol, "symbol->string: must be symbol");
+    CHECK(is_symbol(symbol), NULL, "must be symbol", symbol);
     obj_t name = fixvec1_get_ptr(symbol, 0);
     if (is_undefined(name)) {
 	size_t max_len = 12;

@@ -17,19 +17,19 @@ static inline bool is_continuation(obj_t obj)
 
 static inline cont_proc_t continuation_proc(obj_t cont)
 {
-    CHECK(is_continuation(cont), cont, "continuation required");
+    CHECK(is_continuation(cont), NULL, "must be continuation", cont);
     return (cont_proc_t)mixvec_1_2_get_int(cont, 0);
 }
 
 static inline obj_t continuation_cont(obj_t cont)
 {
-    CHECK(is_continuation(cont), cont, "continuation required");
+    CHECK(is_continuation(cont), NULL, "must be continuation", cont);
     return mixvec_1_2_get_ptr(cont, 0);
 }
 
 static inline obj_t continuation3_arg(obj_t cont)
 {
-    CHECK(is_continuation(cont), cont, "continuation required");
+    CHECK(is_continuation(cont), NULL, "must be continuation", cont);
     return mixvec_1_2_get_ptr(cont, 1);
 }
 

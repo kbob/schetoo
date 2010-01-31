@@ -14,6 +14,8 @@ typedef struct bytevector_obj {
     size_t        v_size;
 } bytevector_obj_t;
 
+mem_ops_t bytevector_ops;
+
 static inline size_t len_to_bytes(size_t len)
 {
     return sizeof (bytevector_obj_t) + len * sizeof (byte_t);
@@ -24,13 +26,11 @@ static inline byte_t *elem_addr(bytevector_obj_t *vec, size_t index)
     return (void *)&vec[1] + index * sizeof (byte_t);
 }
 
-static size_t bytevector_size_op(const heap_object_t *oh)
+static size_t bytevector_size_op(const heap_object_t *hobj)
 {
-    const bytevector_obj_t *vec = (const bytevector_obj_t *)oh;
+    const bytevector_obj_t *vec = (const bytevector_obj_t *)hobj;
     return len_to_bytes(vec->v_size);
 }
-
-mem_ops_t bytevector_ops;
 
 obj_t make_bytevector_uninitialized(size_t size)
 {
@@ -82,7 +82,8 @@ byte_t bytevector_get(obj_t obj, size_t index)
 {
     CHECK_OBJ(obj);
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
-    CHECK(index < vec->v_size, obj, "bytevector_get: index out of range");
+    CHECK(index < vec->v_size,
+	  NULL, "index out of range", obj, make_fixnum(index));
     return *elem_addr(vec, index);
 }
 
@@ -90,6 +91,8 @@ void bytevector_set(obj_t obj, size_t index, byte_t elem)
 {
     CHECK_OBJ(obj);
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
-    CHECK(index < vec->v_size, obj, "bytevector_set: index out of range");
+    //XXX CHECK(is_mutable(obj), NULL, "must be mutable", obj);
+    CHECK(index < vec->v_size,
+	  NULL, "index out of range", obj, make_fixnum(index));
     *elem_addr(vec, index) = elem;
 }

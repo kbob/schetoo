@@ -253,7 +253,7 @@ heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
 
 void collect_garbage(void)
 {
-    printf("Collect garbage.\n");
+    // printf("Collect garbage.\n");
     copy_heap();
 }
 
@@ -275,9 +275,11 @@ const wchar_t *obj_type_name(const obj_t obj)
 }
 
 #ifndef NDEBUG
-void check_obj(const obj_t obj)
-{
-    ASSERT(heap_is_initialized);
-    ASSERT(is_fixnum(obj) || is_immediate(obj) || is_in_tospace(obj));
-}
+
+    void check_obj(const obj_t obj)
+    {
+	ASSERT(heap_is_initialized);
+	ASSERT(is_fixnum(obj) || is_immediate(obj) || is_in_tospace(obj));
+    }
+
 #endif /* !NDEBUG */

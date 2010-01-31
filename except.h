@@ -13,7 +13,7 @@
 
 // CHECK(expr, who, msg, irritants...)
 #define CHECK(expr, who, ...) \
-    ((expr) ? (void)0 : raise(&violation, (who), __VA_ARGS__))
+    ((expr) ? (void)0 : raise(&assertion, (who), __VA_ARGS__))
 
 typedef struct condition_type {
     const char *ct_name;

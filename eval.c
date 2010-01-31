@@ -45,11 +45,10 @@ static obj_t c_eval(obj_t cont, obj_t *p_values, obj_t *p_env)
     } else if (is_application(expr)) {
 	ASSERT(false && "implement me");
     }
-    raise(&assertion, expr, "can't evaluate");
+    raise(&syntax, expr, "must be expression");
 }
 
-static void handle_lowex(lowex_type_t type, obj_t ex) NORETURN;
-static void handle_lowex(lowex_type_t type, obj_t ex) 
+NORETURN static void handle_lowex(lowex_type_t type, obj_t ex) 
 {
     switch (type) {
 
