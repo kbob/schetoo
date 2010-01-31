@@ -700,7 +700,6 @@ static bool build(obj_t actions, obj_t *obj_out)
 {
     obj_t vstack = EMPTY_LIST;
     obj_t reg = EMPTY_LIST;
-    obj_t tmp = EMPTY_LIST;
     while (!stack_is_empty(actions)) {
 	obj_t op = stack_pop(&actions);
 	switch ((word_t)op) {
@@ -724,9 +723,7 @@ static bool build(obj_t actions, obj_t *obj_out)
 	    continue;
 
 	case ACTION_ABBREV:
-	    tmp = make_pair(pair_cadr(reg), EMPTY_LIST);
-	    tmp = make_pair(pair_car(reg), tmp);
-	    reg = make_pair(tmp, pair_cddr(reg));
+	    reg = CONS(CONS(CAR(reg), CONS(CADR(reg), EMPTY_LIST)), CDDR(reg));
 	    continue;
 
 	case ACTION_END_SEQUENCE:
