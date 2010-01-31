@@ -18,8 +18,6 @@ THREAD_ROOT(cont_root);
 THREAD_ROOT(values_root);
 THREAD_ROOT(env_root);
 
-typedef obj_t (*C_procedure_t)(obj_t);
-
 static inline bool is_self_evaluating(obj_t expr)
 {
     return is_boolean(expr)   ||
@@ -32,6 +30,20 @@ static inline bool is_application(obj_t expr)
 {
     return is_pair(expr);
 }
+
+#if 0
+static obj_t c_eval_operator(obj_t cont, obj_t *p_values, obj_t *p_env)
+{
+    obj_t operator = CAR(*p_values);
+    if (!is_procedure(operator)) {
+	raise(&syntax, NULL, "must be procedure", operator);
+    }
+    if (
+
+    if special_form, do it
+    else push a continuation to apply it
+}
+#endif
 
 static obj_t c_eval(obj_t cont, obj_t *p_values, obj_t *p_env)
 {

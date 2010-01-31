@@ -9,7 +9,7 @@
 #include "obj_fixnum.h"
 #include "obj_null.h"
 #include "obj_pair.h"
-//#include "obj_procedure.h"
+#include "obj_procedure.h"
 #include "obj_string.h"
 #include "obj_symbol.h"
 #include "obj_undefined.h"

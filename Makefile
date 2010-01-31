@@ -10,8 +10,8 @@ scheme_cfiles := main.c charbuf.c env.c eval.c except.c heap.c io.c	\
 		 unicode.c						\
 									\
 		 obj_binding.c obj_bytevector.c obj_boolean.c		\
-		 obj_cont.c obj_pair.c obj_string.c obj_symbol.c	\
-		 obj_vector.c						\
+		 obj_cont.c obj_pair.c obj_procedure.c obj_string.c	\
+		 obj_symbol.c obj_vector.c				\
 									\
 		 mem.c mem_fixvec.c mem_mixvec.c mem_scalar.c
 
