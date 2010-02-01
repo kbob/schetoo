@@ -7,7 +7,7 @@
 
 static inline obj_t make_character(char_t value)
 {
-    return (obj_t)(value << CHARACTER_SHIFT | CHARACTER_TAG);
+    return (obj_t)(word_t)(value << CHARACTER_SHIFT | CHARACTER_TAG);
 }
 
 static inline bool is_character(const obj_t o)

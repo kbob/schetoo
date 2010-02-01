@@ -5,7 +5,7 @@
 #include "mem.h"
 
 typedef enum proc_flags {
-    PF_COMPILED_C = 1 << 0,
+    PF_COMPILED_C   = 1 << 0,
     PF_SPECIAL_FORM = 1 << 1,
 } proc_flags_t;
 

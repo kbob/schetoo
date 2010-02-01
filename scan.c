@@ -221,7 +221,7 @@ static bool scan_character(obj_t *lvalp, instream_t *in)
 static token_type_t scan_number(int sign, obj_t *lvalp, instream_t *in)
 {
     wchar_t wc;
-    int ival = 0;
+    word_t ival = 0;
     while ((wc = instream_getwc(in)) != WEOF && is_digit(wc))
 	ival = 10 * ival + (wc & 0xF);
     if (wc != WEOF)

@@ -184,7 +184,7 @@ typedef uint_fast16_t exterminal_set_t;
 typedef struct production {
     char        p_lhs;
     const char *p_rhs;
-    int         p_action;
+    word_t      p_action;
 } production_t;
 
 /*

@@ -137,7 +137,6 @@ static void print_symbol(obj_t obj, outstream_t *out)
     }
 }
 
-#if 0
 static void print_procedure(obj_t obj, outstream_t *out)
 {
     //    if (procedure_is_special_form(obj) || procedure_is_C(obj)) {
@@ -152,16 +151,13 @@ static void print_procedure(obj_t obj, outstream_t *out)
 	outstream_printf(out, L")");
     }
 }
-#endif
 
-#if 0
 static void print_binding(obj_t obj, outstream_t *out)
 {
     print_form(binding_name(obj), out);
     outstream_putwc(binding_is_mutable(obj) ? L':' : L'!', out);
     print_form(binding_value(obj), out);
 }
-#endif
 
 static void print_vector(obj_t obj, outstream_t *out)
 {
@@ -196,17 +192,17 @@ static void print_form(obj_t obj, outstream_t *out)
     } else if (is_boolean(obj)) {
 	outstream_printf(out, boolean_value(obj) ? L"#t" : L"#f");
     } else if (is_fixnum(obj)) {
-	outstream_printf(out, L"%d", fixnum_value(obj));
+	outstream_printf(out, L"%lld", (long long)fixnum_value(obj));
     } else if (is_character(obj)) {
 	print_char(obj, out);
     } else if (is_string(obj)) {
 	print_string(obj, out);
     } else if (is_symbol(obj)) {
 	print_symbol(obj, out);
-    // } else if (is_procedure(obj)) {
-    //     print_procedure(obj, out);
-    // } else if (is_binding(obj)) {
-    //     print_binding(obj, out);
+    } else if (is_procedure(obj)) {
+        print_procedure(obj, out);
+    } else if (is_binding(obj)) {
+        print_binding(obj, out);
     } else if (is_vector(obj)) {
         print_vector(obj, out);
     } else if (is_bytevector(obj)) {

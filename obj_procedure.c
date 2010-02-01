@@ -24,7 +24,7 @@ static obj_t proc_get_ptr_op(const heap_object_t *hobj, size_t index)
 	return proc->proc_env;
     if (index == 2 && !(proc->proc_flags & PF_COMPILED_C))
 	return proc->proc_u.pu_body;
-    ASSERT(false && "index out of bounds");
+    ASSERT(false && "index out of range");
 }
 
 static void proc_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
@@ -37,10 +37,10 @@ static void proc_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
     else if (index == 2 && !(proc->proc_flags & PF_COMPILED_C))
 	proc->proc_u.pu_body = ptr;
     else
-	ASSERT(false && "index out of bounds");
+	ASSERT(false && "index out of range");
 }
 
-mem_ops_t proc_ops = {
+mem_ops_t procedure_ops = {
     MEM_OPS_PRIMITIVE,
     L"procedure",
     NULL,
@@ -54,7 +54,7 @@ mem_ops_t proc_ops = {
 
 static obj_t make_proc(int flags, obj_t body, obj_t args, obj_t env)
 {
-    heap_object_t *obj = mem_alloc_obj(&proc_ops, sizeof (proc_obj_t));
+    heap_object_t *obj = mem_alloc_obj(&procedure_ops, sizeof (proc_obj_t));
     proc_obj_t *proc = (proc_obj_t *)obj;
     proc->proc_flags = flags;
     proc->proc_args = args;

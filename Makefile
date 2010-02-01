@@ -21,7 +21,7 @@ scheme_ldlibs := -lreadline
 
 
      CPPFLAGS := -std=c99 -D_XOPEN_SOURCE -iquote. $(FEATURES)
-       CFLAGS := -g -Wall -Werror -Winline -std=c99
+       CFLAGS := -g -Wall -Werror -Winline
       libtype := static
 
 #    CPPFLAGS += -DNDEBUG -DNOTEST

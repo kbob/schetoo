@@ -110,7 +110,7 @@ static int read_driver(const test_case_descriptor_t *tc)
         for (i = 0; i <= tc->tcd_expected_len; i++)
 	    printf("\\x%02x, ", tc->tcd_expected[i]);
         printf("};\n");
-	printf("    expected_len = %d\n", tc->tcd_expected_len);
+	printf("    expected_len = %zd", tc->tcd_expected_len);
 	printf("\n");
 	err_count++;
     }
