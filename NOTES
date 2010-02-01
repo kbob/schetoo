@@ -240,7 +240,7 @@ right term.  Might also be appropriate to call it a "continuation".
 Condition Index.  Every place in r6rs that mentions raising an exception.
 
 r6rs 4.2.6: &lexical  - #\x0001z
-                      - #\[lambda]x
+                      - #\λx
 		      - #\alarmx
 		      - #\Alarm
 		      - #\alert
@@ -353,4 +353,91 @@ r6rs-lib 18: &assertion - if string-st! passed immutable string
 			- (string-set! (symbol->string 'immutable)
 			               0
 				       #\?)
+
+----------------------------------
+2010.01.31
+
+More Scheme papers.  These are by Matt Might.
+    Lexing with derivatives
+    http://matt.might.net/articles/implementation-of-regular-expression-matching-in-scheme-with-derivatives/
+
+    Compiling Scheme directly to Java
+        http://matt.might.net/articles/compiling-to-java/
+
+    Flat closure conversion while compiling to C
+        http://matt.might.net/articles/compiling-scheme-to-c/
+
+    Church encoding
+        http://matt.might.net/articles/church-encodings-demo-in-scheme/
+
+    First-class macros and meta-circular evaluators
+        http://matt.might.net/articles/metacircular-evaluation-and-first-class-run-time-macros/
+
+
+Other Scheme implementors who announced their projects on Scheme from Scratch
+http://peter.michaux.ca/
+
+    Peter Michaux (C, Scheme from Scratch series)
+	git://github.com/petermichaux/bootstrap-scheme.git
+
+    Jim Ingram (C)
+	http://github.com/ingramj/bs
+
+    Chris Salch (C)
+	http://git.kc5vzm.com/?p=scheme;a=summary
+
+    Nick Fitzgerald (Ada)
+	http://github.com/fitzgen/ada-scheme
+
+    Stu (C)
+	git://github.com/stu/bootstrap-slip.git
+
+    Chris Lloyd (Go)
+	http://github.com/chrislloyd/go-scheme
+	Seems to be abandoned early.
+
+    Philipp (Java for Lego Mindstorms)
+	http://github.com/toelke/scheme-nxj
+
+    Matei Conovici
+	http://github.com/cmatei/yalfs
+
+    Franciso José Marín Pérez (pmarin)
+	http://github.com/pmarin/Muddy-Scheme
+	http://wiki.tcl.tk/25512
+
+    kbob
+        http://github.com/kbob/schetoo
+
+---
+
+Need to implement a handful of primitives before I can eval a
+procedure call.  Peter Michaux started with quote, but I want a
+procedure, not a syntax keyword.
+
+Let's suppose we declare primitive procedures like this.
+
+    DEFINE_PROC(L"+", 0-)(obj_t arglist)
+    {
+        word_t sum = 0;
+        while (arglist != EMPTY_LIST) {
+            sum += fixnum_value(CAR(arglist));
+            arglist = CDR(arglist);
+        }
+	return make_fixnum(sum);
+    }
+
+    DEFINE_PROC(L"cons", 2)(obj_t car, obj_t cdr)
+    {
+        return CONS(car, cdr);
+    }
+
+Just like the old codebase, there will be three kinds of procs,
+varying in their scope.  The default scope will be anonymous.
+
+    #define DEFINE_PROC DEFINE_ANONYMOUS_PROC
+
+    #define DEFINE_ANONYMOUS_PROC(scheme_name, arg_range) ...
+    #define DEFINE_STATIC_PROC(C_name, scheme_name, arg_range) ...
+    #define DEFINE_EXTERN_PROC(C_name, scheme_name, arg_range) ...
 

@@ -15,25 +15,27 @@ DONE	Find better names for EMPTY_LIST and UNDEFINED.
 
 Heap
 	Implement records.
-	Implement procedures.
-	Hook GC into setjmp (after eval).
+DONE	Hook GC into setjmp (after eval).
 	Reintroduce debug GC on every allocation.
 	Automatically grow heap when out of memory.
+	Implement transactional checks.
+	Speed up environments.
 	Speed up symbol lookup.
-	Speed up environments -- two kinds.
+	Implement a mutability flag.  Possibly a separate mem_ops_t
+	    for mutable types.
 
 Data
 	Implement binding as record.
 	Implement continuation as record.
-	Implement procedure.
+DONE	Implement procedure.
 	Implement condition as record.
-	Implement compound condition as record (not derived from condition).
+	Implement compound condition as record (not derived from condition?)
 	Check whether Unicode data is current rev.
 
 Eval
-	Design eval main loop.
-	  -- setjmp and exceptions
+DONE	Design eval main loop.
+DONE	  -- setjmp
+	  -- exceptions
 	  -- multiple values
 	  -- arg lists
 	  -- nice calling convention for primitive procs
-	  -- exception safe

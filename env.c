@@ -1,6 +1,7 @@
 #include "env.h"
 
 #include "except.h"
+#include "roots.h"
 #include "types.h"
 
 /*
@@ -10,12 +11,18 @@
  * flag.
  */
 
+ROOT_CONSTRUCTOR(root_env)
+{
+    return make_env(EMPTY_LIST);
+}
+
 void env_bind(obj_t env,
 	      obj_t name,
 	      binding_type_t type,
 	      mutability_t mutability,
 	      obj_t value)
 {
+    ASSERT(is_symbol(name));
     pair_set_car(env,
 		 CONS(make_binding(name, type, mutability, value),
 		      env_first_frame(env)));
@@ -43,4 +50,9 @@ obj_t env_lookup(obj_t env, obj_t var)
 	env = env_parent(env);
     }
     raise(&undefined, var, "unbound variable");
+}
+
+obj_t root_environment(void)
+{
+    return root_env;
 }

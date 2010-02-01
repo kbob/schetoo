@@ -7,21 +7,11 @@
 #include "heap.h"
 #include "io.h"
 #include "print.h"
+#include "proc.h"
 #include "read.h"
 #include "roots.h"
 #include "test.h"
 #include "types.h"
-
-static obj_t toy_environment(void)
-{
-    obj_t env = make_env(EMPTY_LIST);
-    env_bind(env,
-	     make_symbol_from_C_str(L"answer"),
-	     BT_LEXICAL,
-	     M_IMMUTABLE,
-	     make_fixnum(42));
-    return env;
-}
 
 static void repl(void)
 {
@@ -29,7 +19,7 @@ static void repl(void)
     outstream_t *out = make_file_outstream(stdout);
     obj_t expr;
     /* make a silly environment for testing. */
-    obj_t env = toy_environment();
+    obj_t env = root_environment();
     while (read_stream(in, &expr))
 	print(core_eval(expr, env), out);
     printf("\n");
@@ -40,6 +30,7 @@ int main(int argc, char *argv[])
     set_program_name(argv[0]);
     init_heap();
     init_roots();
+    register_procs();
     if (argc == 2 && !strcmp(argv[1], "-t"))
 	self_test();
     else

@@ -29,4 +29,6 @@ extern void  env_bind  (obj_t          env,
 			obj_t          value);
 extern obj_t env_lookup(obj_t env, obj_t name);
 
+extern obj_t root_environment(void);
+
 #endif /* !ENV_INCLUDED */
