@@ -107,7 +107,7 @@ static inline heap_object_t *obj_heap_ptr(obj_t o)
 
 static inline heap_object_t *obj_fwd_ptr(obj_t o)
 {
-    return (heap_object_t *)(obj_bits(o) & ~SHORT_TAG_MASK);
+    return (heap_object_t *)(obj_bits(*(obj_t *)o) & ~SHORT_TAG_MASK);
 }
 
 static inline void heap_object_set_fwd_ptr(heap_object_t *dst, obj_t fwd)
@@ -170,8 +170,13 @@ struct mem_ops {
 };
 
 struct heap_object {
-    mem_ops_t *oh_ops;
+    mem_ops_t *ho_ops;
 };
+
+static inline bool obj_is_forwarded(obj_t obj)
+{
+    return is_forward(*(obj_t *)obj);
+}
 
 static inline heap_object_t *obj_heap_object(obj_t obj)
 {
@@ -180,7 +185,7 @@ static inline heap_object_t *obj_heap_object(obj_t obj)
 
 static inline mem_ops_t *heap_object_mem_ops(heap_object_t *hobj)
 {
-    return hobj->oh_ops;
+    return hobj->ho_ops;
 }
 
 static inline mem_ops_t *obj_mem_ops(obj_t obj)
@@ -190,7 +195,7 @@ static inline mem_ops_t *obj_mem_ops(obj_t obj)
 
 static inline bool is_primitive_obj(heap_object_t *hobj)
 {
-    return hobj->oh_ops->mo_start_marker == MEM_OPS_PRIMITIVE;
+    return hobj->ho_ops->mo_start_marker == MEM_OPS_PRIMITIVE;
 }
 
 static inline bool is_record_instance(heap_object_t *hobj)

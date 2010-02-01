@@ -163,7 +163,7 @@ static obj_t move_obj(obj_t obj)
 {
     if (is_fixnum(obj) || is_immediate(obj) || is_in_tospace(obj))
 	return obj;
-    if (is_forward(obj))
+    if (obj_is_forwarded(obj))
 	return (obj_t)obj_fwd_ptr(obj);
     heap_object_t *hobj = obj_heap_object(obj);
     ASSERT(is_known_ops(obj_mem_ops(obj)));
@@ -247,7 +247,7 @@ heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
         p = next_alloc;
         next_alloc += alloc_size;
     }
-    p->oh_ops = ops;
+    p->ho_ops = ops;
     return p;
 }
 
