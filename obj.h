@@ -45,8 +45,9 @@
 
 #define EMPTY_LIST         (SPECIAL_OBJ(0))
 #define UNDEFINED_OBJ      (SPECIAL_OBJ(1))
-#define END_OF_FILE        (SPECIAL_OBJ(2))
-#define MEM_OPS_PRIMITIVE  (SPECIAL_OBJ(3))
+#define MISSING_ARG        (SPECIAL_OBJ(2))
+#define END_OF_FILE        (SPECIAL_OBJ(3))
+#define MEM_OPS_PRIMITIVE  (SPECIAL_OBJ(4))
 
 #define OBJ_TYPE_PREDICATE(type)					\
     static inline bool is_##type(obj_t obj)				\

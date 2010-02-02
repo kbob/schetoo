@@ -9,6 +9,7 @@
 #include "low_ex.h"
 #include "obj_cont.h"
 #include "oprintf.h"
+#include "proc.h"
 #include "roots.h"
 #include "types.h"
 
@@ -62,18 +63,15 @@ static obj_t c_apply_procedure(obj_t cont, obj_t *p_values, obj_t *p_env)
     //oprintf("c_apply_procedure stop_values = %O\n", stop_values);
     obj_t p = *p_values;
     obj_t arg_list = EMPTY_LIST;
+    size_t arg_count = 0;
     while (p != stop_values) {
 	arg_list = CONS(CAR(p), arg_list);
 	p = CDR(p);
+	arg_count++;
     }
     obj_t operator = CAR(p);
-    *p_values = CDR(p);
-    if (procedure_is_C(operator)) {
-	*p_values = CONS(procedure_code(operator)(arg_list), *p_values);
-	return cont_cont(cont);
-    } else {
-	ASSERT(false && "implement me");
-    }
+    *p_values = CONS(apply_proc(operator, arg_list, arg_count), CDR(p));
+    return cont_cont(cont);
 }
 
 static obj_t c_eval_operands(obj_t cont, obj_t *p_values, obj_t *p_env)
@@ -89,9 +87,7 @@ static obj_t c_eval_operands(obj_t cont, obj_t *p_values, obj_t *p_env)
 	ASSERT(false && "implement me");
     }
     obj_t arg_list = reverse_list(application_operands(appl));
-    cont = make_cont3(c_apply_procedure,
-			      cont_cont(cont),
-			      *p_values);
+    cont = make_cont3(c_apply_procedure, cont_cont(cont), *p_values);
     while (!is_null(arg_list)) {
 	cont = make_cont3(c_eval, cont, CAR(arg_list));
 	arg_list = CDR(arg_list);
@@ -112,8 +108,7 @@ static obj_t c_eval(obj_t cont, obj_t *p_values, obj_t *p_env)
 	return cont_cont(cont);
     } else if (is_application(expr)) {
 	obj_t operator = application_operator(expr);
-	cont = cont_cont(cont);
-	cont = make_cont3(c_eval_operands, cont, expr);
+	cont = make_cont3(c_eval_operands, cont_cont(cont), expr);
 	return make_cont3(c_eval, cont, operator);
     }
     raise(&syntax, expr, "must be expression");

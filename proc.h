@@ -88,4 +88,6 @@ extern void  register_alias     (alias_descriptor_t *);
 extern obj_t create_proc        (const proc_descriptor_t *);
 extern obj_t create_special_form(const proc_descriptor_t *);
 
+extern obj_t apply_proc         (obj_t proc, obj_t arg_list, size_t arg_count);
+
 #endif /* !PROC_INCLUDED */

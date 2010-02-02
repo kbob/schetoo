@@ -47,8 +47,9 @@
  *         0001 1110 - Special constant.
  *           0000 0001 1110 - nil (the empty list)
  *           0001 0001 1110 - undefined
- *           0010 0001 1110 - end of file
- *           0011 0001 1110 - mem ops primitive (see below)
+ *           0010 0001 1110 - missing arg
+ *           0011 0001 1110 - end of file
+ *           0100 0001 1110 - mem ops primitive (see below)
  *
  * - "Forwarding" pointers are used by the garbage collector, and
  *      are never seen by the mutator.  While a heap region is being

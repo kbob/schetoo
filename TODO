@@ -12,6 +12,7 @@ DONE	Make is_TYPE() inline by exporting the mem_ops_t structures.
 DONE	Move is_null() and is_undefined() to their own files.
 DONE	Find better names for EMPTY_LIST and UNDEFINED.
 	Rationalize wchar_t and char_t.
+	Make pair_car() and pair_cdr() inline.
 
 Heap
 	Implement records.

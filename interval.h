@@ -38,7 +38,7 @@ static inline bool interval_is_variadic(interval_t ivl)
 static inline bool interval_is_infinite(interval_t ivl)
 {
     // True if interval is unbounded
-    return ivl & 2 >> 1;
+    return ivl >> 1 & 1;
 }
 
 static inline int interval_lower_bound(interval_t ivl)

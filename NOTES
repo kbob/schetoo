@@ -273,6 +273,8 @@ r6rs 11.7.2: &no-infinities - if FPU doesn't support Inf
              &no-nans - if FPU doesn't support NaN
 r6rs 11.7.4: &implementation-violation - if exact->inexact fails
      	     	      - if inexact->exact fails
+		      (I think they meant implementation-restriction.)
+	     &implementation-restriction
 		      - if min or max fails to compare exact vs inexact
 		      - if + or * called with mixed non-rational real and
 		        non-real complex arguments
