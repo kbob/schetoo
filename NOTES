@@ -443,3 +443,128 @@ varying in their scope.  The default scope will be anonymous.
     #define DEFINE_STATIC_PROC(C_name, scheme_name, arg_range) ...
     #define DEFINE_EXTERN_PROC(C_name, scheme_name, arg_range) ...
 
+----------------------------------
+2010.02.02 (Groundhog Day)
+
+What shall the calling convention for C special forms be?
+Keep in mind that call/cc is a procedure, not a special form.
+
+Examples:
+	define
+	define-syntax
+	quote
+	lambda
+	if
+	set!
+	let (and friends)
+	begin
+
+obj_t my_special_form(obj_t cont, obj_t form)
+{
+    return a_continuation;
+}
+
+So what about call/cc?  It needs to be marked special somehow
+so that it can access its continuation.  apply probably needs
+the same treatment.
+
+So I think instead of the current two procedure flags,
+
+    PF_COMPILED_C
+    PF_SPECIAL_FORM
+
+there should be three flags:
+
+    PF_COMPILED_C
+    PF_RAW
+    PF_ARGS_UNEVALUATED
+
+RAW means that the procedure can be called directly from the
+eval trampoline.  (Maybe there's a better name.)
+
+ARGS_UNEVALUATED should be obvious.
+
+What special forms wouldn't need the PF_RAW flag?
+Not define, if, or set!.  They each need to push a continuation.
+Not begin.  It needs to manipulate the continuation stack.
+Not lambda.  It needs a pointer to the current environment.
+Now let.  It needs to manipulate the environment.
+
+How about quote?  Sure, quote doesn't need PF_RAW.
+
+    DEFINE_COOKED_SPECIAL_FORM(L"quote", 1)(obj_t datum)
+    {
+        return datum;
+    }
+
+Otherwise, it would be something like this.
+
+    DEFINE_SPECIAL_FORM(L"quote")(obj_t cont, obj_t *p_values, obj_t *p_env)
+    {
+        *p_values = CONS(cont3_arg1(cont), *p_values);
+        return cont_cont(cont);
+    }
+
+What are the macros?
+
+DEFINE_RAW_PROC(name, arg_range).  (Still not happy with the name.)
+DEFINE_SPECIAL_FORM() (implies RAW + ARGS_UNEVALUATED).
+Anonymous, static and extern variants.
+
+---
+
+Cons cell optimization idea number 188^W33.
+
+A heap object has three possible value for its first word.
+If it's forwarded, it has a forwarding pointer, tag 0x02.
+If it's a non-cons, non-forwarded object, it has a mem_ops_t
+pointer, tag 0x00.  If it's a non-forwarded cons cell, then
+either the first word (car) is a fixnum/immediate or it has
+a tag of 0x04.
+
+bool is_pair(obj_t p)
+{
+    if (!is_heap_obj(p))
+        return false;
+    word_t tag = *(word_t *)p & LONG_TAG_MASK;
+    return tag != HEAP_TAG;		/* ignore forwarding pointers */
+}
+
+mem_ops_t *obj_mem_ops(obj_t p)
+{
+    if (is_pair(p))
+        return &pair_ops;
+    else
+        return heap_object_mem_ops(obj_heap_object(obj));
+}
+
+is_pair() is basically the same cost as it is now.  In the current
+scheme, we do a memory access to load the mem_ops_t pointer.  In the
+new scheme, we'll do a memory access to load the car.
+
+obj_mem_ops() has an extra test and branch.
+
+In exchange, pairs save 8 bytes on 32 and 64 bit architectures.
+On 32 bit, we go from 4 to 8 cons cells per cache line.
+On 64 bit, we go from 2.67 to 4.
+
+So I think it's a win.
+
+Now, what about a mutability flag?  
+
+Some objects are inherently immutable: all the immediate objects,
+continuations, rtds, symbols, and procedures.
+
+The potentially mutable objects are pair, string, vector, bytevector,
+binding, and record instance.
+
+Binding is easy.  It already has a mutability flag.
+String - could jam a flag bit into the size field.  Since elements are
+	multibyte, don't need all 32 or 64 bits for size.
+Vector, bytevector - ditto.
+Record instance - handled at a higher level - can't construct
+       a mutator for an immutable field.
+Pair - ???
+
+The only thing that comes to mind is to downgrade fixnums to 30 bits
+so there are more bits to play with.
