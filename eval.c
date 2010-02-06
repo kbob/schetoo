@@ -83,7 +83,7 @@ static obj_t c_eval_operands(obj_t cont, obj_t *p_values, obj_t *p_env)
     if (!is_procedure(operator)) {
 	raise(&syntax, NULL, "must be procedure", operator);
     }
-    if (procedure_is_special_form(operator)) {
+    if (!procedure_args_evaluated(operator)) {
 	ASSERT(false && "implement me");
     }
     obj_t arg_list = reverse_list(application_operands(appl));

@@ -7,8 +7,9 @@
 #include "obj_fixnum.h"
 
 typedef enum proc_flags {
-    PF_COMPILED_C   = 1 << 0,
-    PF_SPECIAL_FORM = 1 << 1,
+    PF_COMPILED_C     = 1 << 0,
+    PF_RAW            = 1 << 1,  // N.B., RAW implies COMPILED_C
+    PF_ARGS_EVALUATED = 1 << 2,
 } proc_flags_t;
 
 typedef obj_t (*C_procedure_t)();
@@ -26,16 +27,21 @@ typedef struct proc_obj {
 
 OBJ_TYPE_PREDICATE(procedure)		// bool is_procedure(obj_t);
 
-extern obj_t make_procedure               (obj_t         code,
-					   obj_t         arglist,
-					   obj_t         env);
-extern obj_t make_C_procedure		  (C_procedure_t code,
-					   interval_t    arg_range,
-					   obj_t         env);
-extern obj_t make_special_form_procedure  (obj_t         code,
-					   obj_t         env);
-extern obj_t make_C_special_form_procedure(C_procedure_t code,
-					   obj_t         env);
+extern obj_t make_procedure                 (obj_t         code,
+					     obj_t         arglist,
+					     obj_t         env);
+extern obj_t make_C_procedure		    (C_procedure_t code,
+					     interval_t    arg_range,
+					     obj_t         env);
+extern obj_t make_raw_procedure             (C_procedure_t code,
+					     obj_t         env);
+extern obj_t make_special_form_procedure    (obj_t         code,
+					     obj_t         env);
+extern obj_t make_C_special_form_procedure  (C_procedure_t code,
+					     interval_t    arg_range,
+					     obj_t         env);
+extern obj_t make_raw_special_form_procedure(C_procedure_t code,
+					     obj_t         env);
 
 static inline bool procedure_is_C(obj_t proc)
 {
@@ -43,10 +49,16 @@ static inline bool procedure_is_C(obj_t proc)
     return ((proc_obj_t *)proc)->proc_flags & PF_COMPILED_C ? true : false;
 }
 
-static inline bool procedure_is_special_form(obj_t proc)
+static inline bool procedure_is_raw(obj_t proc)
 {
     CHECK(is_procedure(proc), NULL, "must be procedure", proc);
-    return ((proc_obj_t *)proc)->proc_flags & PF_SPECIAL_FORM ? true : false;
+    return ((proc_obj_t *)proc)->proc_flags & PF_RAW ? true : false;
+}
+
+static inline bool procedure_args_evaluated(obj_t proc)
+{
+    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
+    return ((proc_obj_t *)proc)->proc_flags & PF_ARGS_EVALUATED ? true : false;
 }
 
 static inline obj_t procedure_body(obj_t proc)
@@ -67,6 +79,7 @@ static inline interval_t procedure_arg_range(obj_t proc)
 {
     CHECK(is_procedure(proc), NULL, "must be procedure", proc);
     CHECK(procedure_is_C(proc), NULL, "must be C procedure", proc);
+    CHECK(!procedure_is_raw(proc), NULL, "must be cooked procedure", proc);
     return fixnum_value(((proc_obj_t *)proc)->proc_args);
 }
 

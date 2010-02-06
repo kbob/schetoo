@@ -15,8 +15,6 @@ static void proc_move_op(const heap_object_t *src, heap_object_t *dst)
     *(proc_obj_t *)dst = *(const proc_obj_t *)src;
 }
 
-#include <stdio.h>
-
 static obj_t proc_get_ptr_op(const heap_object_t *hobj, size_t index)
 {
     proc_obj_t *proc = (proc_obj_t *)hobj;
@@ -70,23 +68,41 @@ obj_t make_procedure(obj_t body, obj_t arglist, obj_t env)
     CHECK_OBJ(body);
     CHECK_OBJ(arglist);
     CHECK_OBJ(env);
-    return make_proc(0, body, arglist, env);
+    return make_proc(PF_ARGS_EVALUATED, body, arglist, env);
+}
+
+obj_t make_C_procedure(C_procedure_t code, interval_t arg_range, obj_t env)
+{
+    CHECK_OBJ(env);
+    proc_flags_t flags = PF_COMPILED_C | PF_ARGS_EVALUATED;
+    return make_proc(flags, (obj_t)code, make_fixnum(arg_range), env);
+}
+
+obj_t make_raw_procedure(C_procedure_t code, obj_t env)
+{
+    CHECK_OBJ(env);
+    proc_flags_t flags = PF_COMPILED_C | PF_RAW | PF_ARGS_EVALUATED;
+    return make_proc(flags, (obj_t)code, UNDEFINED_OBJ, env);
 }
 
 obj_t make_special_form_procedure(obj_t body, obj_t env)
 {
     CHECK_OBJ(body);
     CHECK_OBJ(env);
-    return make_proc(PF_SPECIAL_FORM, body, UNDEFINED_OBJ, env);
+    proc_flags_t flags = 0;
+    return make_proc(flags, body, UNDEFINED_OBJ, env);
 }
 
-obj_t make_C_procedure(C_procedure_t code, interval_t arg_range, obj_t env)
+obj_t make_C_special_form_procedure(C_procedure_t code, interval_t arg_range, obj_t env)
 {
-    return make_proc(PF_COMPILED_C, (obj_t)code, make_fixnum(arg_range), env);
+    CHECK_OBJ(env);
+    proc_flags_t flags = PF_COMPILED_C;
+    return make_proc(flags, (obj_t)code, make_fixnum(arg_range), env);
 }
 
-obj_t make_C_special_form_procedure(C_procedure_t code,
-				    obj_t         env)
+obj_t make_raw_special_form_procedure(C_procedure_t code, obj_t env)
 {
-    return make_proc(PF_COMPILED_C | PF_SPECIAL_FORM, (obj_t)code, UNDEFINED_OBJ, env);
+    CHECK_OBJ(env);
+    proc_flags_t flags = PF_COMPILED_C | PF_RAW;
+    return make_proc(flags, (obj_t)code, UNDEFINED_OBJ, env);
 }
