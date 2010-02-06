@@ -1,6 +1,6 @@
 #include <wchar.h>
 
-#include "proc.h"
+#include "prim.h"
 #include "types.h"
 
 DEFINE_PROC(L"+", 0-)(obj_t arg_list)

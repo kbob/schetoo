@@ -1,4 +1,4 @@
-#include "proc.h"
+#include "prim.h"
 #include "types.h"
 
 DEFINE_PROC(L"symbol->string", 1)(obj_t symbol)

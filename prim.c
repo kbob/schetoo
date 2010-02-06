@@ -1,4 +1,4 @@
-#include "proc.h"
+#include "prim.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,44 +9,44 @@
 #include "obj_symbol.h"
 #include "roots.h"
 
-static proc_descriptor_t *proc_descs;
+static prim_descriptor_t *prim_descs;
 static alias_descriptor_t *alias_descs;
 
-extern obj_t create_proc(const proc_descriptor_t *desc)
+extern obj_t create_proc(const prim_descriptor_t *desc)
 {
-    return make_C_procedure(desc->pd_proc,
+    return make_C_procedure(desc->pd_prim,
 			    desc->pd_arg_range,
 			    root_environment());
 }
 
-extern void register_proc(proc_descriptor_t *desc)
+extern void register_prim(prim_descriptor_t *desc)
 {
 #ifndef NDEBUG
-    proc_descriptor_t *p = proc_descs;
+    prim_descriptor_t *p = prim_descs;
     while (p) {
 	if (!wcscmp(p->pd_name, desc->pd_name)) {
-	    fprintf(stderr, "duplicate proc name \"%ls\"\n", p->pd_name);
+	    fprintf(stderr, "duplicate prim name \"%ls\"\n", p->pd_name);
 	    abort();
 	}
 	p = p->pd_next;
     }
 #endif
-    desc->pd_next = proc_descs;
-    proc_descs = desc;
+    desc->pd_next = prim_descs;
+    prim_descs = desc;
 }
 
-extern void register_procs(void)
+extern void register_primitives(void)
 {
     obj_t root_env = root_environment();
 
     {
-	const proc_descriptor_t *desc;
+	const prim_descriptor_t *desc;
 
-	for (desc = proc_descs; desc; desc = desc->pd_next) {
+	for (desc = prim_descs; desc; desc = desc->pd_next) {
 	    obj_t symbol = make_symbol_from_C_str(desc->pd_name);
 	    obj_t value = (*desc->pd_creator)(desc);
 	    env_bind(root_env, symbol, BT_LEXICAL, M_MUTABLE, value);
-	    proc_descs = desc->pd_next;
+	    prim_descs = desc->pd_next;
 	}
     }
     {

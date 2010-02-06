@@ -1,4 +1,4 @@
-#include "obj_procedure.h"
+#include "obj_proc.h"
 
 static size_t proc_size_op(const heap_object_t *hobj)
 {

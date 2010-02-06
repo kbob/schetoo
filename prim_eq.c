@@ -1,4 +1,4 @@
-#include "proc.h"
+#include "prim.h"
 #include "types.h"
 
 DEFINE_PROC(L"eq?", 2)(obj_t obj1, obj_t obj2)

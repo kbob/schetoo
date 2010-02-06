@@ -7,7 +7,7 @@
 #include "heap.h"
 #include "io.h"
 #include "print.h"
-#include "proc.h"
+#include "prim.h"
 #include "read.h"
 #include "roots.h"
 #include "test.h"
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     set_program_name(argv[0]);
     init_heap();
     init_roots();
-    register_procs();
+    register_primitives();
     if (argc == 2 && !strcmp(argv[1], "-t"))
 	self_test();
     else

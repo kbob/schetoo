@@ -1,4 +1,4 @@
-#include "proc.h"
+#include "prim.h"
 #include "types.h"
 
 static inline bool is_Unicode_scalar_value(int n)

@@ -9,7 +9,7 @@
 #include "low_ex.h"
 #include "obj_cont.h"
 #include "oprintf.h"
-#include "proc.h"
+#include "prim.h"
 #include "roots.h"
 #include "types.h"
 
