@@ -7,8 +7,10 @@
 #include "uniq.h"
 
 /* abbreviations */
-#define DEFINE_PROC         DEFINE_ANONYMOUS_PROC
-#define DEFINE_SPECIAL_FORM DEFINE_ANONYMOUS_SPECIAL_FORM
+#define DEFINE_PROC                DEFINE_ANONYMOUS_PROC
+#define DEFINE_RAW_PROC            DEFINE_ANONYMOUS_RAW_PROC
+#define DEFINE_SPECIAL_FORM        DEFINE_ANONYMOUS_SPECIAL_FORM
+#define DEFINE_COOKED_SPECIAL_FORM DEFINE_ANONYMOUS_COOKED_SPECIAL_FORM
 
 #define DEFINE_EXTERN_PROC(C_name, scheme_name, args)			\
     DEFINE_GENERAL_PROC_(extern,					\
@@ -30,6 +32,71 @@
                          scheme_name,					\
 			 args,						\
 			 create_proc)
+
+#define DEFINE_EXTERN_RAW_PROC(C_name, scheme_name, args)		\
+    DEFINE_GENERAL_PROC_(extern,					\
+			 C_name,					\
+			 scheme_name,					\
+			 args,						\
+			 create_raw_proc)
+
+#define DEFINE_STATIC_RAW_PROC(C_name, scheme_name, args)		\
+    DEFINE_GENERAL_PROC_(static,					\
+			 C_name,					\
+			 scheme_name,					\
+			 args,						\
+			 create_raw_proc)
+
+#define DEFINE_ANONYMOUS_RAW_PROC(scheme_name, args)			\
+    DEFINE_GENERAL_PROC_(static,					\
+                         UNIQ_IDENT(anonymous_),			\
+                         scheme_name,					\
+			 args,						\
+			 create_raw_proc)
+
+#define DEFINE_EXTERN_SPECIAL_FORM(C_name, scheme_name, args)		\
+    DEFINE_GENERAL_PROC_(extern,					\
+			 C_name,					\
+			 scheme_name,					\
+			 args,						\
+			 create_special_form)
+
+#define DEFINE_STATIC_SPECIAL_FORM(C_name, scheme_name, args)		\
+    DEFINE_GENERAL_PROC_(static,					\
+			 C_name,					\
+			 scheme_name,					\
+			 args,						\
+			 create_special_form)
+
+#define DEFINE_ANONYMOUS_SPECIAL_FORM(scheme_name, args)		\
+    DEFINE_GENERAL_PROC_(static,					\
+                         UNIQ_IDENT(anonymous_),			\
+                         scheme_name,					\
+			 args,						\
+			 create_special_form)
+
+#define DEFINE_EXTERN_COOKED_SPECIAL_FORM(C_name, scheme_name, args)	\
+    DEFINE_GENERAL_PROC_(extern,					\
+			 C_name,					\
+			 scheme_name,					\
+			 args,						\
+			 create_cooked_special_form)
+
+#define DEFINE_STATIC_COOKED_SPECIAL_FORM(C_name, scheme_name, args)	\
+    DEFINE_GENERAL_PROC_(static,					\
+			 C_name,					\
+			 scheme_name,					\
+			 args,						\
+			 create_cooked_special_form)
+
+#define DEFINE_ANONYMOUS_COOKED_SPECIAL_FORM(scheme_name, args)		\
+    DEFINE_GENERAL_PROC_(static,					\
+                         UNIQ_IDENT(anonymous_),			\
+                         scheme_name,					\
+			 args,						\
+			 create_cooked_special_form)
+
+
 
 #define ALIAS_NAME(old_name, new_name)					\
     __attribute__((constructor))					\
@@ -81,13 +148,17 @@ struct alias_descriptor {
     alias_descriptor_t   *ad_next;
 };
 
-extern void  register_proc      (proc_descriptor_t *);
-extern void  register_procs     (void);
-extern void  register_alias     (alias_descriptor_t *);
+extern void  register_proc             (proc_descriptor_t *);
+extern void  register_procs            (void);
+extern void  register_alias            (alias_descriptor_t *);
 
-extern obj_t create_proc        (const proc_descriptor_t *);
-extern obj_t create_special_form(const proc_descriptor_t *);
+extern obj_t create_proc               (const proc_descriptor_t *);
+extern obj_t create_raw_proc           (const proc_descriptor_t *);
+extern obj_t create_special_form       (const proc_descriptor_t *);
+extern obj_t create_cooked_special_form(const proc_descriptor_t *);
 
-extern obj_t apply_proc         (obj_t proc, obj_t arg_list, size_t arg_count);
+extern obj_t apply_proc                (obj_t proc,
+					obj_t arg_list,
+					size_t arg_count);
 
 #endif /* !PROC_INCLUDED */

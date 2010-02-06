@@ -482,13 +482,13 @@ there should be three flags:
 RAW means that the procedure can be called directly from the
 eval trampoline.  (Maybe there's a better name.)
 
-ARGS_UNEVALUATED should be obvious.
+ARGS_UNEVALUATED means what it says.
 
 What special forms wouldn't need the PF_RAW flag?
 Not define, if, or set!.  They each need to push a continuation.
 Not begin.  It needs to manipulate the continuation stack.
 Not lambda.  It needs a pointer to the current environment.
-Now let.  It needs to manipulate the environment.
+Not let.  It needs to manipulate the environment.
 
 How about quote?  Sure, quote doesn't need PF_RAW.
 
