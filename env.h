@@ -16,7 +16,6 @@ static inline obj_t env_parent(obj_t env)
     return CDR(env);
 }
 
-static inline obj_t env_first_frame(obj_t env);
 static inline obj_t env_first_frame(obj_t env)
 {
     return CAR(env);

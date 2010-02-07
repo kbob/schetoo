@@ -3,6 +3,7 @@
 
 #include "interval.h"
 #include "obj.h"
+#include "obj_cont.h"
 #include "obj_proc.h"
 #include "uniq.h"
 
@@ -14,89 +15,99 @@
 
 #define DEFINE_EXTERN_PROC(C_name, scheme_name, args)			\
     DEFINE_GENERAL_PRIM_(extern,					\
-			 C_name,					\
-			 scheme_name,					\
-			 args,						\
-			 create_proc)
+			C_name,						\
+			scheme_name,					\
+			obj_t,						\
+			args,						\
+			create_proc)
 
 #define DEFINE_STATIC_PROC(C_name, scheme_name, args)			\
     DEFINE_GENERAL_PRIM_(static,					\
-			 C_name,					\
-			 scheme_name,					\
-			 args,						\
-			 create_proc)
+			C_name,						\
+			scheme_name,					\
+			obj_t,						\
+			args,						\
+			create_proc)
 
 #define DEFINE_ANONYMOUS_PROC(scheme_name, args)			\
     DEFINE_GENERAL_PRIM_(static,					\
-                         UNIQ_IDENT(anonymous_),			\
-                         scheme_name,					\
-			 args,						\
-			 create_proc)
+			UNIQ_IDENT(anonymous_),				\
+			scheme_name,					\
+			obj_t,						\
+			args,						\
+			create_proc)
 
 #define DEFINE_EXTERN_RAW_PROC(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(extern,					\
 			 C_name,					\
 			 scheme_name,					\
-			 UNDEFINED_OBJ,					\
+			 cv_t,						\
+			 0,						\
 			 create_raw_proc)
 
 #define DEFINE_STATIC_RAW_PROC(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(static,					\
 			 C_name,					\
 			 scheme_name,					\
-			 UNDEFINED_OBJ,					\
+			 cv_t,						\
+			 0,						\
 			 create_raw_proc)
 
 #define DEFINE_ANONYMOUS_RAW_PROC(scheme_name)				\
     DEFINE_GENERAL_PRIM_(static,					\
                          UNIQ_IDENT(anonymous_),			\
                          scheme_name,					\
-			 UNDEFINED_OBJ,					\
+			 cv_t,						\
+			 0,						\
 			 create_raw_proc)
 
 #define DEFINE_EXTERN_SPECIAL_FORM(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(extern,					\
 			 C_name,					\
 			 scheme_name,					\
-			 UNDEFINED_OBJ,					\
+	 		 cv_t,						\
+			 0,						\
 			 create_special_form)
 
 #define DEFINE_STATIC_SPECIAL_FORM(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(static,					\
 			 C_name,					\
 			 scheme_name,					\
-			 UNDEFINED_OBJ,					\
+	 		 cv_t,						\
+			 0,						\
 			 create_special_form)
 
 #define DEFINE_ANONYMOUS_SPECIAL_FORM(scheme_name)			\
     DEFINE_GENERAL_PRIM_(static,					\
                          UNIQ_IDENT(anonymous_),			\
                          scheme_name,					\
-			 UNDEFINED_OBJ,					\
+			 cv_t,						\
+			 0,						\
 			 create_special_form)
 
 #define DEFINE_EXTERN_COOKED_SPECIAL_FORM(C_name, scheme_name, args)	\
     DEFINE_GENERAL_PRIM_(extern,					\
-			 C_name,					\
-			 scheme_name,					\
-			 args,						\
-			 create_cooked_special_form)
+			C_name,						\
+			scheme_name,					\
+			obj_t,						\
+			args,						\
+			create_cooked_special_form)
 
 #define DEFINE_STATIC_COOKED_SPECIAL_FORM(C_name, scheme_name, args)	\
     DEFINE_GENERAL_PRIM_(static,					\
-			 C_name,					\
-			 scheme_name,					\
-			 args,						\
-			 create_cooked_special_form)
+			C_name,						\
+			scheme_name,					\
+			obj_t,						\
+			args,						\
+			create_cooked_special_form)
 
 #define DEFINE_ANONYMOUS_COOKED_SPECIAL_FORM(scheme_name, args)		\
     DEFINE_GENERAL_PRIM_(static,					\
-                         UNIQ_IDENT(anonymous_),			\
-                         scheme_name,					\
-			 args,						\
-			 create_cooked_special_form)
-
-
+			UNIQ_IDENT(anonymous_),				\
+			scheme_name,					\
+			obj_t,						\
+			args,						\
+			create_cooked_special_form)
 
 #define ALIAS_NAME(old_name, new_name)					\
     __attribute__((constructor))					\
@@ -113,14 +124,15 @@
 #define DEFINE_GENERAL_PRIM_(storage_class,				\
 			     C_name,					\
 			     scheme_name,				\
+			     return_type,				\
 			     arg_range,					\
 			     binder)					\
-    storage_class obj_t C_name();					\
+    storage_class return_type C_name();					\
     __attribute__((constructor))					\
     static void UNIQ_IDENT(bind_prim_)(void)				\
     {									\
 	static prim_descriptor_t desc = {				\
-	    C_name,							\
+	    (obj_t (*)())C_name,					\
 	    scheme_name,						\
 	    COMPILE_INTERVAL(arg_range),				\
 	    binder,							\
@@ -128,7 +140,7 @@
 	};								\
 	register_prim(&desc);						\
     }									\
-    storage_class obj_t C_name
+    storage_class return_type C_name
 
 typedef struct prim_descriptor  prim_descriptor_t;
 typedef struct alias_descriptor alias_descriptor_t;

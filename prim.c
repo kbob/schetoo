@@ -19,6 +19,11 @@ extern obj_t create_proc(const prim_descriptor_t *desc)
 			    root_environment());
 }
 
+extern obj_t create_special_form(const prim_descriptor_t *desc)
+{
+    return make_raw_special_form_procedure(desc->pd_prim, root_environment());
+}
+
 extern obj_t create_cooked_special_form(const prim_descriptor_t *desc)
 {
     return make_C_special_form_procedure(desc->pd_prim,

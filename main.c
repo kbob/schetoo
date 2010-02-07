@@ -13,6 +13,7 @@
 #include "test.h"
 #include "types.h"
 
+// XXX exception handlers are missing when read_stream() runs.
 static void repl(void)
 {
     instream_t *in = make_readline_instream();
