@@ -53,17 +53,6 @@ static obj_t reverse_list(obj_t list)
     return rev;
 }
 
-// XXX put this somewhere public.
-static size_t list_len(obj_t list)
-{
-    size_t n = 0;
-    while (!is_null(list)) {
-	n++;
-	list = CDR(list);
-    }
-    return n;
-}
-
 static cv_t c_eval(obj_t cont, obj_t values);
 
 static cv_t c_apply_proc(obj_t cont, obj_t values)
@@ -73,9 +62,8 @@ static cv_t c_apply_proc(obj_t cont, obj_t values)
     obj_t saved_values = CDR(p);
     oprintf("c_apply_proc op=%O values=%O\n", operator, values);
     obj_t arg_list = reverse_list(values);
-    size_t arg_count = list_len(arg_list);
     return cv(cont_cont(cont),
-	      CONS(apply_proc(operator, arg_list, arg_count), saved_values));
+	      CONS(apply_proc(operator, arg_list), saved_values));
 }
 
 static cv_t c_eval_operands(obj_t cont, obj_t values)
@@ -87,7 +75,14 @@ static cv_t c_eval_operands(obj_t cont, obj_t values)
 	raise(&syntax, NULL, "must be procedure", operator);
     }
     if (!procedure_args_evaluated(operator)) {
-	ASSERT(false && "implement me");
+	ASSERT(procedure_is_C(operator));
+	if (procedure_is_raw(operator)) {
+	    ASSERT(false && "implement me");
+	} else {
+	    obj_t arg_list = application_operands(appl);
+	    return cv(cont_cont(cont),
+		      CONS(apply_proc(operator, arg_list), CDR(values)));
+	}
     }
     obj_t arg_list = reverse_list(application_operands(appl));
     cont = make_cont4(c_apply_proc,
@@ -164,7 +159,7 @@ extern obj_t core_eval(obj_t expr, obj_t env)
     register_lowex_handler(handle_lowex);
     while (!is_null(cont)) {
 	registers = cont_proc(cont)(cont, values);
-	cont = registers.cv_cont;
+	cont   = registers.cv_cont;
 	values = registers.cv_values;
 	oprintf("       values=%O\n", registers.cv_values);
     }

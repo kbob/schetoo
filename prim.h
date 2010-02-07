@@ -157,8 +157,6 @@ extern obj_t create_raw_proc           (const prim_descriptor_t *);
 extern obj_t create_special_form       (const prim_descriptor_t *);
 extern obj_t create_cooked_special_form(const prim_descriptor_t *);
 
-extern obj_t apply_proc                (obj_t proc,
-					obj_t arg_list,
-					size_t arg_count);
+extern obj_t apply_proc                (obj_t proc, obj_t arg_list);
 
 #endif /* !PROC_INCLUDED */

@@ -79,9 +79,21 @@ static inline obj_t opt_arg(size_t pos, obj_t arg_list)
     return CAR(arg_list);
 }
 
-obj_t apply_proc(obj_t proc, obj_t arg_list, size_t arg_count)
+// XXX put this somewhere public.
+static size_t list_len(obj_t list)
+{
+    size_t n = 0;
+    while (!is_null(list)) {
+	n++;
+	list = CDR(list);
+    }
+    return n;
+}
+
+obj_t apply_proc(obj_t proc, obj_t arg_list)
 {
     if (procedure_is_C(proc)) {
+	size_t arg_count = list_len(arg_list);
 	interval_t ivl = procedure_arg_range(proc);
 	int inf = interval_is_infinite(ivl);
 	CHECK(arg_count >= interval_lower_bound(ivl),
