@@ -27,7 +27,7 @@ typedef struct proc_obj {
 
 OBJ_TYPE_PREDICATE(procedure)		// bool is_procedure(obj_t);
 
-extern obj_t make_procedure                 (obj_t         code,
+extern obj_t make_procedure                 (obj_t         body,
 					     obj_t         arglist,
 					     obj_t         env);
 extern obj_t make_C_procedure		    (C_procedure_t code,

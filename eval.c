@@ -18,7 +18,6 @@ static __thread jmp_buf    eval_restart;
 
 THREAD_ROOT(cont_root);
 THREAD_ROOT(values_root);
-THREAD_ROOT(env_root);
 
 static inline bool is_self_evaluating(obj_t expr)
 {
@@ -54,32 +53,36 @@ static obj_t reverse_list(obj_t list)
     return rev;
 }
 
-static obj_t c_eval(obj_t cont, obj_t *p_values, obj_t *p_env);
-
-static obj_t c_apply_procedure(obj_t cont, obj_t *p_values, obj_t *p_env)
+// XXX put this somewhere public.
+static size_t list_len(obj_t list)
 {
-    ASSERT(is_cont3(cont));
-    obj_t stop_values = cont3_arg(cont);
-    //oprintf("c_apply_procedure stop_values = %O\n", stop_values);
-    obj_t p = *p_values;
-    obj_t arg_list = EMPTY_LIST;
-    size_t arg_count = 0;
-    while (p != stop_values) {
-	arg_list = CONS(CAR(p), arg_list);
-	p = CDR(p);
-	arg_count++;
+    size_t n = 0;
+    while (!is_null(list)) {
+	n++;
+	list = CDR(list);
     }
-    obj_t operator = CAR(p);
-    *p_values = CONS(apply_proc(operator, arg_list, arg_count), CDR(p));
-    return cont_cont(cont);
+    return n;
 }
 
-static obj_t c_eval_operands(obj_t cont, obj_t *p_values, obj_t *p_env)
+static cv_t c_eval(obj_t cont, obj_t values);
+
+static cv_t c_apply_proc(obj_t cont, obj_t values)
 {
-    ASSERT(is_cont3(cont));
-    obj_t appl = cont3_arg(cont);
-    obj_t operator = CAR(*p_values);
-    //oprintf("c_eval_operands appl = %O; operator = %O\n", appl, operator);
+    obj_t p = cont4_arg(cont);
+    obj_t operator = CAR(p);
+    obj_t saved_values = CDR(p);
+    oprintf("c_apply_proc op=%O values=%O\n", operator, values);
+    obj_t arg_list = reverse_list(values);
+    size_t arg_count = list_len(arg_list);
+    return cv(cont_cont(cont),
+	      CONS(apply_proc(operator, arg_list, arg_count), saved_values));
+}
+
+static cv_t c_eval_operands(obj_t cont, obj_t values)
+{
+    obj_t appl = cont4_arg(cont);
+    obj_t operator = CAR(values);
+    oprintf("c_eval_operands appl = %O; operator = %O\n", appl, operator);
     if (!is_procedure(operator)) {
 	raise(&syntax, NULL, "must be procedure", operator);
     }
@@ -87,29 +90,35 @@ static obj_t c_eval_operands(obj_t cont, obj_t *p_values, obj_t *p_env)
 	ASSERT(false && "implement me");
     }
     obj_t arg_list = reverse_list(application_operands(appl));
-    cont = make_cont3(c_apply_procedure, cont_cont(cont), *p_values);
+    cont = make_cont4(c_apply_proc,
+		      cont_cont(cont),
+		      cont_env(cont),
+		      CONS(operator, CDR(values)));
     while (!is_null(arg_list)) {
-	cont = make_cont3(c_eval, cont, CAR(arg_list));
+	cont = make_cont4(c_eval, cont, cont_env(cont), CAR(arg_list));
 	arg_list = CDR(arg_list);
     }
-    return cont;
+    return cv(cont, EMPTY_LIST);
 }
 
-static obj_t c_eval(obj_t cont, obj_t *p_values, obj_t *p_env)
+static cv_t c_eval(obj_t cont, obj_t values)
 {
-    ASSERT(is_cont3(cont));
-    obj_t expr = cont3_arg(cont);
-    //oprintf("c_eval expr=%O\n", expr);
-    if (is_self_evaluating(expr)) {
-	*p_values = CONS(expr, *p_values);
-	return cont_cont(cont);
-    } else if (is_symbol(expr)) {
-	*p_values = CONS(binding_value(env_lookup(*p_env, expr)), *p_values);
-	return cont_cont(cont);
+    obj_t expr = cont4_arg(cont);
+    oprintf("c_eval expr=%O\n", expr);
+    if (is_self_evaluating(expr))
+	return cv(cont_cont(cont), CONS(expr, values));
+    else if (is_symbol(expr)) {
+	obj_t env = cont_env(cont);
+	obj_t bdg = env_lookup(env, expr);
+	obj_t val = binding_value(bdg);
+	return cv(cont_cont(cont), CONS(val, values));
     } else if (is_application(expr)) {
 	obj_t operator = application_operator(expr);
-	cont = make_cont3(c_eval_operands, cont_cont(cont), expr);
-	return make_cont3(c_eval, cont, operator);
+	cont = make_cont4(c_eval_operands,
+			  cont_cont(cont),
+			  cont_env(cont),
+			  expr);
+	return cv(make_cont4(c_eval, cont, cont_env(cont), operator), values);
     }
     raise(&syntax, expr, "must be expression");
 }
@@ -132,8 +141,10 @@ NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
 
 extern obj_t core_eval(obj_t expr, obj_t env)
 {
-    obj_t cont = make_cont3(c_eval, EMPTY_LIST, expr);
-    obj_t values = EMPTY_LIST;
+    obj_t cont     = make_cont4(c_eval, EMPTY_LIST, env, expr);
+    obj_t values   = EMPTY_LIST;
+    cv_t registers = { cont, values };
+
     int j0 = sigsetjmp(eval_sigrestart, 1);
     if (j0 == LT_SIGNALLED) {
 	printf("eval: SIGNALLED\n");
@@ -144,18 +155,20 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 	printf("eval: THROWN\n");
 	/* push exception... */
     } else if (j1 == LT_HEAP_FULL) {
-	cont_root   = expr;
-	values_root = values;
-	env_root    = env;
+	cont_root           = registers.cv_cont;
+	values_root         = registers.cv_values;
 	collect_garbage();
-	cont        = cont_root;
-	values      = values_root;
-	env         = env_root;
+	registers.cv_cont   = cont_root;
+	registers.cv_values = values_root;
     }
     register_lowex_handler(handle_lowex);
     while (!is_null(cont)) {
-	cont = cont_proc(cont)(cont, &values, &env);
+	registers = cont_proc(cont)(cont, values);
+	cont = registers.cv_cont;
+	values = registers.cv_values;
+	oprintf("       values=%O\n", registers.cv_values);
     }
     deregister_lowex_handler(handle_lowex);
+    ASSERT(is_null(CDR(values)));
     return CAR(values);			/* XXX */
 }

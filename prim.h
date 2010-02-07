@@ -33,46 +33,46 @@
 			 args,						\
 			 create_proc)
 
-#define DEFINE_EXTERN_RAW_PROC(C_name, scheme_name, args)		\
+#define DEFINE_EXTERN_RAW_PROC(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(extern,					\
 			 C_name,					\
 			 scheme_name,					\
-			 args,						\
+			 UNDEFINED_OBJ,					\
 			 create_raw_proc)
 
-#define DEFINE_STATIC_RAW_PROC(C_name, scheme_name, args)		\
+#define DEFINE_STATIC_RAW_PROC(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(static,					\
 			 C_name,					\
 			 scheme_name,					\
-			 args,						\
+			 UNDEFINED_OBJ,					\
 			 create_raw_proc)
 
-#define DEFINE_ANONYMOUS_RAW_PROC(scheme_name, args)			\
+#define DEFINE_ANONYMOUS_RAW_PROC(scheme_name)				\
     DEFINE_GENERAL_PRIM_(static,					\
                          UNIQ_IDENT(anonymous_),			\
                          scheme_name,					\
-			 args,						\
+			 UNDEFINED_OBJ,					\
 			 create_raw_proc)
 
-#define DEFINE_EXTERN_SPECIAL_FORM(C_name, scheme_name, args)		\
+#define DEFINE_EXTERN_SPECIAL_FORM(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(extern,					\
 			 C_name,					\
 			 scheme_name,					\
-			 args,						\
+			 UNDEFINED_OBJ,					\
 			 create_special_form)
 
-#define DEFINE_STATIC_SPECIAL_FORM(C_name, scheme_name, args)		\
+#define DEFINE_STATIC_SPECIAL_FORM(C_name, scheme_name)			\
     DEFINE_GENERAL_PRIM_(static,					\
 			 C_name,					\
 			 scheme_name,					\
-			 args,						\
+			 UNDEFINED_OBJ,					\
 			 create_special_form)
 
-#define DEFINE_ANONYMOUS_SPECIAL_FORM(scheme_name, args)		\
+#define DEFINE_ANONYMOUS_SPECIAL_FORM(scheme_name)			\
     DEFINE_GENERAL_PRIM_(static,					\
                          UNIQ_IDENT(anonymous_),			\
                          scheme_name,					\
-			 args,						\
+			 UNDEFINED_OBJ,					\
 			 create_special_form)
 
 #define DEFINE_EXTERN_COOKED_SPECIAL_FORM(C_name, scheme_name, args)	\

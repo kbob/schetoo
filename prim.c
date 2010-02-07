@@ -19,6 +19,13 @@ extern obj_t create_proc(const prim_descriptor_t *desc)
 			    root_environment());
 }
 
+extern obj_t create_cooked_special_form(const prim_descriptor_t *desc)
+{
+    return make_C_special_form_procedure(desc->pd_prim,
+					 desc->pd_arg_range,
+					 root_environment());
+}
+
 extern void register_prim(prim_descriptor_t *desc)
 {
 #ifndef NDEBUG
