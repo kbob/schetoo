@@ -26,7 +26,7 @@ DEFINE_PROC(L"null?", 1)(obj_t obj)
     return make_boolean(is_null(obj));
 }
 
-DEFINE_PROC(L"list", 0-)(obj_t arg_list)
+DEFINE_PROC(L"list", 0-)(obj_t objs)
 {
-    return arg_list;
+    return objs;
 }
