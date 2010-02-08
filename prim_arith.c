@@ -8,6 +8,25 @@ DEFINE_PROC(L"integer?", 1)(obj_t obj)
     return make_boolean(is_fixnum(obj));
 }
 
+DEFINE_PROC(L"=", 2-)(obj_t z1, obj_t z2, obj_t rest)
+{
+    CHECK(is_fixnum(z1), make_symbol_from_C_str(L"="),
+	  "must be fixnum", z1);
+    CHECK(is_fixnum(z2), make_symbol_from_C_str(L"="),
+	  "must be fixnum", z2);
+    if (z2 != z1)
+	return FALSE_OBJ;
+    while (!is_null(rest)) {
+	obj_t z = CAR(rest);
+	CHECK(is_fixnum(z), make_symbol_from_C_str(L"="),
+	      "must be fixnum", z);
+	if (z != z1)
+	    return FALSE_OBJ;
+	rest = CDR(rest);
+    }
+    return TRUE_OBJ;
+}
+
 DEFINE_PROC(L"+", 0-)(obj_t arg_list)
 {
     word_t sum = 0;

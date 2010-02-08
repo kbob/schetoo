@@ -11,7 +11,7 @@ scheme_cfiles := main.c charbuf.c env.c eval.c except.c heap.c io.c	\
 									\
 		 prim.c prim_arith.c prim_boolean.c prim_char.c		\
 		 prim_defn.c prim_eq.c prim_expr.c prim_list.c		\
-		 prim_string.c prim_sym.c				\
+		 prim_proc.c prim_string.c prim_sym.c			\
 									\
 		 obj_binding.c obj_bytevector.c obj_boolean.c		\
 		 obj_cont.c obj_pair.c obj_proc.c obj_string.c		\
