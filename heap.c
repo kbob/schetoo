@@ -17,7 +17,7 @@
 #include <stdio.h>
 #endif /* DEBUG_HEAP */
 
-#define INITIAL_HEAP_WORDS (1 << 12)
+#define INITIAL_HEAP_WORDS (1 << 13)
 #define INITIAL_HEAP_BYTES (INITIAL_HEAP_WORDS * sizeof (word_t))
 
 static void *the_heap;
