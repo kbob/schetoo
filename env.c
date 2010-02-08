@@ -28,25 +28,24 @@ void env_bind(obj_t env,
 		      env_first_frame(env)));
 }
 
+obj_t frame_lookup(obj_t frame, obj_t var)
+{
+    while (!is_null(frame)) {
+	obj_t binding = pair_car(frame);
+	if (binding_name(binding) == var) {
+	    return binding;
+	}
+	frame = pair_cdr(frame);
+    }
+    return FALSE_OBJ;
+}
+
 obj_t env_lookup(obj_t env, obj_t var)
 {
-    /*
-     * for frame in env:
-     *     for binding in frame:
-     *         if binding.name == var:
-     *             return binding
-     * assert False, 'unbound variable'
-     */
-
     while (!is_null(env)) {
-	obj_t frame = env_first_frame(env);
-	while (!is_null(frame)) {
-	    obj_t binding = pair_car(frame);
-	    if (binding_name(binding) == var) {
-		return binding;
-	    }
-	    frame = pair_cdr(frame);
-	}
+	obj_t binding = frame_lookup(env_first_frame(env), var);
+	if (binding != FALSE_OBJ)
+	    return binding;
 	env = env_parent(env);
     }
     raise(&undefined, var, "unbound variable");

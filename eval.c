@@ -6,6 +6,7 @@
 #include "env.h"
 #include "except.h"
 #include "heap.h"
+#include "list.h"
 #include "low_ex.h"
 #include "obj_cont.h"
 #include "oprintf.h"
@@ -49,19 +50,6 @@ static inline obj_t application_operands(obj_t expr)
 {
     return CDR(expr);
 }
-
-// XXX put this somewhere public.
-static obj_t reverse_list(obj_t list)
-{
-    obj_t rev = EMPTY_LIST;
-    while (!is_null(list)) {
-	rev = CONS(CAR(list), rev);
-	list = CDR(list);
-    }
-    return rev;
-}
-
-static cv_t c_eval(obj_t cont, obj_t values);
 
 static cv_t c_eval_seq(obj_t cont, obj_t values)
 {
@@ -147,7 +135,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
     return cv(cont, EMPTY_LIST);
 }
 
-static cv_t c_eval(obj_t cont, obj_t values)
+extern cv_t c_eval(obj_t cont, obj_t values)
 {
     obj_t expr = cont4_arg(cont);
     //oprintf("c_eval  \texpr=%O\n", expr);
@@ -217,6 +205,7 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 	//oprintf("\t\tvalues=%O\n", values);
     }
     deregister_lowex_handler(handle_lowex);
+    //oprintf("\t\tvalues = %O\n", values);
     ASSERT(is_null(CDR(values)));
-    return CAR(values);			/* XXX */
+    return CAR(values);
 }

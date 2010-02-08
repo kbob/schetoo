@@ -171,4 +171,6 @@ extern obj_t create_cooked_special_form(const prim_descriptor_t *);
 
 extern obj_t apply_proc                (obj_t proc, obj_t arg_list);
 
+extern cv_t c_eval(obj_t cont, obj_t values);
+
 #endif /* !PROC_INCLUDED */
