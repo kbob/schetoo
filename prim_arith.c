@@ -3,6 +3,11 @@
 #include "prim.h"
 #include "types.h"
 
+DEFINE_PROC(L"integer?", 1)(obj_t obj)
+{
+    return make_boolean(is_fixnum(obj));
+}
+
 DEFINE_PROC(L"+", 0-)(obj_t arg_list)
 {
     word_t sum = 0;
