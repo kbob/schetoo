@@ -1,7 +1,6 @@
 #include "env.h"
 #include "prim.h"
 #include "list.h"
-#include "oprintf.h"
 #include "types.h"
 
 DEFINE_COOKED_SPECIAL_FORM(L"quote", 1)(obj_t datum)
@@ -20,6 +19,7 @@ DEFINE_SPECIAL_FORM(L"lambda")(obj_t cont, obj_t values)
 
 static cv_t c_continue_if(obj_t cont, obj_t values)
 {
+    EVAL_LOG("values=%O", values);
     //oprintf("c_continue_if: values = %O\n", values);
     bool success = CAR(values) != FALSE_OBJ;
     obj_t form   = cont4_arg(cont);
@@ -40,6 +40,7 @@ static cv_t c_continue_if(obj_t cont, obj_t values)
 DEFINE_SPECIAL_FORM(L"if")(obj_t cont, obj_t values)
 {
     obj_t form = cont4_arg(cont);
+    EVAL_LOG("form=%O", form);
     size_t len = list_length(form);
     CHECK(len >= 3 && len <= 4, make_symbol_from_C_str(L"if"),
 	  "wrong number of arguments", form);
@@ -57,6 +58,7 @@ static cv_t c_continue_set(obj_t cont, obj_t values)
     obj_t var   = CADR(form);
     obj_t value = CAR(values);
     obj_t bdg   = env_lookup(env, var);
+    EVAL_LOG("var=%O value=%O", var, value);
     /* N.B., allocate values list before mutating environment. */
     obj_t new_values = CONS(UNDEFINED_OBJ, CDR(values));
     binding_set_value(bdg, value);
@@ -67,6 +69,7 @@ DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)
 {
     obj_t form = cont4_arg(cont);
     obj_t env = cont_env(cont);
+    EVAL_LOG("form=%O", form);
     CHECK(list_length(form) == 3, make_symbol_from_C_str(L"set!"),
 	  "wrong number of arguments", form);
     obj_t expr = CADDR(form);

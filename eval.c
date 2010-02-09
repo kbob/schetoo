@@ -9,7 +9,6 @@
 #include "list.h"
 #include "low_ex.h"
 #include "obj_cont.h"
-#include "oprintf.h"
 #include "prim.h"
 #include "roots.h"
 #include "types.h"
@@ -20,6 +19,8 @@
  * I think it's a list of computed values in the current argument
  * list.  Except sometimes (c_eval_operator) it's just the list of the
  * operator.
+ * 
+ * It could probably be turned into a vector.
  */
 
 static __thread sigjmp_buf eval_sigrestart;
@@ -51,11 +52,14 @@ static inline obj_t application_operands(obj_t expr)
     return CDR(expr);
 }
 
+// XXX c_eval_seq should pop the most recent value every time EXCEPT the first.
+// Split into two routines.  (sigh...)
+
 static cv_t c_eval_seq(obj_t cont, obj_t values)
 {
     obj_t env = cont_env(cont);
     obj_t exprs = cont4_arg(cont);
-    //oprintf("c_eval_seq\texprs=%O\n", exprs);
+    EVAL_LOG("exprs=%O", exprs);
     obj_t second;
     if (is_null(CDR(exprs)))
 	second = cont_cont(cont);
@@ -71,14 +75,19 @@ static cv_t c_apply_proc(obj_t cont, obj_t values)
     obj_t next = cont_cont(cont);
     obj_t operator = CAR(p);
     obj_t saved_values = CDR(p);
-    //oprintf("c_apply_proc\top=%O values=%O\n", operator, values);
+    EVAL_LOG("op=%O values=%O p=%O", operator, values, p);
     obj_t arg_list = reverse_list(values);
     if (procedure_is_C(operator)) {
 	if (procedure_is_raw(operator))
 	    ASSERT(false && "implement raw procedure application");
-	else
-	    return cv(next, CONS(apply_proc(operator, arg_list), saved_values));
+	else {
+	    // N.B., call proc after all other allocations.
+	    obj_t new_values = CONS(EMPTY_LIST, saved_values);
+	    pair_set_car(new_values, apply_proc(operator, arg_list));
+	    return cv(next, new_values);
+	}
     } else {
+	// Split this into a separate function?
 	obj_t new_env = make_env(procedure_env(operator));
 	obj_t body    = procedure_body(operator);
 	obj_t formals = procedure_args(operator);
@@ -101,7 +110,7 @@ static cv_t c_apply_proc(obj_t cont, obj_t values)
 	    }
 	    env_bind(new_env, formal, BT_LEXICAL, M_MUTABLE, actual);
 	}
-	return cv(make_cont4(c_eval_seq, next, new_env, body), EMPTY_LIST);
+	return cv(make_cont4(c_eval_seq, next, new_env, body), saved_values);
     }
 }
 
@@ -109,7 +118,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 {
     obj_t appl = cont4_arg(cont);
     obj_t operator = CAR(values);
-    //oprintf("c_eval_operator\tappl = %O; operator = %O\n", appl, operator);
+    EVAL_LOG("appl=%O operator=%O", appl, operator);
     if (!is_procedure(operator)) {
 	raise(&syntax, NULL, "must be procedure", operator);
     }
@@ -118,12 +127,15 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 	if (procedure_is_raw(operator)) {
 	    return ((cont_proc_t)procedure_code(operator))(cont, values);
 	} else {
+	    // N.B., call proc after all other allocations.
 	    obj_t arg_list = application_operands(appl);
-	    return cv(cont_cont(cont),
-		      CONS(apply_proc(operator, arg_list), CDR(values)));
+	    obj_t new_values = CONS(EMPTY_LIST, CDR(values));
+	    pair_set_car(new_values, apply_proc(operator, arg_list));
+	    return cv(cont_cont(cont), new_values);
 	}
     }
     obj_t arg_list = reverse_list(application_operands(appl));
+    // XXX Go back to the stop_value thing.
     cont = make_cont4(c_apply_proc,
 		      cont_cont(cont),
 		      cont_env(cont),
@@ -138,7 +150,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 extern cv_t c_eval(obj_t cont, obj_t values)
 {
     obj_t expr = cont4_arg(cont);
-    //oprintf("c_eval  \texpr=%O\n", expr);
+    EVAL_LOG("expr=%O", expr);
     if (is_self_evaluating(expr))
 	return cv(cont_cont(cont), CONS(expr, values));
     else if (is_symbol(expr)) {
@@ -148,11 +160,13 @@ extern cv_t c_eval(obj_t cont, obj_t values)
 	return cv(cont_cont(cont), CONS(val, values));
     } else if (is_application(expr)) {
 	obj_t operator = application_operator(expr);
-	cont = make_cont4(c_eval_operator,
-			  cont_cont(cont),
-			  cont_env(cont),
-			  expr);
-	return cv(make_cont4(c_eval, cont, cont_env(cont), operator), values);
+	obj_t env = cont_env(cont);
+	obj_t second = make_cont4(c_eval_operator,
+				  cont_cont(cont),
+				  env,
+				  expr);
+	obj_t first = make_cont4(c_eval, second, env, operator);
+	return cv(first, values);
     }
     raise(&syntax, expr, "must be expression");
 }
@@ -177,7 +191,6 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 {
     obj_t cont     = make_cont4(c_eval, EMPTY_LIST, env, expr);
     obj_t values   = EMPTY_LIST;
-    //cv_t registers = { cont, values };
 
     int j0 = sigsetjmp(eval_sigrestart, 1);
     if (j0 == LT_SIGNALLED) {
@@ -202,10 +215,14 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 	cv_t ret = cont_proc(cont)(cont, values);
 	cont   = ret.cv_cont;
 	values = ret.cv_values;
-	//oprintf("\t\tvalues=%O\n", values);
+	int n = 0;
+	obj_t p;
+	for (p = cont; !is_null(p); p = cont_cont(p))
+	    n++;
+	EVAL_LOG("values=%O cont depth=%d", values, n);
     }
     deregister_lowex_handler(handle_lowex);
-    //oprintf("\t\tvalues = %O\n", values);
+    EVAL_LOG("END values=%O", values);
     ASSERT(is_null(CDR(values)));
     return CAR(values);
 }

@@ -117,6 +117,7 @@ obj_t apply_proc(obj_t proc, obj_t arg_list)
 	C_procedure_t code = procedure_code(proc);
 	switch (u) {
 
+	/* N.B.  Call primitive after all other allocations. */
 	case 0: return code();
 	case 1: return code(a[0]);
 	case 2: return code(a[0], a[1]);

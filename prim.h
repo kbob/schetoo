@@ -7,6 +7,8 @@
 #include "obj_proc.h"
 #include "uniq.h"
 
+#define DEBUG_EVAL 1
+
 /* abbreviations */
 #define DEFINE_PROC                DEFINE_ANONYMOUS_PROC
 #define DEFINE_RAW_PROC            DEFINE_ANONYMOUS_RAW_PROC
@@ -172,5 +174,13 @@ extern obj_t create_cooked_special_form(const prim_descriptor_t *);
 extern obj_t apply_proc                (obj_t proc, obj_t arg_list);
 
 extern cv_t c_eval(obj_t cont, obj_t values);
+
+#if DEBUG_EVAL
+    #include "oprintf.h"
+    #define EVAL_LOG(fmt, ...) \
+	(oprintf("%-18s" fmt "\n", __func__, __VA_ARGS__))
+#else
+    #define EVAL_LOG(fmt, ...) ((void)0)
+#endif
 
 #endif /* !PROC_INCLUDED */

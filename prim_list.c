@@ -30,3 +30,17 @@ DEFINE_PROC(L"list", 0-)(obj_t objs)
 {
     return objs;
 }
+
+DEFINE_PROC(L"set-car!", 2)(obj_t pair, obj_t obj)
+{
+    /* N.B., mutate list after all other allocations. */
+    pair_set_car(pair, obj);
+    return UNDEFINED_OBJ;
+}
+
+DEFINE_PROC(L"set-cdr!", 2)(obj_t pair, obj_t obj)
+{
+    /* N.B., mutate list after all other allocations. */
+    pair_set_cdr(pair, obj);
+    return UNDEFINED_OBJ;
+}
