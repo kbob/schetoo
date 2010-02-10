@@ -149,7 +149,7 @@ typedef struct alias_descriptor alias_descriptor_t;
 typedef obj_t                   creator_t(const prim_descriptor_t *);
 
 struct prim_descriptor {
-    obj_t               (*pd_prim)();
+    obj_t               (*pd_code)();
     const wchar_t        *pd_name;
     interval_t            pd_arg_range;
     creator_t            *pd_creator;
@@ -174,6 +174,7 @@ extern obj_t create_cooked_special_form(const prim_descriptor_t *);
 extern obj_t apply_proc                (obj_t proc, obj_t arg_list);
 
 extern cv_t c_eval(obj_t cont, obj_t values);
+extern cv_t c_apply_proc(obj_t cont, obj_t values);
 
 #if DEBUG_EVAL
     #include "oprintf.h"

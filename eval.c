@@ -76,7 +76,7 @@ static cv_t c_eval_seq(obj_t cont, obj_t values)
     return cv(first, values);
 }
 
-static cv_t c_apply_proc(obj_t cont, obj_t values)
+extern cv_t c_apply_proc(obj_t cont, obj_t values)
 {
     obj_t p = cont4_arg(cont);
     obj_t next = cont_cont(cont);
@@ -86,15 +86,14 @@ static cv_t c_apply_proc(obj_t cont, obj_t values)
     obj_t arg_list = reverse_list(values);
     if (procedure_is_C(operator)) {
 	if (procedure_is_raw(operator))
-	    ASSERT(false && "implement raw procedure application");
+	    return ((cont_proc_t)procedure_code(operator))(cont, values);
 	else {
 	    // N.B., call proc after all other allocations.
-	    obj_t new_values = CONS(EMPTY_LIST, saved_values);
+	    obj_t new_values = CONS(UNDEFINED_OBJ, saved_values);
 	    pair_set_car(new_values, apply_proc(operator, arg_list));
 	    return cv(next, new_values);
 	}
     } else {
-	// Split this into a separate function?
 	obj_t new_env = make_env(procedure_env(operator));
 	obj_t body    = procedure_body(operator);
 	obj_t formals = procedure_args(operator);
@@ -136,7 +135,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 	} else {
 	    // N.B., call proc after all other allocations.
 	    obj_t arg_list = application_operands(appl);
-	    obj_t new_values = CONS(EMPTY_LIST, CDR(values));
+	    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(values));
 	    pair_set_car(new_values, apply_proc(operator, arg_list));
 	    return cv(cont_cont(cont), new_values);
 	}

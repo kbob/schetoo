@@ -141,7 +141,7 @@ static void print_procedure(obj_t obj, outstream_t *out)
 {
     //    if (procedure_is_special_form(obj) || procedure_is_C(obj)) {
     if (procedure_is_C(obj)) {
-	outstream_printf(out, L"#<proc-%s%s>",
+	outstream_printf(out, L"#<proc-%s%s%s>",
 			 procedure_args_evaluated(obj) ? "" : "S",
 			 procedure_is_C(obj) ? "C" : "",
 			 procedure_is_raw(obj) ? "R" : "");

@@ -15,19 +15,25 @@ static alias_descriptor_t *alias_descs;
 
 extern obj_t create_proc(const prim_descriptor_t *desc)
 {
-    return make_C_procedure(desc->pd_prim,
+    return make_C_procedure(desc->pd_code,
 			    desc->pd_arg_range,
 			    root_environment());
 }
 
+extern obj_t create_raw_proc(const prim_descriptor_t *desc)
+{
+    return make_raw_procedure(desc->pd_code,
+			      root_environment());
+}
+
 extern obj_t create_special_form(const prim_descriptor_t *desc)
 {
-    return make_raw_special_form_procedure(desc->pd_prim, root_environment());
+    return make_raw_special_form_procedure(desc->pd_code, root_environment());
 }
 
 extern obj_t create_cooked_special_form(const prim_descriptor_t *desc)
 {
-    return make_C_special_form_procedure(desc->pd_prim,
+    return make_C_special_form_procedure(desc->pd_code,
 					 desc->pd_arg_range,
 					 root_environment());
 }
