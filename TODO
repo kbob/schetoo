@@ -15,6 +15,7 @@ DONE	Find better names for EMPTY_LIST and UNDEFINED.
 	Make pair_car() and pair_cdr() inline.
 DONE	Rename obj_procedure.{h,c} -> obj_proc.{h,c}
 DONE	Rename proc.{h,c} -> prim.{h,c}
+DONE	Write comments about DEFINE_* macros in prim.h.
 
 Heap
 	Implement records.

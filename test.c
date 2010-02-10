@@ -118,7 +118,6 @@ static int read_driver(const test_case_descriptor_t *tc)
     return err_count;
 }
 
-#if 0
 static int eval_driver(const test_case_descriptor_t *tc)
 {
     int err_count = 0;
@@ -148,7 +147,6 @@ static int eval_driver(const test_case_descriptor_t *tc)
     }
     return err_count;
 }
-#endif
 
 static void test_all(test_phase_t phase, test_driver_t driver)
 {
@@ -178,7 +176,7 @@ void register_test(test_case_descriptor_t *tc)
 void self_test()
 {
     test_all(TP_READ, read_driver);
-    // test_all(TP_EVAL, eval_driver);
+    test_all(TP_EVAL, eval_driver);
 }
 
 #endif /* !NOTEST */
