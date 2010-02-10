@@ -90,6 +90,9 @@
  * Objects allocated by the primitive may be mutated in any order.
  * They will all be reclaimed during GC if the primitive triggers GC.
  *
+ * Similarly, if a primitive has side-effects such as I/O, then
+ * it must do all allocations before committing the I/O.
+ *
  * Examples of heap modifying primitives: define, set!, set-car!.
  */
 
