@@ -7,7 +7,7 @@
 #include "obj_proc.h"
 #include "uniq.h"
 
-#define DEBUG_EVAL 1
+#define DEBUG_EVAL 0
 
 /* abbreviations */
 #define DEFINE_PROC                DEFINE_ANONYMOUS_PROC

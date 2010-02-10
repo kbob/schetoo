@@ -17,8 +17,8 @@
  * I'm having trouble figuring out exactly what values is.
  *
  * I think it's a list of computed values in the current argument
- * list.  Except sometimes (c_eval_operator) it's just the list of the
- * operator.
+ * list.  Except sometimes (e.g., c_eval_operator) it's just the list
+ * of the operator.
  * 
  * It could probably be turned into a vector.
  */
@@ -52,21 +52,28 @@ static inline obj_t application_operands(obj_t expr)
     return CDR(expr);
 }
 
-// XXX c_eval_seq should pop the most recent value every time EXCEPT the first.
-// Split into two routines.  (sigh...)
+static cv_t c_continue_seq(obj_t cont, obj_t values)
+{
+    obj_t env = cont_env(cont);
+    obj_t exprs = cont4_arg(cont);
+    EVAL_LOG("exprs=%O", exprs);
+    obj_t second = cont_cont(cont);
+    if (!is_null(CDR(exprs)))
+	second = make_cont4(c_continue_seq, second, env, CDR(exprs));
+    obj_t first = make_cont4(c_eval, second, env, CAR(exprs));
+    return cv(first, CDR(values));
+}
 
 static cv_t c_eval_seq(obj_t cont, obj_t values)
 {
     obj_t env = cont_env(cont);
     obj_t exprs = cont4_arg(cont);
     EVAL_LOG("exprs=%O", exprs);
-    obj_t second;
-    if (is_null(CDR(exprs)))
-	second = cont_cont(cont);
-    else
-	second = make_cont4(c_eval_seq, cont_cont(cont), env, CDR(exprs));
+    obj_t second = cont_cont(cont);
+    if (!is_null(CDR(exprs)))
+	second = make_cont4(c_continue_seq, second, env, CDR(exprs));
     obj_t first = make_cont4(c_eval, second, env, CAR(exprs));
-    return cv(first, EMPTY_LIST);
+    return cv(first, values);
 }
 
 static cv_t c_apply_proc(obj_t cont, obj_t values)
@@ -135,7 +142,6 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 	}
     }
     obj_t arg_list = reverse_list(application_operands(appl));
-    // XXX Go back to the stop_value thing.
     cont = make_cont4(c_apply_proc,
 		      cont_cont(cont),
 		      cont_env(cont),
@@ -215,11 +221,13 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 	cv_t ret = cont_proc(cont)(cont, values);
 	cont   = ret.cv_cont;
 	values = ret.cv_values;
+#if DEBUG_EVAL
 	int n = 0;
 	obj_t p;
 	for (p = cont; !is_null(p); p = cont_cont(p))
 	    n++;
 	EVAL_LOG("values=%O cont depth=%d", values, n);
+#endif
     }
     deregister_lowex_handler(handle_lowex);
     EVAL_LOG("END values=%O", values);
