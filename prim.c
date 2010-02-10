@@ -91,6 +91,8 @@ static inline obj_t opt_arg(size_t pos, obj_t arg_list)
     return CAR(arg_list);
 }
 
+// XXX move this to eval.c.
+
 obj_t apply_proc(obj_t proc, obj_t arg_list)
 {
     size_t arg_count = list_length(arg_list);
