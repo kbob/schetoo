@@ -5,20 +5,21 @@
      programs := scheme
  test_scripts := selftest.sh
 
+  prim_groups := arith boolean char ctrl defn env eq eval expr list	\
+		 proc string sym
+
+    obj_types := binding bytevector boolean cont pair proc record rtd	\
+		 string symbol vector
+
+    mem_types := fixvec mixvec scalar
+
 scheme_cfiles := main.c charbuf.c env.c eval.c except.c heap.c io.c	\
 		 list.c low_ex.c oprintf.c print.c read.c roots.c	\
 		 scan.c test.c unicode.c				\
 									\
-		 prim.c prim_arith.c prim_boolean.c prim_char.c		\
-		 prim_ctrl.c prim_defn.c prim_env.c prim_eq.c		\
-		 prim_eval.c prim_expr.c prim_list.c prim_proc.c	\
-		 prim_string.c prim_sym.c				\
-									\
-		 obj_binding.c obj_bytevector.c obj_boolean.c		\
-		 obj_cont.c obj_pair.c obj_proc.c obj_string.c		\
-		 obj_symbol.c obj_vector.c				\
-									\
-		 mem.c mem_fixvec.c mem_mixvec.c mem_scalar.c
+		 prim.c $(prim_groups:%=prim_%.c)			\
+		 obj.c    $(obj_types:%=obj_%.c)			\
+		 mem.c    $(mem_types:%=mem_%.c)
 
 scheme_ldlibs := -lreadline
 
@@ -36,6 +37,6 @@ unicode.o .unicode.d: ucd_data.h
 
 ucd_data.h: gen_ucd_data.py unicode.h UnicodeData.txt
 	python gen_ucd_data.py > $@
-JUNK = ucd_data.h
+JUNK += ucd_data.h
 
 include makefiles/project-root.make

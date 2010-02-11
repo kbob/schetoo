@@ -1,5 +1,5 @@
-#ifndef OBJ_PROCEDURE_INCLUDED
-#define OBJ_PROCEDURE_INCLUDED
+#ifndef OBJ_PROC_INCLUDED
+#define OBJ_PROC_INCLUDED
 
 #include "except.h"
 #include "interval.h"
@@ -96,4 +96,4 @@ static inline obj_t procedure_env(obj_t proc)
     return ((proc_obj_t *)proc)->proc_env;
 }
 
-#endif /* !OBJ_PROCEDURE_INCLUDED */
+#endif /* !OBJ_PROC_INCLUDED */

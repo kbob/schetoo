@@ -58,7 +58,7 @@
 
 /*
  * The unit of heap allocation is the word_t.  A word_t is an integer
- * the same size as a pointer.
+ * the same size as a pointer.  uword_t is its unsigned twin.
  *
  * A Scheme object is an obj_t.  An obj_t is a pointer to an opaque
  * type.
@@ -66,10 +66,12 @@
 
 typedef struct object *obj_t;
 typedef intptr_t       word_t;
+typedef uintptr_t      uword_t;
 typedef struct mem_ops mem_ops_t;
 
-#define WORD_MIN (INTPTR_MIN)
-#define WORD_MAX (INTPTR_MAX)
+#define WORD_MIN  (INTPTR_MIN)
+#define WORD_MAX  (INTPTR_MAX)
+#define UWORD_MAX (UINTPTR_MAX)
 
 static inline word_t obj_bits(const obj_t o)
 {

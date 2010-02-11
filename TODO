@@ -18,7 +18,8 @@ DONE	Rename proc.{h,c} -> prim.{h,c}
 DONE	Write comments about DEFINE_* macros in prim.h.
 
 Heap
-	Implement records.
+DONE	Implement records.
+	Write comments about record layout.
 DONE	Hook GC into setjmp (after eval).
 	Reintroduce debug GC on every allocation.
 	Automatically grow heap when out of memory.

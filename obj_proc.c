@@ -54,13 +54,13 @@ mem_ops_t procedure_ops = {
 
 static obj_t make_proc(int flags, obj_t body, obj_t args, obj_t env)
 {
-    heap_object_t *obj = mem_alloc_obj(&procedure_ops, sizeof (proc_obj_t));
-    proc_obj_t *proc = (proc_obj_t *)obj;
+    heap_object_t *hobj = mem_alloc_obj(&procedure_ops, sizeof (proc_obj_t));
+    proc_obj_t *proc = (proc_obj_t *)hobj;
     proc->proc_flags = flags;
     proc->proc_args = args;
     proc->proc_env = env;
     proc->proc_u.pu_body = body;
-    return (obj_t)obj;
+    return (obj_t)hobj;
 }
 
 obj_t make_procedure(obj_t body, obj_t arglist, obj_t env)

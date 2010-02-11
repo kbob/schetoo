@@ -568,3 +568,53 @@ Pair - ???
 
 The only thing that comes to mind is to downgrade fixnums to 30 bits
 so there are more bits to play with.
+
+----------------------------------
+2010.02.10
+
+Records.
+
+I started implementing records tonight.  Got part way through
+and found out I'm doing it wrong.
+
+1. All rtd's must be stored in the heap.  I was thinking that there
+   would be some in heap and some in C .data section.  But the
+   contents of an rtd has to be GC'd, so it's easier to put it in the
+   heap than declare each field a root.
+
+   1a. Record instances don't need to check for a primitive
+       rtd.  That makes instance mem_ops simpler.
+
+2. r6rs-lib requires a specific format for the `field' argument
+   when it's passed (by reference) to make-record-type-descriptor.
+   So that's the format I'll use.
+
+3. An instance should be laid out like a vector, except it doesn't
+   need a length field if the rtd has a length field.
+
+   3a. The rtd should have a number-of-fields field.
+
+4. Accessors need to index into the fields.  Sort of like
+   (lambda (rec) (vector-get rec 3))
+
+   4a.  Should record_get_by_index()/record_set_by_index() functions.
+
+   4b.  Accessors will be created by Scheme.  C will export lower-
+        level procedures, maybe just accessors for parent and fields.
+
+5. Field storage for a record instance should be in-line in the record.
+
+It seems like it should be almost straightforward -- bad magic is
+happening in the overloading, in a record instance, of
+(heap_object).ho_ops and the rtd pointer and in the overloading, in an
+rtd, of (rtd_obj_t).rtd_inst_ops.mo_start_marker and
+(heap_object.ho_ops, but that was accounted for long ago when I
+defined the basic heap object layout.
+
+So what, exactly, is &syntax?  I think syntax is a root pointer to the
+syntax rtd.  Or maybe it's a structure containing the root pointer so
+there's a little C type safety.
+
+And I'll need a DECLARE_RTD(name, ...) analogous to DECLARE_PROC()
+which squirrels stuff away until the heap is initialized, then
+creates the RTD and stores a pointer in a named C variable.
