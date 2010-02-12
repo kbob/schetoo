@@ -63,7 +63,7 @@ static void init_rec(rec_descriptor_t *desc)
     /* Construct the constructor descriptor, constructor, predicate,
      * field accessors, and field mutators.
      */
-    // XXX implement me.
+    // XXX implement me.  Maybe the rest should be in Scheme.
 }
 
 void init_records(void)
