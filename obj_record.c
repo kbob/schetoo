@@ -82,6 +82,8 @@ obj_t make_record(obj_t rtd, ...)
 	CHECK_OBJ(field);
 	*elem_addr(rec, i) = field;
     }
+    int end_marker = va_arg(ap, int);
+    ASSERT(end_marker == 0);
     va_end(ap);
     return (obj_t)hobj;
 }
@@ -104,4 +106,3 @@ void record_set_field(obj_t obj, size_t index, obj_t value)
     CHECK_OBJ(value);
     *elem_addr(rec, index) = value;
 }
-

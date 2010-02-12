@@ -618,3 +618,12 @@ there's a little C type safety.
 And I'll need a DECLARE_RTD(name, ...) analogous to DECLARE_PROC()
 which squirrels stuff away until the heap is initialized, then
 creates the RTD and stores a pointer in a named C variable.
+
+----------------------------------
+2010.02.11
+
+Think about auxilliary syntax.
+
+Symbols with special meanings like else, =>, ..., mutable.  Bind them
+to a magic inevaluable type but with distinct values.  Think about
+what makes free-identifier=? evaluate true.

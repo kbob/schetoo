@@ -95,7 +95,8 @@ obj_t make_rtd(rtd_flags_t flags,
     CHECK(is_symbol(name), NULL, "must be symbol", name);
     CHECK(parent == FALSE_OBJ || is_rtd(parent),
 	  NULL, "must be rtd or #f", parent);
-    CHECK(!rtd_is_sealed(parent), NULL, "parent is sealed", parent);
+    CHECK(parent == FALSE_OBJ || !rtd_is_sealed(parent),
+	  NULL, "parent is sealed", parent);
     if (protocol != FALSE_OBJ)
 	raise(&implementation_restriction, NULL,
 	      "record protocols not implemented", protocol);
@@ -104,11 +105,14 @@ obj_t make_rtd(rtd_flags_t flags,
 	      "nongenerative records not implemented", uid);
     CHECK(is_vector(fields), NULL, "must be vector", fields);
     // XXX walk through the fields and ensure they have the right format.
+    // ... or wait until the first instantiation...
     heap_object_t *hobj = mem_alloc_obj(&rtd_ops, sizeof (rtd_obj_t));
     size_t field_count = parent == FALSE_OBJ ? 0 : rtd_field_count(parent);
     field_count += vector_len(fields);
     rtd_obj_t *rtd = (rtd_obj_t *) hobj;
     rtd->rtd_inst_ops = record_ops;
+    // overwrite first word of rtd_inst_ops.
+    hobj->ho_ops      = &rtd_ops;
     rtd->rtd_flags    = flags | field_count << RF_SHIFT;
     rtd->rtd_name     = name;
     rtd->rtd_parent   = parent;

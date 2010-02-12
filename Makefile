@@ -14,8 +14,8 @@
     mem_types := fixvec mixvec scalar
 
 scheme_cfiles := main.c charbuf.c env.c eval.c except.c heap.c io.c	\
-		 list.c low_ex.c oprintf.c print.c read.c roots.c	\
-		 scan.c test.c unicode.c				\
+		 list.c low_ex.c oprintf.c print.c read.c record.c	\
+		 roots.c scan.c test.c unicode.c			\
 									\
 		 prim.c $(prim_groups:%=prim_%.c)			\
 		 obj.c    $(obj_types:%=obj_%.c)			\
