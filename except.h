@@ -3,11 +3,11 @@
 
 #include "conditions.h"
 
-// CHECK(expr, who, msg, irritants...)
+// CHECK(expr, message, irritants...)
 // message may be either a wide or 8-bit string.
-#define CHECK(expr, who, ...)						\
+#define CHECK(expr, ...)						\
     ((expr) ? (void)0							\
-            : THROW(&assertion, (who), __VA_ARGS__))
+            : THROW(&assertion, NULL, __VA_ARGS__))
 
 // THROW(condition, who, message, irritants...)
 // Note that message may be either a wide or 8-bit string.

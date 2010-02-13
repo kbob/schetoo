@@ -72,7 +72,7 @@ mem_ops_t record_ops = {
 
 obj_t make_record_(obj_t rtd, ...)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     size_t i, size = rtd_field_count(rtd);
     heap_object_t *hobj = mem_alloc_obj((mem_ops_t *)rtd, len_to_bytes(size));
     record_obj_t *rec = (record_obj_t *)hobj;
@@ -92,19 +92,19 @@ obj_t make_record_(obj_t rtd, ...)
 
 obj_t record_get_field(obj_t obj, size_t index)
 {
-    CHECK(is_record(obj), NULL, "must be record", obj);
+    CHECK(is_record(obj), "must be record", obj);
     record_obj_t *rec = (record_obj_t *)obj;
-    CHECK(index < rtd_field_count(rec->rec_rtd),
-	  NULL, "index out of range", obj, make_fixnum(index));
+    CHECK(index < rtd_field_count(rec->rec_rtd), "index out of range",
+	  obj, make_fixnum(index));
     return *elem_addr(rec, index);
 }
 
 void record_set_field(obj_t obj, size_t index, obj_t value)
 {
-    CHECK(is_record(obj), NULL, "must be record", obj);
+    CHECK(is_record(obj), "must be record", obj);
     record_obj_t *rec = (record_obj_t *)obj;
-    CHECK(index < rtd_field_count(rec->rec_rtd),
-	  NULL, "index out of range", obj, make_fixnum(index));
+    CHECK(index < rtd_field_count(rec->rec_rtd), "index out of range",
+	  obj, make_fixnum(index));
     CHECK_OBJ(value);
     *elem_addr(rec, index) = value;
 }

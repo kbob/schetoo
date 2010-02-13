@@ -46,49 +46,49 @@ static inline obj_t  rtd_fields          (obj_t       rtd);
 
 static inline bool rtd_is_sealed(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_flags & RF_SEALED ? true : false;
 }
 
 static inline bool rtd_is_opaque(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_flags & RF_OPAQUE ? true : false;
 }
 
 static inline bool rtd_is_generative(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_flags & RF_NONGENERATIVE ? false : true;
 }
 
 static inline obj_t rtd_name(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_name;
 }
 
 static inline obj_t rtd_parent(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_parent;
 }
 
 static inline obj_t rtd_protocol(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_protocol;
 }
 
 static inline size_t rtd_field_count(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_flags >> RF_SHIFT;
 }
 
 static inline obj_t rtd_fields(obj_t rtd)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     return ((rtd_obj_t *)rtd)->rtd_fields;
 }
 

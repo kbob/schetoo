@@ -100,7 +100,7 @@ obj_t make_compound_condition_(obj_t parts, ...)
 	else if (is_instance(p, compound_condition))
 	    n_parts += vector_len(record_get_field(p, 0));
 	else
-	    CHECK(false, NULL, "must be condition", p);
+	    CHECK(false, "must be condition", p);
     }
     va_end(ap);
 

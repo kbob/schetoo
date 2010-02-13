@@ -82,8 +82,7 @@ byte_t bytevector_get(obj_t obj, size_t index)
 {
     CHECK_OBJ(obj);
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
-    CHECK(index < vec->v_size,
-	  NULL, "index out of range", obj, make_fixnum(index));
+    CHECK(index < vec->v_size, "index out of range", obj, make_fixnum(index));
     return *elem_addr(vec, index);
 }
 
@@ -91,8 +90,7 @@ void bytevector_set(obj_t obj, size_t index, byte_t elem)
 {
     CHECK_OBJ(obj);
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
-    //XXX CHECK(is_mutable(obj), NULL, "must be mutable", obj);
-    CHECK(index < vec->v_size,
-	  NULL, "index out of range", obj, make_fixnum(index));
+    //XXX CHECK(is_mutable(obj), "must be mutable", obj);
+    CHECK(index < vec->v_size, "index out of range", obj, make_fixnum(index));
     *elem_addr(vec, index) = elem;
 }

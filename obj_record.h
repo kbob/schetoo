@@ -41,8 +41,8 @@ static inline bool is_nonopaque_record(obj_t obj)
 
 static inline bool is_instance(obj_t rec, obj_t rtd)
 {
-    CHECK(is_record(rec), NULL, "must be record", rec);
-    CHECK(is_rtd(rtd),    NULL, "must be rtd",    rtd);
+    CHECK(is_record(rec), "must be record", rec);
+    CHECK(is_rtd(rtd), "must be rtd",    rtd);
     //return ((record_obj_t *)rec)->rec_rtd == rtd;
     obj_t p = record_rtd(rec);
     while (p != FALSE_OBJ) {
@@ -55,7 +55,7 @@ static inline bool is_instance(obj_t rec, obj_t rtd)
 
 static inline obj_t record_rtd(obj_t rec)
 {
-    CHECK(is_record(rec), NULL, "must be record", rec);
+    CHECK(is_record(rec), "must be record", rec);
     return ((record_obj_t *)rec)->rec_rtd;
 }
 

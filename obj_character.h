@@ -17,7 +17,7 @@ static inline bool is_character(const obj_t o)
 
 static inline char_t character_value(obj_t ch)
 {
-    CHECK(is_character(ch), NULL, "must be character", ch);
+    CHECK(is_character(ch), "must be character", ch);
     return obj_bits(ch) >> CHARACTER_SHIFT;
 }
 

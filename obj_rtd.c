@@ -96,18 +96,17 @@ obj_t make_rtd(rtd_flags_t flags,
     CHECK_OBJ(uid);
     CHECK_OBJ(protocol);
     CHECK_OBJ(fields);
-    CHECK(is_symbol(name), NULL, "must be symbol", name);
-    CHECK(parent == FALSE_OBJ || is_rtd(parent),
-	  NULL, "must be rtd or #f", parent);
-    CHECK(parent == FALSE_OBJ || !rtd_is_sealed(parent),
-	  NULL, "parent is sealed", parent);
+    CHECK(is_symbol(name), "must be symbol", name);
+    CHECK(parent == FALSE_OBJ || is_rtd(parent), "must be rtd or #f", parent);
+    CHECK(parent == FALSE_OBJ || !rtd_is_sealed(parent), "parent is sealed",
+	  parent);
     if (protocol != FALSE_OBJ)
 	THROW(&implementation_restriction, NULL,
 	      "record protocols not implemented", protocol);
     if ((flags & RF_NONGENERATIVE) || uid != FALSE_OBJ)
 	THROW(&implementation_restriction, NULL,
 	      "nongenerative records not implemented", uid);
-    CHECK(is_vector(fields), NULL, "must be vector", fields);
+    CHECK(is_vector(fields), "must be vector", fields);
     // XXX walk through the fields and ensure they have the right format.
     // ... or wait until the first instantiation...
     heap_object_t *hobj = mem_alloc_obj(&rtd_ops, sizeof (rtd_obj_t));
@@ -127,10 +126,10 @@ obj_t make_rtd(rtd_flags_t flags,
 
 static obj_t find_field(obj_t rtd, size_t index)
 {
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
     size_t n = rtd_field_count(rtd);
     size_t m = vector_len(((rtd_obj_t *)rtd)->rtd_fields);
-    CHECK(index < n, NULL, "index out of range", make_fixnum(index));
+    CHECK(index < n, "index out of range", make_fixnum(index));
     while (index < n - m) {
 	n -= m;
 	rtd = rtd_parent(rtd);

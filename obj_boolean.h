@@ -19,7 +19,7 @@ static inline bool is_boolean(const obj_t o)
 
 static inline bool boolean_value(obj_t boolean)
 {
-    CHECK(is_boolean(boolean), NULL, "must be Boolean", boolean);
+    CHECK(is_boolean(boolean), "must be Boolean", boolean);
     return boolean == TRUE_OBJ;
 }
 

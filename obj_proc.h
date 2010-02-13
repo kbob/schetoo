@@ -62,61 +62,61 @@ OBJ_TYPE_PREDICATE(procedure)		// bool is_procedure(obj_t);
 
 static inline bool procedure_is_C(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
     return ((proc_obj_t *)proc)->proc_flags & PF_COMPILED_C ? true : false;
 }
 
 static inline bool procedure_is_raw(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
     return ((proc_obj_t *)proc)->proc_flags & PF_RAW ? true : false;
 }
 
 static inline bool procedure_args_evaluated(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
     return ((proc_obj_t *)proc)->proc_flags & PF_ARGS_EVALUATED ? true : false;
 }
 
 static inline obj_t procedure_body(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
-    CHECK(!procedure_is_C(proc), NULL, "must be Scheme procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
+    CHECK(!procedure_is_C(proc), "must be Scheme procedure", proc);
     return ((proc_obj_t *)proc)->proc_u.pu_body;
 }
 
 static inline C_procedure_t procedure_code(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
-    CHECK(procedure_is_C(proc), NULL, "must be C procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
+    CHECK(procedure_is_C(proc), "must be C procedure", proc);
     return ((proc_obj_t *)proc)->proc_u.pu_code;
 }
 
 static inline obj_t procedure_name(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
-    CHECK(procedure_is_C(proc), NULL, "must be C procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
+    CHECK(procedure_is_C(proc), "must be C procedure", proc);
     return ((proc_obj_t *)proc)->proc_name;
 }
 
 static inline interval_t procedure_arg_range(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
-    CHECK(procedure_is_C(proc), NULL, "must be C procedure", proc);
-    CHECK(!procedure_is_raw(proc), NULL, "must be cooked procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
+    CHECK(procedure_is_C(proc), "must be C procedure", proc);
+    CHECK(!procedure_is_raw(proc), "must be cooked procedure", proc);
     return fixnum_value(((proc_obj_t *)proc)->proc_args);
 }
 
 static inline obj_t procedure_args(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
-    CHECK(!procedure_is_C(proc), NULL, "must be Scheme procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
+    CHECK(!procedure_is_C(proc), "must be Scheme procedure", proc);
     return ((proc_obj_t *)proc)->proc_args;
 }
 
 static inline obj_t procedure_env(obj_t proc)
 {
-    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
+    CHECK(is_procedure(proc), "must be procedure", proc);
     return ((proc_obj_t *)proc)->proc_env;
 }
 

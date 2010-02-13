@@ -41,7 +41,7 @@ obj_t make_binding(obj_t          name,
 void binding_set_mutability(obj_t bdg, mutability_t mutability)
 {
     CHECK_OBJ(bdg);
-    CHECK(is_binding(bdg), NULL, "must be binding", bdg);
+    CHECK(is_binding(bdg), "must be binding", bdg);
     mixvec_1_2_set_int(bdg, 0, combine(binding_type(bdg), mutability));
 }
 
@@ -49,7 +49,7 @@ void binding_set_value(obj_t bdg, obj_t value)
 {
     CHECK_OBJ(bdg);
     CHECK_OBJ(value);
-    CHECK(is_binding(bdg), NULL, "must be binding", bdg);
-    CHECK(binding_is_mutable(bdg), NULL, "must be mutable", bdg, value);
+    CHECK(is_binding(bdg), "must be binding", bdg);
+    CHECK(binding_is_mutable(bdg), "must be mutable", bdg, value);
     mixvec_1_2_set_ptr(bdg, 1, value);
 }

@@ -46,25 +46,25 @@ static inline bool is_cont(obj_t obj)
 
 static inline cont_proc_t cont_proc(obj_t cont)
 {
-    CHECK(is_cont(cont), NULL, "must be continuation", cont);
+    CHECK(is_cont(cont), "must be continuation", cont);
     return (cont_proc_t)mixvec_1_3_get_int(cont, 0);
 }
 
 static inline obj_t cont_cont(obj_t cont)
 {
-    CHECK(is_cont(cont), NULL, "must be continuation", cont);
+    CHECK(is_cont(cont), "must be continuation", cont);
     return mixvec_1_3_get_ptr(cont, 0);
 }
 
 static inline obj_t cont_env(obj_t cont)
 {
-    CHECK(is_cont(cont), NULL, "must be cont", cont);
+    CHECK(is_cont(cont), "must be cont", cont);
     return mixvec_1_3_get_ptr(cont, 1);
 }
 
 static inline obj_t cont4_arg(obj_t cont)
 {
-    CHECK(is_cont4(cont), NULL, "must be cont4", cont);
+    CHECK(is_cont4(cont), "must be cont4", cont);
     return mixvec_1_3_get_ptr(cont, 2);
 }
 

@@ -105,10 +105,8 @@ obj_t apply_proc(obj_t proc, obj_t arg_list)
     size_t arg_count = list_length(arg_list);
     interval_t ivl = procedure_arg_range(proc);
     int inf = interval_is_infinite(ivl);
-    CHECK(arg_count >= interval_lower_bound(ivl),
-	  NULL, "not enough arguments");
-    CHECK(inf || arg_count <= interval_upper_bound(ivl),
-	  NULL, "too many arguments");
+    CHECK(arg_count >= interval_lower_bound(ivl), "not enough arguments");
+    CHECK(inf || arg_count <= interval_upper_bound(ivl), "too many arguments");
     const size_t max_args = 3;
     size_t i, u;
     if (inf)

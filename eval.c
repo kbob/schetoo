@@ -120,9 +120,9 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	obj_t formal;
 	obj_t actual;
 	while (!is_null(formals) || !is_null(actuals)) {
-	    CHECK(!is_null(formals), NULL, "too many arguments");
+	    CHECK(!is_null(formals), "too many arguments");
 	    if (is_pair(formals)) {
-		CHECK(!is_null(actuals), NULL, "not enough arguments");
+		CHECK(!is_null(actuals), "not enough arguments");
 		formal  = CAR(formals);
 		formals = CDR(formals);
 		actual  = CAR(actuals);

@@ -57,25 +57,25 @@ obj_t make_string_from_chars(const char_t *value, size_t len)
 size_t string_len(obj_t string)
 {
     CHECK_OBJ(string);
-    CHECK(is_string(string), NULL, "must be string", string);
+    CHECK(is_string(string), "must be string", string);
     return ((string_obj_t *)string)->string_len;
 }
 
 const char_t *string_value(obj_t string)
 {
     CHECK_OBJ(string);
-    CHECK(is_string(string), NULL, "must be string", string);
+    CHECK(is_string(string), "must be string", string);
     return ((string_obj_t *)string)->string_value;
 }
 
 void string_set_char(obj_t string, size_t index, char_t c)
 {
     CHECK_OBJ(string);
-    CHECK(is_string(string), NULL, "must be string", string);
+    CHECK(is_string(string), "must be string", string);
     string_obj_t *sp = (string_obj_t *)string;
-    //XXX CHECK(is_mutable(string), NULL, "must be mutable", string);
-    CHECK(index < sp->string_len,
-	  NULL, "index out of range", string, make_fixnum(index));
+    //XXX CHECK(is_mutable(string), "must be mutable", string);
+    CHECK(index < sp->string_len, "index out of range",
+	  string, make_fixnum(index));
     sp->string_value[index] = c;
     assert(sp->string_value[sp->string_len] == '\0');
 }
@@ -86,10 +86,9 @@ void string_set_substring(obj_t         string,
 			  const char_t *substring)
 {
     CHECK_OBJ(string);
-    CHECK(is_string(string), NULL, "must be string", string);
+    CHECK(is_string(string), "must be string", string);
     string_obj_t *sp = (string_obj_t *)string;
-    CHECK(pos + len <= sp->string_len,
-	  NULL, "substring out of range",
+    CHECK(pos + len <= sp->string_len, "substring out of range",
 	  string, make_fixnum(pos), make_fixnum(len));
     size_t i;
     char_t *p = sp->string_value;
@@ -100,8 +99,8 @@ void string_set_substring(obj_t         string,
 
 int strings_cmp(obj_t str1, obj_t str2)
 {
-    CHECK(is_string(str1), NULL, "must be string", str1);
-    CHECK(is_string(str2), NULL, "must be string", str2);
+    CHECK(is_string(str1), "must be string", str1);
+    CHECK(is_string(str2), "must be string", str2);
     size_t len1 = string_len(str1);
     size_t len2 = string_len(str2);
     const char_t *val1 = string_value(str1);

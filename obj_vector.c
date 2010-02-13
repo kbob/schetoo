@@ -117,20 +117,18 @@ size_t vector_len(obj_t obj)
 obj_t vector_ref(obj_t obj, size_t index)
 {
     CHECK_OBJ(obj);
-    CHECK(is_vector(obj), NULL, "must be vector", obj);
+    CHECK(is_vector(obj), "must be vector", obj);
     vector_obj_t *vec = (vector_obj_t *)obj;
-    CHECK(index < vec->v_size,
-	  NULL, "index out of range", obj, make_fixnum(index));
+    CHECK(index < vec->v_size, "index out of range", obj, make_fixnum(index));
     return *elem_addr(vec, index);
 }
 
 void vector_set(obj_t obj, size_t index, obj_t elem)
 {
     CHECK_OBJ(obj);
-    CHECK(is_vector(obj), NULL, "must be vector", obj);
+    CHECK(is_vector(obj), "must be vector", obj);
     vector_obj_t *vec = (vector_obj_t *)obj;
-    //XXX CHECK(is_mutable(obj), NULL, "must be mutable", pair);
-    CHECK(index < vec->v_size,
-	  NULL, "index out of range", obj, make_fixnum(index));
+    //XXX CHECK(is_mutable(obj), "must be mutable", pair);
+    CHECK(index < vec->v_size, "index out of range", obj, make_fixnum(index));
     *elem_addr(vec, index) = elem;
 }

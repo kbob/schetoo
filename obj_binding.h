@@ -25,19 +25,19 @@ extern obj_t	      make_binding         (obj_t          name,
 					    obj_t          value);
 static inline obj_t binding_name(obj_t bdg)
 {
-    CHECK(is_binding(bdg), NULL, "must be binding", bdg);
+    CHECK(is_binding(bdg), "must be binding", bdg);
     return mixvec_1_2_get_ptr(bdg, 0);
 }
 
 static inline binding_type_t binding_type(obj_t bdg)
 {
-    CHECK(is_binding(bdg), NULL, "must be binding", bdg);
+    CHECK(is_binding(bdg), "must be binding", bdg);
     return mixvec_1_2_get_int(bdg, 0) >> 1;
 }
 
 static inline bool binding_is_mutable(obj_t bdg)
 {
-    CHECK(is_binding(bdg), NULL, "must be binding", bdg);
+    CHECK(is_binding(bdg), "must be binding", bdg);
     return mixvec_1_2_get_int(bdg, 0) & 1;
 }
 

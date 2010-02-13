@@ -42,7 +42,7 @@ DEFINE_SPECIAL_FORM(L"if")(obj_t cont, obj_t values)
     obj_t form = cont4_arg(cont);
     EVAL_LOG("form=%O", form);
     size_t len = list_length(form);
-    CHECK(len >= 3 && len <= 4, NULL, "if takes 2 or 3 arguments");
+    CHECK(len >= 3 && len <= 4, "if takes 2 or 3 arguments");
     obj_t test = CADR(form);
     obj_t env = cont_env(cont);
     obj_t second = make_cont4(c_continue_if, cont_cont(cont), env, form);
@@ -69,7 +69,7 @@ DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)
     obj_t form = cont4_arg(cont);
     obj_t env = cont_env(cont);
     EVAL_LOG("form=%O", form);
-    CHECK(list_length(form) == 3, NULL, "set! takes 2 arguments");
+    CHECK(list_length(form) == 3, "set! takes 2 arguments");
     obj_t expr = CADDR(form);
     obj_t second = make_cont4(c_continue_set, cont_cont(cont), env, form);
     obj_t first = make_cont4(c_eval, second, env, expr);
