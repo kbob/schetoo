@@ -258,8 +258,6 @@ extern obj_t create_raw_proc           (const prim_descriptor_t *);
 extern obj_t create_special_form       (const prim_descriptor_t *);
 extern obj_t create_cooked_special_form(const prim_descriptor_t *);
 
-extern obj_t apply_proc                (obj_t proc, obj_t arg_list);
-
 extern cv_t c_eval(obj_t cont, obj_t values);
 extern cv_t c_apply_proc(obj_t cont, obj_t values);
 

@@ -11,7 +11,6 @@ DONE	Refactor mem.h.
 DONE	Make is_TYPE() inline by exporting the mem_ops_t structures.
 DONE	Move is_null() and is_undefined() to their own files.
 DONE	Find better names for EMPTY_LIST and UNDEFINED.
-	Rationalize wchar_t and char_t.
 DONE	Make pair_car() and pair_cdr() inline.
 DONE	Rename obj_procedure.{h,c} -> obj_proc.{h,c}
 DONE	Rename proc.{h,c} -> prim.{h,c}
@@ -22,8 +21,10 @@ DONE	Rename all ASSERT to assert.
 DONE	Rename RAISE to THROW.
 DONE	Remove 2nd arg from CHECK and RAISE (aka THROW).
 DONE	read.c should use &lexical, not &syntax.
-	Move apply_proc() from prim.c to eval.c.
+DONE	Move apply_proc() from prim.c to eval.c.
 	Most exceptions shouldn't supply irritants.
+	Move env from cont to dyn_env.
+	Split cont4 into cont3 and cont4.
 
 Heap
 DONE	Implement records.
@@ -38,17 +39,18 @@ DONE	Hook GC into setjmp (after eval).
 	    for mutable types.
 
 Data
-	Implement binding as record.
-	Implement continuation as record.
+DONE	Implement binding.
+DONE	Implement continuation.
 DONE	Implement procedure.
-	Implement condition as record.
-	Implement compound condition as record (not derived from condition?)
+DONE	Implement condition as record.
+DONE	Implement compound condition as record (not derived from condition)
 	Check whether Unicode data is current rev.
+	Rationalize wchar_t and char_t.
 
 Eval
 DONE	Design eval main loop.
 DONE	  -- setjmp
-	  -- exceptions
+DONE	  -- exceptions
 	  -- multiple values
 	  -- arg lists
 	  -- nice calling convention for primitive procs

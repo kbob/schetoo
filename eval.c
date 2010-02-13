@@ -71,6 +71,46 @@ static inline obj_t application_operands(obj_t expr)
     return CDR(expr);
 }
 
+static obj_t apply_proc(obj_t proc, obj_t arg_list)
+{
+    size_t arg_count = list_length(arg_list);
+    interval_t ivl = procedure_arg_range(proc);
+    int inf = interval_is_infinite(ivl);
+    CHECK(arg_count >= interval_lower_bound(ivl), "not enough arguments");
+    CHECK(inf || arg_count <= interval_upper_bound(ivl), "too many arguments");
+    const size_t max_args = 3;
+    size_t i, u;
+    if (inf)
+	u = interval_lower_bound(ivl);
+    else
+	u = interval_upper_bound(ivl);
+    assert(u + inf <= max_args);
+    obj_t a[max_args];
+    for (i = 0; i < u; i++) {
+	if (is_null(arg_list))
+	    a[i] = MISSING_ARG;
+	else {
+	    a[i] = CAR(arg_list);
+	    arg_list = CDR(arg_list);
+	}
+    }
+    if (interval_is_infinite(ivl))
+	a[u++] = arg_list;
+
+    C_procedure_t code = procedure_code(proc);
+    switch (u) {
+
+    /* N.B.  Call primitive after all other allocations. */
+    case 0: return code();
+    case 1: return code(a[0]);
+    case 2: return code(a[0], a[1]);
+    case 3: return code(a[0], a[1], a[2]);
+
+    default:
+	assert(false && "implement me");
+    }
+}
+
 static cv_t c_continue_seq(obj_t cont, obj_t values)
 {
     obj_t env = cont_env(cont);
