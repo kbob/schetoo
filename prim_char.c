@@ -19,6 +19,6 @@ DEFINE_PROC(L"char->integer", 1)(obj_t chr)
 DEFINE_PROC(L"integer->char", 1)(obj_t sv)
 {
     word_t i = fixnum_value(sv);
-    CHECK(is_Unicode_scalar_value(i), NULL, "must be Unicode scalar value", sv);
+    CHECK(is_Unicode_scalar_value(i), "must be Unicode scalar value", sv);
     return make_character(i);
 }

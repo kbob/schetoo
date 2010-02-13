@@ -43,7 +43,7 @@ static inline bool binding_is_mutable(obj_t bdg)
 
 static inline obj_t binding_value(obj_t bdg)
 {
-    CHECK(is_binding(bdg), NULL, "must be binding", bdg);
+    CHECK(is_binding(bdg), "must be binding", bdg);
     return mixvec_1_2_get_ptr(bdg, 1);
 }
 

@@ -18,7 +18,7 @@
 static const char *prog_name;
 static const char *prog_short_name;
 
-void throw(obj_t *ct, obj_t obj, const wchar_t *msg, ...)
+void throw(obj_t *ct, const wchar_t *msg, ...)
 {
 #if 0
     {

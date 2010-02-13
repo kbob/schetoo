@@ -683,7 +683,7 @@ static obj_t parse(instream_t *in)
 	    if (sym == TOK_EOF)
 		break;
 	    if (sym != tok)
-		THROW(&lexical, NULL, "datum syntax error", make_fixnum(tok), sym);
+		THROW(&lexical, "datum syntax error", make_fixnum(tok), sym);
 	    if (!is_null(yylval))
 		stack_push(&actions, yylval);
 	    if (!stack_is_empty(actions) &&
