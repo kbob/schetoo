@@ -151,8 +151,8 @@ static token_type_t scan_ident(const wchar_t *prefix,
 	    wc = instream_getwc(in);
 	    if (wc == L'x' || wc == L'X') {
 		if (!inline_hex_scalar(in, &wc, L';'))
-		    THROW(&syntax,
-			  charbuf_make_string(&buf), "bad hex scalar");
+		    THROW(&lexical, NULL, "bad hex scalar",
+			  charbuf_make_string(&buf));
 	    } else if (wc != WEOF) {
 		instream_ungetwc(wc, in);
 		break;
@@ -346,8 +346,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 		    while (depth) {
 			w2 = instream_getwc(in);
 			if (w2 == WEOF)
-			    THROW(&syntax,
-				  FALSE_OBJ, "unterminated block comment");
+			    THROW(&lexical, NULL, "unterminated block comment");
 			if (w2 == L'|' && state == 0)
 			    state = 1;
 			else if (w2 == L'|' && state == 1) {
@@ -438,8 +437,8 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    while (true) {
 		w2 = instream_getwc(in);
 		if (w2 == WEOF)
-		    THROW(&syntax,
-			  charbuf_make_string(&buf), "unterminated string");
+		    THROW(&lexical, NULL, "unterminated string",
+			  charbuf_make_string(&buf));
 		if (w2 == L'"')
 		    break;
 		if (w2 == L'\\') {
@@ -457,28 +456,25 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 		    case L'x': 
 		    case L'X':
 			if (!inline_hex_scalar(in, (wchar_t *)&w2, L';'))
-			    THROW(&syntax,
-				  charbuf_make_string(&buf), "bad hex escape");
+			    THROW(&lexical, NULL, "bad hex escape",
+				  charbuf_make_string(&buf));
 			break;
 		    default:
 			while (is_intraline_whitespace(w2)) {
 			    w2 = instream_getwc(in);
 			    if (w2 == WEOF)
-				THROW(&syntax,
-				      charbuf_make_string(&buf),
-				      "unterminated string");
+				THROW(&lexical, NULL, "unterminated string",
+				      charbuf_make_string(&buf));
 			}
 			if (!is_line_ending(w2))
-			    THROW(&syntax,
-				  charbuf_make_string(&buf),
-				  "bad backslash escape");
+			    THROW(&lexical, NULL, "bad backslash escape",
+				  charbuf_make_string(&buf));
 			w2 = instream_getwc(in);
 			while (is_intraline_whitespace(w2)) {
 			    w2 = instream_getwc(in);
 			    if (w2 == WEOF)
-				THROW(&syntax,
-				      charbuf_make_string(&buf),
-				      "unterminated string");
+				THROW(&lexical, NULL, "unterminated string",
+				      charbuf_make_string(&buf));
 			}
 			instream_ungetwc(w2, in);
 			continue;
@@ -508,7 +504,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    instream_ungetwc(wc, in);
 	    return scan_ident(L"", lvalp, in);
 	}
-	THROW(&syntax, make_character(wc), "unexpected input character");
+	THROW(&lexical, NULL, "unexpected input character", make_character(wc));
     }
     return TOK_EOF;
 }
