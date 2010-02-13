@@ -26,8 +26,6 @@ typedef struct proc_obj {
     }             proc_u;
 } proc_obj_t;
 
-OBJ_TYPE_PREDICATE(procedure)		// bool is_procedure(obj_t);
-
 extern obj_t make_procedure                 (obj_t         body,
 					     obj_t         arglist,
 					     obj_t         env);
@@ -47,6 +45,20 @@ extern obj_t make_C_special_form_procedure  (C_procedure_t code,
 extern obj_t make_raw_special_form_procedure(C_procedure_t code,
 					     obj_t	   name,
 					     obj_t         env);
+
+static inline bool          is_procedure            (obj_t);
+static inline bool          procedure_is_C          (obj_t proc);
+static inline bool          procedure_is_raw        (obj_t proc);
+static inline bool          procedure_args_evaluated(obj_t proc);
+
+static inline obj_t         procedure_body          (obj_t proc);
+static inline C_procedure_t procedure_code          (obj_t proc);
+static inline obj_t         procedure_name          (obj_t proc);
+static inline interval_t    procedure_arg_range     (obj_t proc);
+static inline obj_t         procedure_args          (obj_t proc);
+static inline obj_t         procedure_env           (obj_t proc);
+
+OBJ_TYPE_PREDICATE(procedure)		// bool is_procedure(obj_t);
 
 static inline bool procedure_is_C(obj_t proc)
 {
