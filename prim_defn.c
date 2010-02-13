@@ -22,9 +22,7 @@ DEFINE_SPECIAL_FORM(L"define")(obj_t cont, obj_t values)
     obj_t env  = cont_env(cont);
     EVAL_LOG("form=%O", form);
     //oprintf("define  \tform=%O\n", form);
-    CHECK(list_length(form) == 3,
-	  make_symbol_from_C_str(L"define"),
-	  "define must have exactly two args", form);
+    CHECK(list_length(form) == 3, NULL, "define takes 2 arguments");
     obj_t var  = CADR(form);
     obj_t expr = CADDR(form);
     obj_t second = make_cont4(c_continue_define, cont_cont(cont), env, var);

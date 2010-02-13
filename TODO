@@ -23,6 +23,7 @@ DONE	Rename RAISE to THROW.
 	Remove 2nd arg from CHECK and RAISE (aka THROW).
 	read.c should use &lexical, not &syntax.
 	Move apply_proc() from prim.c to eval.c.
+	Most exceptions shouldn't supply irritants.
 
 Heap
 DONE	Implement records.

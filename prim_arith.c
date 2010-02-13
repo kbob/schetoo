@@ -12,61 +12,47 @@ DEFINE_PROC(L"integer?", 1)(obj_t obj)
 
 DEFINE_PROC(L"=", 2-)(obj_t z1, obj_t z2, obj_t zs)
 {
-    CHECK(is_fixnum(z1), make_symbol_from_C_str(L"="),
-	  "must be fixnum", z1);
-    CHECK(is_fixnum(z2), make_symbol_from_C_str(L"="),
-	  "must be fixnum", z2);
-    if (z2 != z1)
-	return FALSE_OBJ;
-    while (!is_null(zs)) {
-	obj_t z = CAR(zs);
-	CHECK(is_fixnum(z), make_symbol_from_C_str(L"="),
-	      "must be fixnum", z);
-	if (z != z1)
+    CHECK(is_fixnum(z1), NULL, "must be fixnum");
+    while (true) {
+	CHECK(is_fixnum(z2), NULL, "must be fixnum");
+	if (!(z1 == z2))
 	    return FALSE_OBJ;
+	if (is_null(zs))
+	    return TRUE_OBJ;
+	z1 = z2;
+	z2 = CAR(zs);
 	zs = CDR(zs);
     }
-    return TRUE_OBJ;
 }
 
 DEFINE_PROC(L"<", 2-)(obj_t z1, obj_t z2, obj_t zs)
 {
-    CHECK(is_fixnum(z1),
-	  make_symbol_from_C_str(L"<"), "must be fixnum", z1);
-    CHECK(is_fixnum(z2),
-	  make_symbol_from_C_str(L"<"), "must be fixnum", z2);
-    if (!(z1 < z2))
-	return FALSE_OBJ;
-    while (!is_null(zs)) {
-	z1 = z2;
-	z2 = CAR(zs);
-	CHECK(is_fixnum(z2),
-	      make_symbol_from_C_str(L"<"), "must be fixnum", z2);
+    CHECK(is_fixnum(z1), NULL, "must be fixnum");
+    while (true) {
+	CHECK(is_fixnum(z2), NULL, "must be fixnum");
 	if (!(z1 < z2))
 	    return FALSE_OBJ;
+	if (is_null(zs))
+	    return TRUE_OBJ;
+	z1 = z2;
+	z2 = CAR(zs);
 	zs = CDR(zs);
     }
-    return TRUE_OBJ;
 }
 
 DEFINE_PROC(L">", 2-)(obj_t z1, obj_t z2, obj_t zs)
 {
-    CHECK(is_fixnum(z1),
-	  make_symbol_from_C_str(L">"), "must be fixnum", z1);
-    CHECK(is_fixnum(z2),
-	  make_symbol_from_C_str(L">"), "must be fixnum", z2);
-    if (!(z1 > z2))
-	return FALSE_OBJ;
-    while (!is_null(zs)) {
-	z1 = z2;
-	z2 = CAR(zs);
-	CHECK(is_fixnum(z2),
-	      make_symbol_from_C_str(L">"), "must be fixnum", z2);
+    CHECK(is_fixnum(z1), NULL, "must be fixnum");
+    while (true) {
+	CHECK(is_fixnum(z2), NULL, "must be fixnum");
 	if (!(z1 > z2))
 	    return FALSE_OBJ;
+	if (is_null(zs))
+	    return TRUE_OBJ;
+	z1 = z2;
+	z2 = CAR(zs);
 	zs = CDR(zs);
     }
-    return TRUE_OBJ;
 }
 
 DEFINE_PROC(L"+", 0-)(obj_t arg_list)
@@ -104,7 +90,7 @@ DEFINE_PROC(L"-", 1-)(obj_t z, obj_t rest)
 DEFINE_PROC(L"div", 2)(obj_t x1, obj_t x2)
 {
     word_t v1 = fixnum_value(x1), v2 = fixnum_value(x2);
-    CHECK(v2, NULL, "division by zero", x1, x2);
+    CHECK(v2, NULL, "division by zero");
     word_t q = v1 / v2;
     word_t r = v1 - q * v2;
     if (r < 0) {
@@ -119,7 +105,7 @@ DEFINE_PROC(L"div", 2)(obj_t x1, obj_t x2)
 DEFINE_PROC(L"mod", 2)(obj_t x1, obj_t x2)
 {
     word_t v1 = fixnum_value(x1), v2 = fixnum_value(x2);
-    CHECK(v2, NULL, "division by zero", x1, x2);
+    CHECK(v2, NULL, "division by zero");
     word_t r = v1 % v2;
     if (r < 0) {
 	if (v2 < 0)
@@ -133,21 +119,21 @@ DEFINE_PROC(L"mod", 2)(obj_t x1, obj_t x2)
 DEFINE_PROC(L"quotient", 2)(obj_t n1, obj_t n2)
 {
     word_t v1 = fixnum_value(n1), v2 = fixnum_value(n2);
-    CHECK(v2, NULL, "division by zero", n1, n2);
+    CHECK(v2, NULL, "division by zero");
     return make_fixnum(v1 / v2);
 }
 
 DEFINE_PROC(L"remainder", 2)(obj_t n1, obj_t n2)
 {
     word_t v1 = fixnum_value(n1), v2 = fixnum_value(n2);
-    CHECK(v2, NULL, "division by zero", n1, n2);
+    CHECK(v2, NULL, "division by zero");
     return make_fixnum(v1 % v2);
 }
 
 DEFINE_PROC(L"modulo", 2)(obj_t n1, obj_t n2)
 {
     word_t v1 = fixnum_value(n1), v2 = fixnum_value(n2);
-    CHECK(v2, NULL, "division by zero", n1, n2);
+    CHECK(v2, NULL, "division by zero");
     word_t m = v1 % v2;
     if ((v2 < 0) != (m < 0))
 	m += v2;
@@ -190,7 +176,7 @@ DEFINE_PROC(L"number->string", 1-3)(obj_t z, obj_t radix, obj_t precision)
 	    fmt = L"%s%x";
 	    break;
 	default:
-	    CHECK(false, NULL, "illegal radix", radix);
+	    CHECK(false, NULL, "illegal radix");
 	}
 	if (precision != MISSING_ARG)
 	    THROW(&implementation_restriction,
