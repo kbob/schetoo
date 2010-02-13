@@ -682,7 +682,7 @@ static obj_t parse(instream_t *in)
 	    if (sym == TOK_EOF)
 		break;
 	    if (sym != tok)
-		RAISE(&syntax, make_fixnum(tok), "syntax error", sym);
+		RAISE(&syntax, NULL, "syntax error", make_fixnum(tok), sym);
 	    if (!is_null(yylval))
 		stack_push(&actions, yylval);
 	    if (!stack_is_empty(actions) &&

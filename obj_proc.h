@@ -17,6 +17,7 @@ typedef obj_t (*C_procedure_t)();
 typedef struct proc_obj {
     heap_object_t proc_header;
     word_t        proc_flags;
+    obj_t	  proc_name;
     obj_t         proc_args;
     obj_t         proc_env;
     union {
@@ -31,16 +32,20 @@ extern obj_t make_procedure                 (obj_t         body,
 					     obj_t         arglist,
 					     obj_t         env);
 extern obj_t make_C_procedure		    (C_procedure_t code,
+					     obj_t	   name,
 					     interval_t    arg_range,
 					     obj_t         env);
 extern obj_t make_raw_procedure             (C_procedure_t code,
+					     obj_t	   name,
 					     obj_t         env);
 extern obj_t make_special_form_procedure    (obj_t         code,
 					     obj_t         env);
 extern obj_t make_C_special_form_procedure  (C_procedure_t code,
+					     obj_t	   name,
 					     interval_t    arg_range,
 					     obj_t         env);
 extern obj_t make_raw_special_form_procedure(C_procedure_t code,
+					     obj_t	   name,
 					     obj_t         env);
 
 static inline bool procedure_is_C(obj_t proc)
@@ -73,6 +78,13 @@ static inline C_procedure_t procedure_code(obj_t proc)
     CHECK(is_procedure(proc), NULL, "must be procedure", proc);
     CHECK(procedure_is_C(proc), NULL, "must be C procedure", proc);
     return ((proc_obj_t *)proc)->proc_u.pu_code;
+}
+
+static inline obj_t procedure_name(obj_t proc)
+{
+    CHECK(is_procedure(proc), NULL, "must be procedure", proc);
+    CHECK(procedure_is_C(proc), NULL, "must be C procedure", proc);
+    return ((proc_obj_t *)proc)->proc_name;
 }
 
 static inline interval_t procedure_arg_range(obj_t proc)

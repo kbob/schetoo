@@ -139,17 +139,22 @@ static void print_symbol(obj_t obj, outstream_t *out)
 
 static void print_procedure(obj_t obj, outstream_t *out)
 {
-    //    if (procedure_is_special_form(obj) || procedure_is_C(obj)) {
     if (procedure_is_C(obj)) {
-	outstream_printf(out, L"#<proc-%s%s%s>",
+	outstream_printf(out, L"#<proc-%s%s%s-",
 			 procedure_args_evaluated(obj) ? "" : "S",
 			 procedure_is_C(obj) ? "C" : "",
 			 procedure_is_raw(obj) ? "R" : "");
+	print_symbol(procedure_name(obj), out);
+	outstream_putwc(L'>', out);
     } else {
+#if 1
+	outstream_printf(out, L"#<proc-lambda>");
+#else
 	outstream_printf(out, L"(lambda ");
 	print_form(procedure_args(obj), out);
 	print_list_interior(procedure_body(obj), L" ", out);
 	outstream_printf(out, L")");
+#endif
     }
 }
 
@@ -186,6 +191,28 @@ static void print_bytevector(obj_t obj, outstream_t *out)
     outstream_printf(out, L")");
 }
 
+static void print_rtd(obj_t obj, outstream_t *out)
+{
+    outstream_printf(out, L"#<rtd-");
+    print_symbol(rtd_name(obj), out);
+    outstream_putwc(L'>', out);
+}
+
+static void print_record(obj_t obj, outstream_t *out)
+{
+    int i, size = record_len(obj);
+
+    outstream_printf(out, L"#<");
+    print_form(rtd_name(record_rtd(obj)), out);
+    for (i = 0; i < size; i++) {
+	outstream_putwc(L' ', out);
+	print_form(rtd_field_name(record_rtd(obj), i), out);
+	outstream_putwc(L'=', out);
+	print_form(record_get_field(obj, i), out);
+    }
+    outstream_putwc(L'>', out);
+}
+
 static void print_form(obj_t obj, outstream_t *out)
 {
     if (is_null(obj) || is_pair(obj)) {
@@ -208,6 +235,10 @@ static void print_form(obj_t obj, outstream_t *out)
         print_vector(obj, out);
     } else if (is_bytevector(obj)) {
 	print_bytevector(obj, out);
+    } else if (is_rtd(obj)) {
+	print_rtd(obj, out);
+    } else if (is_record(obj)) {
+	print_record(obj, out);
     } else {
 	outstream_printf(out, L"#<%ls-%p>", obj_type_name(obj), obj);
     }

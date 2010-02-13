@@ -48,7 +48,7 @@ obj_t env_lookup(obj_t env, obj_t var)
 	    return binding;
 	env = env_parent(env);
     }
-    RAISE(&undefined, NULL, "unbound variable", var);
+    RAISE(&undefined, NULL, "unbound variable");
 }
 
 obj_t root_environment(void)

@@ -48,5 +48,6 @@ extern void raise_continuable(obj_t         *condition,
 			      const wchar_t *msg) __attribute__ ((noreturn));
 
 extern void set_program_name(const char *);
+extern const char *program_short_name(void);
 
 #endif /* !EXCEPT_INCLUDED */

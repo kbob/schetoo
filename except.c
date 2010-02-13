@@ -15,8 +15,8 @@
 #include "obj_symbol.h"
 #include "oprintf.h"
 
-static const char *program_name;
-static const char *program_short_name;
+static const char *prog_name;
+static const char *prog_short_name;
 
 #ifndef NDEBUG
 
@@ -26,7 +26,7 @@ void assertion_failed(const char *file,
 		      const char *expr)
 {
     fprintf(stderr, "%s: %s:%d: %s: Assertion `%s' failed.\n",
-	    program_short_name, file, line, fn, expr);
+	    program_short_name(), file, line, fn, expr);
     abort();
 }
 
@@ -34,16 +34,20 @@ void assertion_failed(const char *file,
 
 void raise(obj_t *ct, obj_t obj, const wchar_t *msg, ...)
 {
-    fprintf(stderr, "%s: condition &%ls: %ls",
-	    program_short_name, string_value(symbol_name(rtd_name(*ct))), msg);
-    va_list ap1;
-    va_start(ap1, msg);
-    obj_t irritant;
-    while ((irritant = va_arg(ap1, obj_t)) != END_OF_ARGS)
-	ofprintf(stderr, " %O", irritant);
-    va_end(ap1);
-    fprintf(stderr, "\n");
-
+#if 0
+    {
+	fprintf(stderr, "%s: condition %ls: %ls",
+		program_short_name(),
+		string_value(symbol_name(rtd_name(*ct))), msg);
+	va_list ap1;
+	va_start(ap1, msg);
+	obj_t irritant;
+	while ((irritant = va_arg(ap1, obj_t)) != END_OF_ARGS)
+	    ofprintf(stderr, " %O", irritant);
+	va_end(ap1);
+	fprintf(stderr, "\n");
+    }
+#endif
     /*
      * Make &message condition.
      * Make irritants.
@@ -54,15 +58,20 @@ void raise(obj_t *ct, obj_t obj, const wchar_t *msg, ...)
     obj_t primary_ex = MAKE_RECORD(*ct);
     obj_t msg_str = make_string_from_chars(msg, wcslen(msg));
     obj_t msg_ex = MAKE_RECORD(message, msg_str);
+    obj_t ex;
+    obj_t irritant;
     obj_t irr_list = EMPTY_LIST;
     va_list ap;
     va_start(ap, msg);
     while ((irritant = va_arg(ap, obj_t)) != END_OF_ARGS)
 	irr_list = CONS(irritant, irr_list);
     va_end(ap);
-    irr_list = reverse_list(irr_list);
-    obj_t irr_ex = MAKE_RECORD(irritants, irr_list);
-    obj_t ex = MAKE_COMPOUND_CONDITION(primary_ex, msg_ex, irr_ex);
+    if (irr_list != EMPTY_LIST) {
+	irr_list = reverse_list(irr_list);
+	obj_t irr_ex = MAKE_RECORD(irritants, irr_list);
+	ex = MAKE_COMPOUND_CONDITION(primary_ex, msg_ex, irr_ex);
+    } else
+	ex = MAKE_COMPOUND_CONDITION(primary_ex, msg_ex);
     send_exception(ex);
 }
     
@@ -74,10 +83,15 @@ void raise_continuable(obj_t *ct, obj_t obj, const wchar_t *msg)
 
 void set_program_name(const char *path)
 {
-    program_name = path;
-    program_short_name = strrchr(path, '/');
-    if (program_short_name)
-	program_short_name++;
+    prog_name = path;
+    prog_short_name = strrchr(path, '/');
+    if (prog_short_name)
+	prog_short_name++;
     else
-	program_short_name = path;
+	prog_short_name = path;
+}
+
+const char *program_short_name(void)
+{
+    return prog_short_name;
 }

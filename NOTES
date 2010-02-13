@@ -1,3 +1,13 @@
+These notes were, for the most part, written before the corresponding
+features were implemented.  So they're likely to be speculative and
+inaccurate.
+
+It's interesting (to me) to see the ideas become more refined.
+
+
+
+----------------------------------
+
 Note 1: Give up on saving a word on pairs.  Just give them a normal
 type record.  Revisit later if you really want to.
 
@@ -646,4 +656,17 @@ Back in the top-level, there's a continuation pointer.
 But that's all at top-level.  I guess I should pack up the other stuff
 and build &who and the compound condition back up there.
 
+---
 
+RAISE() builds a compound condition.  Hands it off.  Now I need
+to store it in a static variable in eval, decode the &who (later),
+and pass it to a pretty print routine.  All the info is there,
+but it's scattered around.  Probably need some more condition
+accessors too.
+
+How about this for a target message format?
+
+    scheme: assertion-violation - divide by zero
+            div: 1 0
+
+Source file and line number would be nice, but...

@@ -46,8 +46,15 @@ static void init_rec(rec_descriptor_t *desc)
 			 FALSE_OBJ,
 			 FALSE_OBJ,
 			 field_vec);
-    env_bind(env, nsym, BT_LEXICAL, M_IMMUTABLE, rtd);
     *desc->rd_root = rtd;
+
+    if (desc->rd_flags & RF_OPAQUE) {
+	/* Do not create bindings for an opaque record type. */
+	return;
+    }
+
+    /* Bind the rtd to name. */
+    env_bind(env, nsym, BT_LEXICAL, M_IMMUTABLE, rtd);
 
     /* Construct the constructor descriptor, constructor, predicate,
      * field accessors, and field mutators.

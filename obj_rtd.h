@@ -35,7 +35,8 @@ extern obj_t make_rtd                    (rtd_flags_t flags,
 static inline bool   rtd_is_sealed       (obj_t       rtd);
 static inline bool   rtd_is_opaque       (obj_t       rtd);
 static inline bool   rtd_is_generative   (obj_t       rtd);
-extern        bool   rtd_field_is_mutable(obj_t       rtd);
+extern        bool   rtd_field_is_mutable(obj_t       rtd, size_t index);
+extern        obj_t  rtd_field_name      (obj_t       rtd, size_t index);
 
 static inline obj_t  rtd_name            (obj_t       rtd);
 static inline obj_t  rtd_parent          (obj_t       rtd);

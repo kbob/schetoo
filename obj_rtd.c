@@ -1,6 +1,8 @@
 #include "obj_rtd.h"
 
 #include "obj_boolean.h"
+#include "obj_fixnum.h"
+#include "obj_pair.h"
 #include "obj_record.h"
 #include "obj_symbol.h"
 #include "obj_vector.h"
@@ -119,4 +121,29 @@ obj_t make_rtd(rtd_flags_t flags,
     rtd->rtd_protocol = protocol;
     rtd->rtd_fields   = fields;
     return (obj_t)hobj;
+}
+
+static obj_t find_field(obj_t rtd, size_t index)
+{
+    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
+    size_t n = rtd_field_count(rtd);
+    size_t m = vector_len(((rtd_obj_t *)rtd)->rtd_fields);
+    CHECK(index < n, NULL, "index out of range", make_fixnum(index));
+    while (index < n - m) {
+	n -= m;
+	rtd = rtd_parent(rtd);
+	ASSERT(is_rtd(rtd));
+	m = vector_len(((rtd_obj_t *)rtd)->rtd_fields);
+    }
+    return vector_ref(((rtd_obj_t *)rtd)->rtd_fields, index - (n - m));
+}
+
+bool rtd_field_is_mutable(obj_t rtd, size_t index)
+{
+    return CAR(find_field(rtd, index)) == make_symbol_from_C_str(L"mutable");
+}
+
+obj_t rtd_field_name(obj_t rtd, size_t index)
+{
+    return CADR(find_field(rtd, index));
 }

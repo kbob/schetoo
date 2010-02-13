@@ -10,76 +10,76 @@
 
 /* standard simple conditions */
 
-DEFINE_EXTERN_RECORD_TYPE(condition, L"condition", NULL,       0) = {
+DEFINE_EXTERN_RECORD_TYPE(condition, L"&condition", NULL,       0) = {
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(message,   L"message",   &condition, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(message,   L"&message",   &condition, 0) = {
     { FM_IMMUTABLE, L"message" },
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(warning,   L"warning",   &condition, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(warning,   L"&warning",   &condition, 0) = {
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(serious,   L"serious",   &condition, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(serious,   L"&serious",   &condition, 0) = {
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(error,     L"error",     &serious,   0) = {
+DEFINE_EXTERN_RECORD_TYPE(error,     L"&error",     &serious,   0) = {
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(violation, L"violation", &serious,   0) = {
+DEFINE_EXTERN_RECORD_TYPE(violation, L"&violation", &serious,   0) = {
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(assertion, L"assertion", &serious,   0) = {
+DEFINE_EXTERN_RECORD_TYPE(assertion, L"&assertion", &serious,   0) = {
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(irritants, L"irritants", &condition, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(irritants, L"&irritants", &condition, 0) = {
     { FM_IMMUTABLE, L"irritants" },
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(who,       L"who",       &condition, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(who,       L"&who",       &condition, 0) = {
     { FM_IMMUTABLE, L"who" },
     { FM_END }
 };
 
 DEFINE_EXTERN_RECORD_TYPE(non_continuable,
-			  L"non_continuable",
+			  L"&non_continuable",
 			  &violation,
 			  0) = {
     { FM_END }
 };
 
 DEFINE_EXTERN_RECORD_TYPE(implementation_restriction,
-			  L"implementation_restriction",
+			  L"&implementation_restriction",
 			  &violation, 0) = {
     { FM_END }
 };
 
-DEFINE_EXTERN_RECORD_TYPE(lexical,   L"lexical",   &violation, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(lexical,   L"&lexical",   &violation, 0) = {
     { FM_END },
 };
 
-DEFINE_EXTERN_RECORD_TYPE(syntax,    L"syntax",    &violation, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(syntax,    L"&syntax",    &violation, 0) = {
     { FM_IMMUTABLE, L"form" },
     { FM_IMMUTABLE, L"subform" },
     { FM_END },
 };
 
-DEFINE_EXTERN_RECORD_TYPE(undefined, L"undefined", &violation, 0) = {
+DEFINE_EXTERN_RECORD_TYPE(undefined, L"&undefined", &violation, 0) = {
     { FM_END }
 };
 
 /* compound conditions */
 
 DEFINE_STATIC_RECORD_TYPE(compound_condition,
-			  L"compound-condition",
+			  L"&compound-condition",
 			  NULL,
 			  RF_SEALED | RF_OPAQUE) = {
     { FM_MUTABLE, L"parts" },
@@ -94,7 +94,6 @@ obj_t make_compound_condition_(obj_t parts, ...)
 
     va_start(ap, parts);
     while ((p = va_arg(ap, obj_t)) != END_OF_ARGS) {
-	oprintf("n_p = %d, p = %O\n", n_parts, p);
 	if (is_instance(p, condition))
 	    n_parts++;
 	else if (is_instance(p, compound_condition))
@@ -109,7 +108,6 @@ obj_t make_compound_condition_(obj_t parts, ...)
     vector_set(vec, i++, parts);
     va_start(ap, parts);
     while ((p = va_arg(ap, obj_t)) != END_OF_ARGS) {
-	oprintf("i = %d, p = %O\n", i, p);
 	if (is_instance(p, condition))
 	    vector_set(vec, i++, p);
 	else if (is_instance(p, compound_condition)) {

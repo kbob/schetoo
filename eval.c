@@ -2,6 +2,7 @@
 
 #include <setjmp.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "env.h"
 #include "except.h"
@@ -9,7 +10,10 @@
 #include "list.h"
 #include "low_ex.h"
 #include "obj_cont.h"
+#include "obj_record.h"
+#include "oprintf.h"
 #include "prim.h"
+#include "record.h"
 #include "roots.h"
 #include "types.h"
 
@@ -23,11 +27,25 @@
  * It could probably be turned into a vector.
  */
 
+DEFINE_STATIC_RECORD_TYPE(dyn_env, L"dynamic-environment", NULL, RF_OPAQUE) = {
+    { FM_MUTABLE, L"environment" },
+    { FM_MUTABLE, L"dynamic-unwind" },
+    { FM_MUTABLE, L"exception-handler" },
+    { FM_END }
+};
+typedef enum dyn_env_fields {
+    DE_ENV,
+    DE_UNWIND,
+    DE_HANDLER,
+} dyn_env_fields_t;
+
 static __thread sigjmp_buf eval_sigrestart;
 static __thread jmp_buf    eval_restart;
+static __thread obj_t      eval_exception;
 
 THREAD_ROOT(cont_root);
 THREAD_ROOT(values_root);
+THREAD_ROOT(eval_dyn_env);
 
 static inline bool is_self_evaluating(obj_t expr)
 {
@@ -78,8 +96,8 @@ static cv_t c_eval_seq(obj_t cont, obj_t values)
 
 extern cv_t c_apply_proc(obj_t cont, obj_t values)
 {
-    obj_t p = cont4_arg(cont);
     obj_t next = cont_cont(cont);
+    obj_t p = cont4_arg(cont);
     obj_t operator = CAR(p);
     obj_t saved_values = CDR(p);
     EVAL_LOG("op=%O values=%O p=%O", operator, values, p);
@@ -176,11 +194,12 @@ extern cv_t c_eval(obj_t cont, obj_t values)
     RAISE(&syntax, expr, "must be expression");
 }
 
-NORETURN static void handle_lowex(lowex_type_t type, obj_t ex) 
+NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
 {
     switch (type) {
 
     case LT_THROWN:
+	eval_exception = ex;
     case LT_HEAP_FULL:
 	longjmp(eval_restart, type);
 
@@ -192,28 +211,144 @@ NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
     }
 }
 
+static cv_t default_handler(obj_t cont, obj_t values)
+{
+    /*
+     * For all non-message-irritants-who conditions,
+     *     print the condition's class.
+     * For all message conditions, print the condition's message.
+     * If who or irritants given, print (cons who irritants).
+     */
+
+    EVAL_LOG("cont=%O values=%O", cont, values);
+    obj_t ex = CAR(values);
+    obj_t parts = record_get_field(ex, 0);
+    const char *psn = program_short_name();
+    size_t psnl = strlen(psn);
+    size_t i, size = vector_len(parts);
+    for (i = 0; i < size; i++) {
+	obj_t rtd = record_rtd(vector_ref(parts, i));
+	if (rtd != message && rtd != irritants && rtd != who) {
+	    ofprintf(stderr, "%*s: %O\n", psnl, psn, rtd_name(rtd));
+	    psn = "";
+	}
+    }
+    obj_t who_p = FALSE_OBJ;
+    obj_t irr_p = EMPTY_LIST;
+    for (i = 0; i < size; i++) {
+	obj_t p = vector_ref(parts, i);
+	obj_t rtd = record_rtd(p);
+	if (rtd == message) {
+	    obj_t msg = record_get_field(p, 0);
+	    const wchar_t *chars = string_value(msg);
+	    fprintf(stderr, "%*s  %ls\n", psnl, psn, chars);
+	    psn = "";
+	} else if (rtd == who)
+	    who_p = record_get_field(p, 0);
+	else if (rtd == irritants)
+	    irr_p = record_get_field(p, 0);
+    }
+    if (who_p != FALSE_OBJ && irr_p != EMPTY_LIST) {
+	ofprintf(stderr, "%*s  %O\n", psnl, psn, CONS(who_p, irr_p));
+	psn = "";
+    } else if (who_p != FALSE_OBJ) {
+	ofprintf(stderr, "%*s  %O\n", psnl, psn, who_p);
+	psn = "";
+    } else if (irr_p != EMPTY_LIST) {
+	ofprintf(stderr, "%*s  %O\n", psnl, psn, irr_p);
+	psn = "";
+    }
+    if (*psn)
+	fprintf(stderr, "%s: unknown exception\n", psn);
+    ofprintf(stderr, "\n");
+    return cv(EMPTY_LIST, CONS(UNDEFINED_OBJ, EMPTY_LIST));
+}
+
+ROOT_CONSTRUCTOR(dhproc)
+{
+    obj_t proc_name = make_symbol_from_C_str(L"default-exception-handler");
+    return make_raw_procedure((C_procedure_t)default_handler,
+			      proc_name,
+			      root_environment());
+}
+
+static cv_t c_exception_returned(obj_t cont, obj_t values)
+{
+    obj_t handler = cont4_arg(cont);
+    EVAL_LOG("handler=%O", handler);
+    RAISE(&non_continuable, NULL, "exception handler returned", handler);
+}
+
+obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
+{
+    //oprintf("add_who_irritants: cont4_arg = %O\n", cont4_arg(cont));
+    //oprintf("add_who_irritants: values = %O\n", values);
+    cont_proc_t proc = cont_proc(cont);
+    if (proc == c_apply_proc) {
+	obj_t arg = cont4_arg(cont);
+	obj_t op = CAR(arg);
+	obj_t who_sym = procedure_is_C(op) ? procedure_name(op) : FALSE_OBJ;
+	obj_t who_ex = MAKE_RECORD(who, who_sym);
+	obj_t irr_ex = MAKE_RECORD(irritants, reverse_list(values));
+	return MAKE_COMPOUND_CONDITION(who_ex, irr_ex, ex);
+    }
+    if (proc == c_eval) {
+	obj_t expr = cont4_arg(cont);
+	obj_t who_ex = MAKE_RECORD(who, expr);
+	return MAKE_COMPOUND_CONDITION(who_ex, ex);
+    }
+    return ex;
+}
+
+static cv_t push_exception(obj_t cont, obj_t values)
+{
+    obj_t ex = add_who_irritants(cont, values, eval_exception);
+    obj_t handler = record_get_field(eval_dyn_env, DE_HANDLER);
+    obj_t second = make_cont4(c_exception_returned,
+			      EMPTY_LIST,
+			      cont_env(cont),
+			      EMPTY_LIST);
+    obj_t first = make_cont4(c_apply_proc,
+			     second,
+			     cont_env(cont),
+			     CONS(handler, values));
+    return cv(first, CONS(ex, values));
+}
+
 extern obj_t core_eval(obj_t expr, obj_t env)
 {
-    obj_t cont     = make_cont4(c_eval, EMPTY_LIST, env, expr);
-    obj_t values   = EMPTY_LIST;
+    obj_t cont   = make_cont4(c_eval, EMPTY_LIST, env, expr);
+    obj_t values = EMPTY_LIST;
+    eval_dyn_env = MAKE_RECORD(dyn_env, env, EMPTY_LIST, dhproc);
 
-    int j0 = sigsetjmp(eval_sigrestart, 1);
-    if (j0 == LT_SIGNALLED) {
+    if (sigsetjmp(eval_sigrestart, 1)) {
+	/* On Linux, siglongjmp is 30X slower than longjmp. */
 	/* push exception... */
     } else {
-	ASSERT(j0 == LT_NO_EXCEPTION);
-	int j1 = setjmp(eval_restart);
-	if (j1 == LT_THROWN) {
-	    /* push exception... */
-	} else if (j1 == LT_HEAP_FULL) {
-	    cont_root           = cont;
-	    values_root         = values;
+	switch (setjmp(eval_restart)) {
+
+	case LT_THROWN:
+	    {
+		cv_t ret = push_exception(cont, values);
+		cont     = ret.cv_cont;
+		values   = ret.cv_values;
+	    }
+	    break;
+
+	case LT_HEAP_FULL:
+	    cont_root   = cont;
+	    values_root = values;
 	    collect_garbage();
-	    cont   = cont_root;
-	    values = values_root;
-	} else {
-	    ASSERT(j1 == LT_NO_EXCEPTION);
+	    cont        = cont_root;
+	    values      = values_root;
+	    break;
+
+	case LT_NO_EXCEPTION:
 	    register_lowex_handler(handle_lowex);
+	    break;
+
+	default:
+	    ASSERT(false);
 	}
     }
     while (!is_null(cont)) {
