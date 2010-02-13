@@ -12,7 +12,7 @@ DONE	Make is_TYPE() inline by exporting the mem_ops_t structures.
 DONE	Move is_null() and is_undefined() to their own files.
 DONE	Find better names for EMPTY_LIST and UNDEFINED.
 	Rationalize wchar_t and char_t.
-	Make pair_car() and pair_cdr() inline.
+DONE	Make pair_car() and pair_cdr() inline.
 DONE	Rename obj_procedure.{h,c} -> obj_proc.{h,c}
 DONE	Rename proc.{h,c} -> prim.{h,c}
 DONE	Write comments about DEFINE_* macros in prim.h.
@@ -21,7 +21,7 @@ DONE	Implement get_who().
 DONE	Rename all ASSERT to assert.
 DONE	Rename RAISE to THROW.
 DONE	Remove 2nd arg from CHECK and RAISE (aka THROW).
-	read.c should use &lexical, not &syntax.
+DONE	read.c should use &lexical, not &syntax.
 	Move apply_proc() from prim.c to eval.c.
 	Most exceptions shouldn't supply irritants.
 
