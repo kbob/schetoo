@@ -191,7 +191,7 @@ DEFINE_PROC(L"number->string", 1-3)(obj_t z, obj_t radix, obj_t precision)
 	    CHECK(false, NULL, "illegal radix", radix);
 	}
 	if (precision != MISSING_ARG)
-	    raise(&implementation_restriction,
+	    RAISE(&implementation_restriction,
 		  NULL, "inexact numbers unsupported", z, radix, precision);
     }
     word_t azv = zv < 0 ? -zv : zv;

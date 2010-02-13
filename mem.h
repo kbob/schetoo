@@ -50,6 +50,7 @@
  *           0010 0001 1110 - missing arg
  *           0011 0001 1110 - end of file
  *           0100 0001 1110 - mem ops primitive (see below)
+ *           0101 0001 1110 - end of args
  *
  * - "Forwarding" pointers are used by the garbage collector, and
  *      are never seen by the mutator.  While a heap region is being
@@ -71,10 +72,12 @@
  *    1 0000 1110 - true
  *      0001 0110 - read action (see read.c)
  *      0001 1100 - special constant
- *   00 0001 1110 - empty list
- *   01 0001 1110 - undefined
- *   10 0001 1110 - end of file
- *   11 0001 1110 - mem ops primitive (see below)
+ *  000 0001 1110 - empty list
+ *  001 0001 1110 - undefined
+ *  010 0001 1110 - missing arg
+ *  011 0001 1110 - end of file
+ *  100 0001 1110 - mem ops primitive (see below)
+ *  101 0001 1110 - end of args
  */
 
 typedef struct heap_object heap_object_t;

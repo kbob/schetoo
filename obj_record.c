@@ -69,7 +69,7 @@ mem_ops_t record_ops = {
     rec_set_ptr_op,
 };
 
-obj_t make_record(obj_t rtd, ...)
+obj_t make_record_(obj_t rtd, ...)
 {
     CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
     size_t i, size = rtd_field_count(rtd);
@@ -80,10 +80,11 @@ obj_t make_record(obj_t rtd, ...)
     for (i = 0; i < size; i++) {
 	obj_t field = va_arg(ap, obj_t);
 	CHECK_OBJ(field);
+	ASSERT(field != END_OF_ARGS);
 	*elem_addr(rec, i) = field;
     }
-    int end_marker = va_arg(ap, int);
-    ASSERT(end_marker == 0);
+    obj_t end_marker = va_arg(ap, obj_t);
+    ASSERT(end_marker == END_OF_ARGS);
     va_end(ap);
     return (obj_t)hobj;
 }

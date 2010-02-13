@@ -6,13 +6,6 @@
 #include "obj_symbol.h"
 #include "obj_vector.h"
 
-
-DEFINE_EXTERN_RECORD_TYPE(testing123, L"toy-boat", NULL, 0) = {
-    { FM_MUTABLE,   L"scupper" },
-    { FM_IMMUTABLE, L"yardarm" },
-    { FM_END }
-};
-
 static rec_descriptor_t *rec_descs;
 
 void register_record(rec_descriptor_t *desc)
@@ -46,11 +39,7 @@ static void init_rec(rec_descriptor_t *desc)
     /* Construct the rtd. */
     obj_t env = root_environment();
     obj_t nsym = make_symbol_from_C_str(desc->rd_name);
-    obj_t parent = FALSE_OBJ;
-    if (desc->rd_parent) {
-	obj_t psym = make_symbol_from_C_str(desc->rd_parent);
-	parent = env_lookup(env, psym);
-    }
+    obj_t parent = desc->rd_parent ? *desc->rd_parent : FALSE_OBJ;
     obj_t rtd = make_rtd(desc->rd_flags,
 			 nsym,
 			 parent,
@@ -68,19 +57,10 @@ static void init_rec(rec_descriptor_t *desc)
 
 void init_records(void)
 {
-    /* Reverse the descriptors so that each superclass is defined
-     * before its subclasses.
+    /*
+     * We got lucky.  The descriptors happen to be in the order they
+     * were declared, so superclasses are created before subclasses.
      */
-
-    rec_descriptor_t *forw = rec_descs;
-    rec_descriptor_t *rev = NULL;
-    while (forw) {
-	rec_descriptor_t *next = forw->rd_next;
-	forw->rd_next = rev;
-	rev = forw;
-	forw = next;
-    }
-    rec_descs = rev;
 
     rec_descriptor_t *desc;
     for (desc = rec_descs; desc; desc = desc->rd_next)

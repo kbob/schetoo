@@ -1,6 +1,8 @@
 #ifndef OPRINTF_INCLUDED
 #define OPRINTF_INCLUDED
 
+#include <stdio.h>
+
 /*
  * oprintf - object-aware printf
  *
@@ -15,5 +17,7 @@
  */
 
 extern int oprintf(const char *format, ...);
+
+extern int ofprintf(FILE *, const char *format, ...);
 
 #endif /* !OPRINTF_INCLUDED */

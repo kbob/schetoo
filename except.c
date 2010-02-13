@@ -1,23 +1,19 @@
 #include "except.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
-condition_type_t condition		    = { "condition" };
-condition_type_t warning		    = { "warning" };
-condition_type_t serious		    = { "serious" };
-condition_type_t message		    = { "message" };
-condition_type_t irritants		    = { "irritants" };
-condition_type_t who			    = { "who" };
-condition_type_t error			    = { "error" };
-condition_type_t violation		    = { "violation" };
-condition_type_t assertion		    = { "assertion" };
-condition_type_t non_continuable	    = { "non_continuable" };
-condition_type_t implementation_restriction = { "implementation_restriction" };
-condition_type_t lexical		    = { "lexical" };
-condition_type_t syntax			    = { "syntax" };
-condition_type_t undefined		    = { "undefined" };
+#include "list.h"
+#include "low_ex.h"
+#include "obj_pair.h"
+#include "obj_record.h"
+#include "obj_rtd.h"
+#include "obj_string.h"
+#include "obj_symbol.h"
+#include "oprintf.h"
 
 static const char *program_name;
 static const char *program_short_name;
@@ -36,16 +32,43 @@ void assertion_failed(const char *file,
 
 #endif
 
-void raise(condition_type_t *ct, obj_t obj, const char *msg, ...)
+void raise(obj_t *ct, obj_t obj, const wchar_t *msg, ...)
 {
-    fprintf(stderr, "%s: condition &%s: %s\n",
-	    program_short_name, ct->ct_name, msg);
-    abort();
+    fprintf(stderr, "%s: condition &%ls: %ls",
+	    program_short_name, string_value(symbol_name(rtd_name(*ct))), msg);
+    va_list ap1;
+    va_start(ap1, msg);
+    obj_t irritant;
+    while ((irritant = va_arg(ap1, obj_t)) != END_OF_ARGS)
+	ofprintf(stderr, " %O", irritant);
+    va_end(ap1);
+    fprintf(stderr, "\n");
+
+    /*
+     * Make &message condition.
+     * Make irritants.
+     * Pack them all up in a compound condition.
+     * Longjmp out.
+     */
+
+    obj_t primary_ex = MAKE_RECORD(*ct);
+    obj_t msg_str = make_string_from_chars(msg, wcslen(msg));
+    obj_t msg_ex = MAKE_RECORD(message, msg_str);
+    obj_t irr_list = EMPTY_LIST;
+    va_list ap;
+    va_start(ap, msg);
+    while ((irritant = va_arg(ap, obj_t)) != END_OF_ARGS)
+	irr_list = CONS(irritant, irr_list);
+    va_end(ap);
+    irr_list = reverse_list(irr_list);
+    obj_t irr_ex = MAKE_RECORD(irritants, irr_list);
+    obj_t ex = MAKE_COMPOUND_CONDITION(primary_ex, msg_ex, irr_ex);
+    send_exception(ex);
 }
     
-void raise_continuable(condition_type_t *ct, obj_t obj, const char *msg)
+void raise_continuable(obj_t *ct, obj_t obj, const wchar_t *msg)
 {
-    // XXX implement
+    // XXX implement me
     raise(ct, obj, msg);
 }
 

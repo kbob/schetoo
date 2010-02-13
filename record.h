@@ -13,7 +13,7 @@
 #define DEFINE_RECORD_TYPE DEFINE_ANONYMOUS_RECORD_TYPE
 
 #define DEFINE_EXTERN_RECORD_TYPE(C_name, scheme_name, parent, flags)	\
-    DEFINE_GENERAL_RECORD_TYPE_(static,					\
+    DEFINE_GENERAL_RECORD_TYPE_(/* blank */,				\
 				C_name,					\
 				scheme_name,				\
 				parent,					\
@@ -21,7 +21,7 @@
 				UNIQ_IDENT(record_fields_))
 
 #define DEFINE_STATIC_RECORD_TYPE(C_name, scheme_name, parent, flags)	\
-    DEFINE_GENERAL_RECORD_TYPE_(/* blank */,				\
+    DEFINE_GENERAL_RECORD_TYPE_(static,					\
 				C_name,					\
 				scheme_name,				\
 				parent,					\
@@ -76,7 +76,7 @@ struct rec_descriptor {
     obj_t                    *rd_root;
     rtd_flags_t               rd_flags;
     const wchar_t            *rd_name;
-    const wchar_t            *rd_parent;
+    obj_t                    *rd_parent;
     const field_descriptor_t *rd_fields;
     rec_descriptor_t         *rd_next;
 };

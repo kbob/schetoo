@@ -51,3 +51,12 @@ int oprintf(const char *format, ...)
     va_end(ap);
     return r;
 }
+
+int ofprintf(FILE *f, const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    int r = vfprintf(f, format, ap);
+    va_end(ap);
+    return r;
+}

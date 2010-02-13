@@ -627,3 +627,23 @@ Think about auxilliary syntax.
 Symbols with special meanings like else, =>, ..., mutable.  Bind them
 to a magic inevaluable type but with distinct values.  Think about
 what makes free-identifier=? evaluate true.
+
+----------------------------------
+2010.02.12
+
+I claimed that I could pass NULL to raise with impunity.
+Well, now it's time to figure out who &who is.
+Back in the top-level, there's a continuation pointer.
+
+    code = cont_code(cont)
+    if (code == c_apply_proc)
+	operator = CAR(cont4_arg(cont));
+    else if (code == c_eval_operator)
+	operator = CAR(values);
+    else
+	operator = eval;  //why not?
+
+But that's all at top-level.  I guess I should pack up the other stuff
+and build &who and the compound condition back up there.
+
+

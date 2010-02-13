@@ -150,7 +150,7 @@ static token_type_t scan_ident(const wchar_t *prefix,
 	    wc = instream_getwc(in);
 	    if (wc == L'x' || wc == L'X') {
 		if (!inline_hex_scalar(in, &wc, L';'))
-		    raise(&syntax,
+		    RAISE(&syntax,
 			  charbuf_make_string(&buf), "bad hex scalar");
 	    } else if (wc != WEOF) {
 		instream_ungetwc(wc, in);
@@ -345,7 +345,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 		    while (depth) {
 			w2 = instream_getwc(in);
 			if (w2 == WEOF)
-			    raise(&syntax,
+			    RAISE(&syntax,
 				  FALSE_OBJ, "unterminated block comment");
 			if (w2 == L'|' && state == 0)
 			    state = 1;
@@ -437,7 +437,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    while (true) {
 		w2 = instream_getwc(in);
 		if (w2 == WEOF)
-		    raise(&syntax,
+		    RAISE(&syntax,
 			  charbuf_make_string(&buf), "unterminated string");
 		if (w2 == L'"')
 		    break;
@@ -456,26 +456,26 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 		    case L'x': 
 		    case L'X':
 			if (!inline_hex_scalar(in, (wchar_t *)&w2, L';'))
-			    raise(&syntax,
+			    RAISE(&syntax,
 				  charbuf_make_string(&buf), "bad hex escape");
 			break;
 		    default:
 			while (is_intraline_whitespace(w2)) {
 			    w2 = instream_getwc(in);
 			    if (w2 == WEOF)
-				raise(&syntax,
+				RAISE(&syntax,
 				      charbuf_make_string(&buf),
 				      "unterminated string");
 			}
 			if (!is_line_ending(w2))
-			    raise(&syntax,
+			    RAISE(&syntax,
 				  charbuf_make_string(&buf),
 				  "bad backslash escape");
 			w2 = instream_getwc(in);
 			while (is_intraline_whitespace(w2)) {
 			    w2 = instream_getwc(in);
 			    if (w2 == WEOF)
-				raise(&syntax,
+				RAISE(&syntax,
 				      charbuf_make_string(&buf),
 				      "unterminated string");
 			}
@@ -507,7 +507,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    instream_ungetwc(wc, in);
 	    return scan_ident(L"", lvalp, in);
 	}
-	raise(&syntax, make_character(wc), "unexpected input character");
+	RAISE(&syntax, make_character(wc), "unexpected input character");
     }
     return TOK_EOF;
 }

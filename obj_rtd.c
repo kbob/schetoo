@@ -98,10 +98,10 @@ obj_t make_rtd(rtd_flags_t flags,
     CHECK(parent == FALSE_OBJ || !rtd_is_sealed(parent),
 	  NULL, "parent is sealed", parent);
     if (protocol != FALSE_OBJ)
-	raise(&implementation_restriction, NULL,
+	RAISE(&implementation_restriction, NULL,
 	      "record protocols not implemented", protocol);
     if ((flags & RF_NONGENERATIVE) || uid != FALSE_OBJ)
-	raise(&implementation_restriction, NULL,
+	RAISE(&implementation_restriction, NULL,
 	      "nongenerative records not implemented", uid);
     CHECK(is_vector(fields), NULL, "must be vector", fields);
     // XXX walk through the fields and ensure they have the right format.
@@ -111,8 +111,7 @@ obj_t make_rtd(rtd_flags_t flags,
     field_count += vector_len(fields);
     rtd_obj_t *rtd = (rtd_obj_t *) hobj;
     rtd->rtd_inst_ops = record_ops;
-    // overwrite first word of rtd_inst_ops.
-    hobj->ho_ops      = &rtd_ops;
+    hobj->ho_ops      = &rtd_ops;	// overwrite first word of rtd_inst_ops
     rtd->rtd_flags    = flags | field_count << RF_SHIFT;
     rtd->rtd_name     = name;
     rtd->rtd_parent   = parent;

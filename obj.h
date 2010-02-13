@@ -48,6 +48,7 @@
 #define MISSING_ARG        (SPECIAL_OBJ(2))
 #define END_OF_FILE        (SPECIAL_OBJ(3))
 #define MEM_OPS_PRIMITIVE  (SPECIAL_OBJ(4))
+#define END_OF_ARGS        (SPECIAL_OBJ(5))
 
 #define OBJ_TYPE_PREDICATE(type)					\
     static inline bool is_##type(obj_t obj)				\
@@ -86,4 +87,3 @@ static inline bool is_heap(const obj_t o)
 extern const wchar_t *obj_type_name(const obj_t);
 
 #endif /* !OBJ_INCLUDED */
-

@@ -7,11 +7,10 @@
 #include "mem.h"
 
 typedef enum rtd_flags {
-    RF_MUTABLE       = 1 << 0,
-    RF_SEALED        = 1 << 1,
-    RF_OPAQUE        = 1 << 2,
-    RF_NONGENERATIVE = 1 << 3,
-    RF_SHIFT         = 4,
+    RF_SEALED        = 1 << 0,
+    RF_OPAQUE        = 1 << 1,
+    RF_NONGENERATIVE = 1 << 2,
+    RF_SHIFT         = 3,
 } rtd_flags_t;
 
 typedef struct rtd_obj {
@@ -33,7 +32,6 @@ extern obj_t make_rtd                    (rtd_flags_t flags,
 					  obj_t       protocol,
 					  obj_t       fields);
 
-static inline bool   rtd_is_mutable      (obj_t       rtd);
 static inline bool   rtd_is_sealed       (obj_t       rtd);
 static inline bool   rtd_is_opaque       (obj_t       rtd);
 static inline bool   rtd_is_generative   (obj_t       rtd);
@@ -44,12 +42,6 @@ static inline obj_t  rtd_parent          (obj_t       rtd);
 static inline obj_t  rtd_protocol        (obj_t       rtd);
 static inline size_t rtd_field_count     (obj_t       rtd);
 static inline obj_t  rtd_fields          (obj_t       rtd);
-
-static inline bool rtd_is_mutable(obj_t rtd)
-{
-    CHECK(is_rtd(rtd), NULL, "must be rtd", rtd);
-    return ((rtd_obj_t *)rtd)->rtd_flags & RF_MUTABLE ? true : false;
-}
 
 static inline bool rtd_is_sealed(obj_t rtd)
 {

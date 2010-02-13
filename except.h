@@ -1,27 +1,26 @@
 #ifndef EXCEPT_INCLUDED
 #define EXCEPT_INCLUDED
 
-#include "obj.h"
+#include "conditions.h"
 
 #ifdef NDEBUG
     #define ASSERT(expr) ((void)0)
 #else
-    #define ASSERT(expr)                                                       \
-        ((expr) ? (void)0                                                      \
+    #define ASSERT(expr)						\
+        ((expr) ? (void)0						\
                 : assertion_failed(__FILE__, __LINE__, __func__, # expr))
 #endif
 
 // CHECK(expr, who, msg, irritants...)
-#define CHECK(expr, who, ...) \
-    ((expr) ? (void)0 : raise(&assertion, (who), __VA_ARGS__))
+#if 0
+#define CHECK(expr, who, ...)						\
+    ((expr) ? (void)0							\
+            : raise(&assertion, (who), L"" __VA_ARGS__, END_OF_ARGS))
+#endif
 
-typedef struct condition_type {
-    const char *ct_name;
-} condition_type_t;
-
-extern condition_type_t condition, warning, serious, message, irritants, who;
-extern condition_type_t error, violation, assertion, non_continuable;
-extern condition_type_t implementation_restriction, lexical, syntax, undefined;
+#define CHECK(expr, who, ...)						\
+    ((expr) ? (void)0							\
+            : RAISE(&assertion, (who), __VA_ARGS__))
 
 #ifndef NDEBUG
 extern void assertion_failed(const char *file,
@@ -30,19 +29,23 @@ extern void assertion_failed(const char *file,
 			     const char *expr) __attribute__ ((noreturn));
 #endif
 
-extern void raise_error     (obj_t       who,
-			     const char *message,
-			     obj_t       irritants,
+// RAISE(condition, who, message, irritants...)
+#define RAISE(condition, who, ...)					\
+    (raise((condition), (who), L""  __VA_ARGS__, END_OF_ARGS))
+
+extern void raise_error     (obj_t          who,
+			     const wchar_t *message,
+			     obj_t          irritants,
 			     ...)              __attribute__ ((noreturn));
 
-extern void raise           (condition_type_t *,
-		             obj_t       obj,
-		             const char *msg,
+extern void raise           (obj_t         *condition,
+		             obj_t          obj,
+		             const wchar_t *msg,
 			     ...)              __attribute__ ((noreturn));
     
-extern void raise_continuable(condition_type_t *,
-			      obj_t       obj,
-			      const char *msg) __attribute__ ((noreturn));
+extern void raise_continuable(obj_t         *condition,
+			      obj_t          obj,
+			      const wchar_t *msg) __attribute__ ((noreturn));
 
 extern void set_program_name(const char *);
 
