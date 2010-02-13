@@ -19,7 +19,8 @@ DONE	Write comments about DEFINE_* macros in prim.h.
 DONE	Clean up obj_proc.h.
 DONE	Implement get_who().
 DONE	Rename all ASSERT to assert.
-	Remove 2nd arg from CHECK and RAISE.
+DONE	Rename RAISE to THROW.
+	Remove 2nd arg from CHECK and RAISE (aka THROW).
 	read.c should use &lexical, not &syntax.
 
 Heap

@@ -145,7 +145,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
     obj_t operator = CAR(values);
     EVAL_LOG("appl=%O operator=%O", appl, operator);
     if (!is_procedure(operator)) {
-	RAISE(&syntax, NULL, "must be procedure", operator);
+	THROW(&syntax, NULL, "must be procedure", operator);
     }
     if (!procedure_args_evaluated(operator)) {
 	assert(procedure_is_C(operator) && "implement Scheme special forms");
@@ -192,7 +192,7 @@ extern cv_t c_eval(obj_t cont, obj_t values)
 	obj_t first = make_cont4(c_eval, second, env, operator);
 	return cv(first, values);
     }
-    RAISE(&syntax, expr, "must be expression");
+    THROW(&syntax, expr, "must be expression");
 }
 
 NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
@@ -277,7 +277,7 @@ static cv_t c_exception_returned(obj_t cont, obj_t values)
 {
     obj_t handler = cont4_arg(cont);
     EVAL_LOG("handler=%O", handler);
-    RAISE(&non_continuable, NULL, "exception handler returned", handler);
+    THROW(&non_continuable, NULL, "exception handler returned", handler);
 }
 
 obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)

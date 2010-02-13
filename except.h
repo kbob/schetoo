@@ -7,12 +7,12 @@
 // message may be either a wide or 8-bit string.
 #define CHECK(expr, who, ...)						\
     ((expr) ? (void)0							\
-            : RAISE(&assertion, (who), __VA_ARGS__))
+            : THROW(&assertion, (who), __VA_ARGS__))
 
-// RAISE(condition, who, message, irritants...)
+// THROW(condition, who, message, irritants...)
 // Note that message may be either a wide or 8-bit string.
 // An 8-bit string will be widened by the macro.
-#define RAISE(condition, who, ...)					\
+#define THROW(condition, who, ...)					\
     (raise((condition), (who), L""  __VA_ARGS__, END_OF_ARGS))
 
 extern void raise_error     (obj_t          who,
