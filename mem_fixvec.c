@@ -1,5 +1,6 @@
 #include "mem_fixvec.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include "except.h"
@@ -25,7 +26,7 @@
     static obj_t fv##N##_get_ptr_op(const heap_object_t *obj, size_t index)\
     { 									\
 	fixvec##N##_t *vec = (fixvec##N##_t *)obj; 			\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	return vec->fv##N##_ptrs[index]; 				\
     } 									\
  									\
@@ -34,7 +35,7 @@
 				   obj_t ptr)				\
     { 									\
 	fixvec##N##_t *vec = (fixvec##N##_t *)obj; 			\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	vec->fv##N##_ptrs[index] = ptr; 				\
     } 									\
  									\
@@ -67,7 +68,7 @@ void mem_fixvec_create_ops(mem_ops_t *ops, wchar_t *name, size_t len)
 	break;
 
     default:
-	ASSERT(false);
+	assert(false);
 	super = NULL;
     }
 

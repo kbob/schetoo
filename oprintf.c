@@ -3,7 +3,6 @@
 /* Register new printf handlers to print objects. */
 /* Not used until the heap is initialized. */
 
-#include <assert.h>
 #include <printf.h>
 #include <stdarg.h>
 

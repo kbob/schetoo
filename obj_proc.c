@@ -1,5 +1,7 @@
 #include "obj_proc.h"
 
+#include <assert.h>
+
 static size_t proc_size_op(const heap_object_t *hobj)
 {
     return sizeof (proc_obj_t);
@@ -24,7 +26,7 @@ static obj_t proc_get_ptr_op(const heap_object_t *hobj, size_t index)
 	return proc->proc_env;
     if (index == 2 && !(proc->proc_flags & PF_COMPILED_C))
 	return proc->proc_u.pu_body;
-    ASSERT(false && "index out of range");
+    assert(false && "index out of range");
 }
 
 static void proc_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
@@ -37,7 +39,7 @@ static void proc_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
     else if (index == 2 && !(proc->proc_flags & PF_COMPILED_C))
 	proc->proc_u.pu_body = ptr;
     else
-	ASSERT(false && "index out of range");
+	assert(false && "index out of range");
 }
 
 mem_ops_t procedure_ops = {

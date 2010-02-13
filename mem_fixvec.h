@@ -1,6 +1,8 @@
 #ifndef MEM_FIXVEC_INCLUDED
 #define MEM_FIXVEC_INCLUDED
 
+#include <assert.h>
+
 #include "except.h"
 #include "mem.h"
 
@@ -26,7 +28,7 @@
     static inline obj_t fixvec##N##_get_ptr(obj_t obj, size_t index)	\
     {									\
 	CHECK_OBJ(obj);							\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	return ((fixvec##N##_t *)obj)->fv##N##_ptrs[index];		\
     }									\
 									\
@@ -34,7 +36,7 @@
     fixvec##N##_set_ptr(obj_t obj, size_t index, obj_t ptr)		\
     {									\
 	CHECK_OBJ(obj);							\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	((fixvec##N##_t *)obj)->fv##N##_ptrs[index] = ptr;		\
     }
 

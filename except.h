@@ -3,33 +3,15 @@
 
 #include "conditions.h"
 
-#ifdef NDEBUG
-    #define ASSERT(expr) ((void)0)
-#else
-    #define ASSERT(expr)						\
-        ((expr) ? (void)0						\
-                : assertion_failed(__FILE__, __LINE__, __func__, # expr))
-#endif
-
 // CHECK(expr, who, msg, irritants...)
-#if 0
-#define CHECK(expr, who, ...)						\
-    ((expr) ? (void)0							\
-            : raise(&assertion, (who), L"" __VA_ARGS__, END_OF_ARGS))
-#endif
-
+// message may be either a wide or 8-bit string.
 #define CHECK(expr, who, ...)						\
     ((expr) ? (void)0							\
             : RAISE(&assertion, (who), __VA_ARGS__))
 
-#ifndef NDEBUG
-extern void assertion_failed(const char *file,
-			     int	 line,
-			     const char *fn,
-			     const char *expr) __attribute__ ((noreturn));
-#endif
-
 // RAISE(condition, who, message, irritants...)
+// Note that message may be either a wide or 8-bit string.
+// An 8-bit string will be widened by the macro.
 #define RAISE(condition, who, ...)					\
     (raise((condition), (who), L""  __VA_ARGS__, END_OF_ARGS))
 

@@ -1,5 +1,7 @@
 #include "obj_rtd.h"
 
+#include <assert.h>
+
 #include "obj_boolean.h"
 #include "obj_fixnum.h"
 #include "obj_pair.h"
@@ -37,7 +39,7 @@ static obj_t rtd_get_ptr_op(const heap_object_t *hobj, size_t index)
     case 4:
 	return rtd->rtd_fields;
     }
-    ASSERT(false && "index out of range");
+    assert(false && "index out of range");
 }
 
 static void rtd_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
@@ -66,7 +68,7 @@ static void rtd_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
 	break;
 
     default:
-	ASSERT(false && "index out of range");
+	assert(false && "index out of range");
     }
 }
 
@@ -132,7 +134,7 @@ static obj_t find_field(obj_t rtd, size_t index)
     while (index < n - m) {
 	n -= m;
 	rtd = rtd_parent(rtd);
-	ASSERT(is_rtd(rtd));
+	assert(is_rtd(rtd));
 	m = vector_len(((rtd_obj_t *)rtd)->rtd_fields);
     }
     return vector_ref(((rtd_obj_t *)rtd)->rtd_fields, index - (n - m));

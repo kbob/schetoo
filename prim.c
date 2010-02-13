@@ -1,5 +1,6 @@
 #include "prim.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
@@ -114,7 +115,7 @@ obj_t apply_proc(obj_t proc, obj_t arg_list)
 	u = interval_lower_bound(ivl);
     else
 	u = interval_upper_bound(ivl);
-    ASSERT(u + inf <= max_args);
+    assert(u + inf <= max_args);
     obj_t a[max_args];
     for (i = 0; i < u; i++) {
 	if (is_null(arg_list))
@@ -137,6 +138,6 @@ obj_t apply_proc(obj_t proc, obj_t arg_list)
     case 3: return code(a[0], a[1], a[2]);
 
     default:
-	ASSERT(false && "implement me");
+	assert(false && "implement me");
     }
 }

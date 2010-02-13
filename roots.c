@@ -1,5 +1,7 @@
 #include "roots.h"
 
+#include <assert.h>
+
 #include "except.h"
 
 static root_descriptor_t *static_roots;
@@ -7,7 +9,7 @@ static root_descriptor_t *thread_roots;
 
 void record_static_root(root_descriptor_t *desc)
 {
-    ASSERT(thread_roots == NULL);
+    assert(thread_roots == NULL);
     /* with lock */ {
 	desc->rd_next = static_roots;
 	static_roots = desc;

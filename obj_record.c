@@ -1,5 +1,6 @@
 #include "obj_record.h"
 
+#include <assert.h>
 #include <stdarg.h>
 
 #include "obj_fixnum.h"
@@ -44,7 +45,7 @@ static obj_t rec_get_ptr_op(const heap_object_t *hobj, size_t index)
     else if (index <= rtd_field_count(rec->rec_rtd))
 	return *elem_addr(rec, index - 1);
     else
-	ASSERT(false && "index out of range");
+	assert(false && "index out of range");
 }
 
 static void rec_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
@@ -55,7 +56,7 @@ static void rec_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
     else if (index <= rtd_field_count(rec->rec_rtd))
 	*elem_addr(rec, index - 1) = ptr;
     else
-	ASSERT(false && "index out of range");
+	assert(false && "index out of range");
 }
 
 mem_ops_t record_ops = {
@@ -80,11 +81,11 @@ obj_t make_record_(obj_t rtd, ...)
     for (i = 0; i < size; i++) {
 	obj_t field = va_arg(ap, obj_t);
 	CHECK_OBJ(field);
-	ASSERT(field != END_OF_ARGS);
+	assert(field != END_OF_ARGS);
 	*elem_addr(rec, i) = field;
     }
     obj_t end_marker = va_arg(ap, obj_t);
-    ASSERT(end_marker == END_OF_ARGS);
+    assert(end_marker == END_OF_ARGS);
     va_end(ap);
     return (obj_t)hobj;
 }

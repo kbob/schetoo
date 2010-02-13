@@ -1,5 +1,6 @@
 #include "eval.h"
 
+#include <assert.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
@@ -147,7 +148,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 	RAISE(&syntax, NULL, "must be procedure", operator);
     }
     if (!procedure_args_evaluated(operator)) {
-	ASSERT(procedure_is_C(operator) && "implement Scheme special forms");
+	assert(procedure_is_C(operator) && "implement Scheme special forms");
 	if (procedure_is_raw(operator)) {
 	    return ((cont_proc_t)procedure_code(operator))(cont, values);
 	} else {
@@ -207,7 +208,7 @@ NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
 	longjmp(eval_sigrestart, type);
 
     default:
-	ASSERT(false);
+	assert(false);
     }
 }
 
@@ -348,7 +349,7 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 	    break;
 
 	default:
-	    ASSERT(false);
+	    assert(false);
 	}
     }
     while (!is_null(cont)) {
@@ -365,6 +366,6 @@ extern obj_t core_eval(obj_t expr, obj_t env)
     }
     deregister_lowex_handler(handle_lowex);
     EVAL_LOG("END values=%O", values);
-    ASSERT(is_null(CDR(values)));
+    assert(is_null(CDR(values)));
     return CAR(values);
 }

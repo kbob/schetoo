@@ -1,5 +1,6 @@
 #include "mem_scalar.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include "except.h"
@@ -16,13 +17,13 @@ static void scalar_move_op(const heap_object_t *src, heap_object_t *dst)
 
 static obj_t scalar_get_ptr_op(const heap_object_t *obj, size_t index)
 {
-    ASSERT(false);
+    assert(false);
     return 0;
 }
 
 static void scalar_set_ptr_op(heap_object_t *obj, size_t index, obj_t ptr)
 {
-    ASSERT(false);
+    assert(false);
 }
 
 static mem_ops_t scalar_ops = {

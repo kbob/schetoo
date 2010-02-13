@@ -1,5 +1,6 @@
 #include "heap.h"
 
+#include <assert.h>
 #include <stdio.h>			/* XXX */
 #include <stdlib.h>
 
@@ -66,7 +67,7 @@ static inline size_t aligned_size(size_t size)
     void remember_ops(const mem_ops_t *ops)
     {
 	if (!is_known_ops(ops)) {
-	    ASSERT(n_known_ops < KNOWN_OPS_SIZE - 1);
+	    assert(n_known_ops < KNOWN_OPS_SIZE - 1);
 	    known_ops[n_known_ops++] = ops;
 	}
     }
@@ -74,22 +75,22 @@ static inline size_t aligned_size(size_t size)
     static void verify_object(obj_t obj, bool scanned)
     {
 	if (scanned)
-	    ASSERT(!is_forward(obj));
+	    assert(!is_forward(obj));
 	heap_object_t *hobj = obj_heap_object(obj);
 	mem_ops_t *ops = obj_mem_ops(obj);
-	ASSERT(is_known_ops(ops));
+	assert(is_known_ops(ops));
 	size_t i, nptr = ops->mo_ptr_count(hobj);
 	for (i = 0; i < nptr; i++) {
 	    obj_t ptr = ops->mo_get_ptr(hobj, i);
 	    if (scanned || !fromspace) {
-		ASSERT(is_in_tospace(ptr));
+		assert(is_in_tospace(ptr));
 		if (is_heap(ptr))
-		    ASSERT(is_known_ops(obj_mem_ops(ptr)));
+		    assert(is_known_ops(obj_mem_ops(ptr)));
 	    }
 	    else {
-		ASSERT(is_in_tospace(ptr) || IS_IN_FROMSPACE(ptr));
+		assert(is_in_tospace(ptr) || IS_IN_FROMSPACE(ptr));
 		if (is_heap(ptr))
-		    ASSERT(is_known_ops(obj_mem_ops(ptr)));
+		    assert(is_known_ops(obj_mem_ops(ptr)));
 	    }
 	}
     }
@@ -115,12 +116,12 @@ static inline size_t aligned_size(size_t size)
 	    printf("         to_space_end=%p\n", tospace_end);
 	    printf("            alloc_end=%p\n", alloc_end);
 	}
-	ASSERT(p == next_scan);
+	assert(p == next_scan);
 	while (p < next_alloc) {
 	    obj_t obj = (obj_t)p;
 	    heap_object_t *hobj = obj_heap_object(obj);
 	    mem_ops_t *ops = heap_object_mem_ops(hobj);
-	    ASSERT(is_known_ops(ops));
+	    assert(is_known_ops(ops));
 	    verify_object(obj, false);
 	    size_t size = aligned_size(ops->mo_size(hobj));
 	    size_t i, nptr = ops->mo_ptr_count(hobj);
@@ -166,9 +167,9 @@ static obj_t move_obj(obj_t obj)
     if (obj_is_forwarded(obj))
 	return (obj_t)obj_fwd_ptr(obj);
     heap_object_t *hobj = obj_heap_object(obj);
-    ASSERT(is_known_ops(obj_mem_ops(obj)));
+    assert(is_known_ops(obj_mem_ops(obj)));
     size_t size = aligned_size(obj_mem_ops(obj)->mo_size(hobj));
-    ASSERT(next_alloc + size <= alloc_end);
+    assert(next_alloc + size <= alloc_end);
     obj_t new_obj = next_alloc;
     next_alloc += size;
     heap_object_mem_ops(hobj)->mo_move(hobj, obj_heap_object(new_obj));
@@ -179,7 +180,7 @@ static obj_t move_obj(obj_t obj)
 static void *scan_obj(heap_object_t *hobj)
 {
     mem_ops_t *ops = heap_object_mem_ops(hobj);
-    ASSERT(is_known_ops(ops));
+    assert(is_known_ops(ops));
     size_t size = aligned_size(ops->mo_size(hobj));
     size_t i, n_ptrs = ops->mo_ptr_count(hobj);
     for (i = 0; i < n_ptrs; i++) {
@@ -203,7 +204,7 @@ static void copy_heap()
 	    next_scan = scan_obj(next_scan);
 	    verify_heap();
 	}
-	ASSERT(next_scan == next_alloc);
+	assert(next_scan == next_alloc);
 	/* if (debug_heap)
 	 *     alloc_end = next_alloc;
 	 *else*/ if (alloc_end - next_alloc < (tospace_end - tospace) / 2)
@@ -213,7 +214,7 @@ static void copy_heap()
 
 void set_heap_size_bytes(size_t size_bytes)
 {
-    ASSERT(!heap_is_initialized);
+    assert(!heap_is_initialized);
     if (heap_size_bytes != size_bytes) {
 	heap_size_bytes = size_bytes;
     }	
@@ -221,7 +222,7 @@ void set_heap_size_bytes(size_t size_bytes)
 
 void init_heap(void)
 {
-    ASSERT(!heap_is_initialized);
+    assert(!heap_is_initialized);
     the_heap = malloc(heap_size_bytes);
     tospace = the_heap;
     alloc_end = tospace_end = the_heap + heap_size_bytes / 2;
@@ -235,7 +236,7 @@ void init_heap(void)
 
 heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
 {
-    ASSERT(heap_is_initialized);
+    assert(heap_is_initialized);
     verify_heap();
     remember_ops(ops);
     size_t alloc_size = aligned_size(size_bytes);
@@ -278,8 +279,8 @@ const wchar_t *obj_type_name(const obj_t obj)
 
     void check_obj(const obj_t obj)
     {
-	ASSERT(heap_is_initialized);
-	ASSERT(is_fixnum(obj) || is_immediate(obj) || is_in_tospace(obj));
+	assert(heap_is_initialized);
+	assert(is_fixnum(obj) || is_immediate(obj) || is_in_tospace(obj));
     }
 
 #endif /* !NDEBUG */

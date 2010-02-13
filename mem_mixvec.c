@@ -1,5 +1,7 @@
 #include "mem_mixvec.h"
 
+#include <assert.h>
+
 #include "except.h"
 #include "mem.h"
 
@@ -24,7 +26,7 @@
     static obj_t mv_##MN##_get_ptr_op(const heap_object_t *obj,		\
 				      size_t index)			\
     {									\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	return ((mixvec_##MN##_t *)obj)->mv_##MN##_ptrs[index];		\
     }									\
 									\
@@ -32,7 +34,7 @@
 				     size_t index,			\
 				     obj_t ptr)				\
     {									\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	((mixvec_##MN##_t *)obj)->mv_##MN##_ptrs[index] = ptr;		\
     }									\
 									\
@@ -99,7 +101,7 @@ void mem_mixvec_create_ops(mem_ops_t  *ops,
     else if (nints == 1 && nptrs == 3)
 	super = &mixvec_1_3_ops;
     else
-	ASSERT(false);
+	assert(false);
     *ops = *super;
     ops->mo_name = name;
     ops->mo_super = super;

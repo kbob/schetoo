@@ -1,5 +1,7 @@
 #include <wchar.h>
 
+#include <assert.h>
+
 #include "prim.h"
 #include "types.h"
 
@@ -196,7 +198,7 @@ DEFINE_PROC(L"number->string", 1-3)(obj_t z, obj_t radix, obj_t precision)
     }
     word_t azv = zv < 0 ? -zv : zv;
     int nchar = swprintf(buf, max_chars, fmt, &"-"[zv >= 0], azv);
-    ASSERT(nchar > 0);
+    assert(nchar > 0);
     return make_string_from_chars(buf, nchar);
 }
 

@@ -1,5 +1,7 @@
 #include "env.h"
 
+#include <assert.h>
+
 #include "except.h"
 #include "roots.h"
 #include "types.h"
@@ -22,7 +24,7 @@ void env_bind(obj_t env,
 	      mutability_t mutability,
 	      obj_t value)
 {
-    ASSERT(is_symbol(name));
+    assert(is_symbol(name));
     pair_set_car(env,
 		 CONS(make_binding(name, type, mutability, value),
 		      env_first_frame(env)));

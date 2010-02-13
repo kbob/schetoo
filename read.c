@@ -1,5 +1,6 @@
 #include "read.h"
 
+#include <assert.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -70,7 +71,7 @@
     {									\
 	size_t index = var##_size;					\
 	var##_size += n;						\
-	ASSERT(var##_size <= (size));					\
+	assert(var##_size <= (size));					\
 	return index;							\
     }									\
 									\
@@ -326,14 +327,14 @@ static void init_symbols(void)
 	for (p = grammar[i].p_rhs; *p; p++)
 	    if (charmap[(uint_fast8_t)*p] == CT_NONE)
 		charmap[(uint_fast8_t)*p] = CT_TERMINAL;
-    ASSERT(charmap['$'] == CT_NONE);
+    assert(charmap['$'] == CT_NONE);
     charmap['$'] = CT_TERMINAL;
-    ASSERT(charmap['-'] == CT_NONE);
+    assert(charmap['-'] == CT_NONE);
     for (i = j = 0; i < token_pairs_size; i++, j++) {
 	token_pair_t *tpp = &token_pairs[i];
-	ASSERT(tpp->tm_ttype < token_pairs_size);
+	assert(tpp->tm_ttype < token_pairs_size);
 	uint_fast8_t *cmp = &charmap[(uint_fast8_t)tpp->tm_term];
-	ASSERT(*cmp == CT_TERMINAL);
+	assert(*cmp == CT_TERMINAL);
 	*cmp |= tpp->tm_ttype;
 	*next_symbols(1) = tpp->tm_term;
     }
@@ -348,7 +349,7 @@ static void init_symbols(void)
 	    *next_symbols(1) = i;
 	}
     nonterminals_size = symbols_size - exterminals_size;
-    ASSERT(symbols_size < CTMASK);
+    assert(symbols_size < CTMASK);
 
 #if DUMP_TABLES
     printf("start_symbol = '%c'\n", start_symbol);
@@ -374,7 +375,7 @@ static void init_symbols(void)
 static inline size_t sym_index(char sym)
 {
     uint_fast8_t cm = charmap[(size_t)sym];
-    ASSERT(cm & CTMASK);
+    assert(cm & CTMASK);
     return cm & SYMMASK;
 }
 
@@ -382,7 +383,7 @@ static inline size_t sym_index(char sym)
 static inline size_t term_index(char term)
 {
     uint_fast8_t cm = charmap[(size_t)term];
-    ASSERT(cm & CT_TERMINAL);
+    assert(cm & CT_TERMINAL);
     return cm & SYMMASK;
 }
 
@@ -390,21 +391,21 @@ static inline size_t term_index(char term)
 static inline size_t nonterm_index(char nonterm)
 {
     uint_fast8_t cm = charmap[(size_t)nonterm];
-    ASSERT((cm & CTMASK) == CT_NONTERMINAL);
+    assert((cm & CTMASK) == CT_NONTERMINAL);
     return (cm & SYMMASK) - exterminals_size;
 }
 
 /* map a terminal index to its representation character. */
 static inline char terminal(size_t term_index)
 {
-    ASSERT(term_index < terminals_size);
+    assert(term_index < terminals_size);
     return symbols[term_index];
 }
 
 /* map a nonterminal index to its representation character. */
 static inline char nonterminal(size_t nonterm_index)
 {
-    ASSERT(nonterm_index < nonterminals_size);
+    assert(nonterm_index < nonterminals_size);
     return symbols[nonterm_index + exterminals_size];
 }
 
@@ -442,7 +443,7 @@ static void init_first(void)
 	    for (j = 0; pp->p_rhs[j]; j++) {
 		exterminal_set_t *y = &sym_first[sym_index(pp->p_rhs[j])];
 		if (*y & ~*x) {
-		    ASSERT(*x != (*x | *y));
+		    assert(*x != (*x | *y));
 		    *x |= *y;
 		    done = false;
 		}
@@ -569,11 +570,11 @@ static int pt_entry(char A, char a)
 	if (pp->p_lhs == A) {
 	    exterminal_set_t fig = first(pp->p_rhs);
 	    if (fig & 1 << ia) {
-		ASSERT(found == NO_RULE && "grammar not LL(1)");
+		assert(found == NO_RULE && "grammar not LL(1)");
 		found = i;
 	    }
 	    if (a_follows_A && (fig & 1 << epsilon)) {
-		ASSERT(found == NO_RULE && "grammar not LL(1)");
+		assert(found == NO_RULE && "grammar not LL(1)");
 		found = i;
 	    }		
 	}
@@ -583,8 +584,8 @@ static int pt_entry(char A, char a)
 
 static uint_fast8_t parsing_table_entry(size_t i, size_t j)
 {
-    ASSERT(i < nonterminals_size);
-    ASSERT(j < terminals_size);
+    assert(i < nonterminals_size);
+    assert(j < terminals_size);
     return parsing_table[i * terminals_size + j];
 }
 
@@ -667,7 +668,7 @@ static obj_t parse(instream_t *in)
     int tok = yylex(&yylval, in);
     while (true) {
 	int sym = fixnum_value(stack_pop(&stack));
-	ASSERT(0 <= sym && sym < symbols_size);
+	assert(0 <= sym && sym < symbols_size);
 	uint_fast8_t rule = get_rule(symbols[sym], tok);
 	if (rule != NO_RULE) {
 	    const production_t *pp = &grammar[rule];
@@ -741,11 +742,11 @@ static bool build(obj_t actions, obj_t *obj_out)
 	    continue;
 	}
     }
-    ASSERT(stack_is_empty(vstack));
+    assert(stack_is_empty(vstack));
 
     bool success = false;
     if (!is_null(reg)) {
-	ASSERT(is_null(pair_cdr(reg)));
+	assert(is_null(pair_cdr(reg)));
 	*obj_out = pair_car(reg);
 	success = true;
     }

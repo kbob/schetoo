@@ -1,5 +1,7 @@
 #include "obj_vector.h"
 
+#include <assert.h>
+
 #include "except.h"
 #include "mem.h"
 #include "obj_fixnum.h"
@@ -46,14 +48,14 @@ static void vector_move_op(const heap_object_t *src, heap_object_t *dst)
 static obj_t vector_get_ptr_op(const heap_object_t *obj, size_t index)
 {
     vector_obj_t *vec = (vector_obj_t *)obj;
-    ASSERT(index < vec->v_size);
+    assert(index < vec->v_size);
     return *elem_addr(vec, index);
 }
 
 static void vector_set_ptr_op(heap_object_t *obj, size_t index, obj_t ptr)
 {
     vector_obj_t *vec = (vector_obj_t *)obj;
-    ASSERT(index < vec->v_size);
+    assert(index < vec->v_size);
     *elem_addr(vec, index) = ptr;
 }
 

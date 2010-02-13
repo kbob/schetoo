@@ -1,5 +1,6 @@
 #include "scan.h"
 
+#include <assert.h>
 #include <string.h>
 #include <wctype.h>
 
@@ -114,7 +115,7 @@ static int digit_value(wchar_t wc)
 	return wc - L'0';
     if (L'a'<= wc && wc <= L'f')
 	return wc - L'a' + 0xa;
-    ASSERT(L'A'<= wc && wc <= L'F');
+    assert(L'A'<= wc && wc <= L'F');
     return wc - L'A' + 0xA;
 }
 
@@ -254,7 +255,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	    case L']':
 		return TOK_RBRACKET;
 	    default:
-		ASSERT(0);
+		assert(0);
 	    }
 	}
 	if (wc == L'.') {
@@ -530,7 +531,7 @@ const char *token_name(token_type_t tok)
 	CASE(TOK_RBRACKET)
 #undef CASE
     default:
-	ASSERT(false && "unknown token type");
+	assert(false && "unknown token type");
 	return NULL;
     }
 }

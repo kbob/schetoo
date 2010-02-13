@@ -1,5 +1,7 @@
 #include "obj_binding.h"
 
+#include <assert.h>
+
 mem_ops_t binding_ops;
 
 static inline int combine(binding_type_t type, mutability_t mutability)
@@ -24,9 +26,9 @@ obj_t make_binding(obj_t          name,
 {
     CHECK_OBJ(name);
     CHECK_OBJ(value);
-    ASSERT(type == BT_CORE  || type == BT_LEXICAL ||
+    assert(type == BT_CORE  || type == BT_LEXICAL ||
 	   type == BT_MACRO || type == BT_PATTERN);
-    ASSERT(mutability == M_MUTABLE || mutability == M_IMMUTABLE);
+    assert(mutability == M_MUTABLE || mutability == M_IMMUTABLE);
 
     if (!binding_ops.mo_super)
 	mem_mixvec_create_ops(&binding_ops, L"binding", 1, 2);

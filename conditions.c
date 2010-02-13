@@ -1,5 +1,6 @@
 #include "conditions.h"
 
+#include <assert.h>
 #include <stdarg.h>
 
 #include "obj_boolean.h"
@@ -115,9 +116,9 @@ obj_t make_compound_condition_(obj_t parts, ...)
 	    for (j = 0; j < vector_len(part_parts); j++)
 		vector_set(vec, i++, vector_ref(part_parts, j));
 	} else
-	    ASSERT(false);
+	    assert(false);
     }
-    ASSERT(i == n_parts);
+    assert(i == n_parts);
     va_end(ap);
     return MAKE_RECORD(compound_condition, vec);
 }

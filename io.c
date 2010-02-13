@@ -1,5 +1,6 @@
 #include "io.h"
 
+#include <assert.h>
 #include <limits.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -143,11 +144,11 @@ static wint_t readline_getwc(instream_t *ip)
 	}
 	memset(&mbstate, '\0', sizeof mbstate);
 	line_len = mbsrtowcs(NULL, &linebuf, 0, &mbstate);
-	ASSERT(line_len >= 0);
+	assert(line_len >= 0);
 	rp->ri_linebuf = malloc((line_len + 1) * sizeof *rp->ri_linebuf);
 	tmp = linebuf;
 	nb = mbsrtowcs(rp->ri_linebuf, &tmp, line_len + 1, &mbstate);
-	ASSERT(nb >= 0);
+	assert(nb >= 0);
 	rp->ri_pos = 0;
     }
     line_len = wcslen(rp->ri_linebuf);
@@ -164,8 +165,8 @@ static wint_t readline_getwc(instream_t *ip)
 static wint_t readline_ungetwc(wint_t wc, instream_t *ip)
 {
     readline_instream_t *rp = (readline_instream_t *)ip;
-    ASSERT(rp->ri_ungot == WEOF);
-    ASSERT(wc != WEOF);
+    assert(rp->ri_ungot == WEOF);
+    assert(wc != WEOF);
     rp->ri_ungot = wc;
     return wc;
 }
@@ -194,8 +195,8 @@ static wint_t string_getwc(instream_t *ip)
 static wint_t string_ungetwc(wint_t wc, instream_t *ip)
 {
     string_instream_t *sp = (string_instream_t *)ip;
-    ASSERT(sp->si_pos > 0);
-    ASSERT(wc == sp->si_inbuf[sp->si_pos - 1]);
+    assert(sp->si_pos > 0);
+    assert(wc == sp->si_inbuf[sp->si_pos - 1]);
     --sp->si_pos;
     return wc;
 }

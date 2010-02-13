@@ -1,5 +1,6 @@
 #include "obj_string.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include "except.h"
@@ -76,7 +77,7 @@ void string_set_char(obj_t string, size_t index, char_t c)
     CHECK(index < sp->string_len,
 	  NULL, "index out of range", string, make_fixnum(index));
     sp->string_value[index] = c;
-    ASSERT(sp->string_value[sp->string_len] == '\0');
+    assert(sp->string_value[sp->string_len] == '\0');
 }
 
 void string_set_substring(obj_t         string,
@@ -94,7 +95,7 @@ void string_set_substring(obj_t         string,
     char_t *p = sp->string_value;
     for (i = 0; i < len; i++)
 	p[pos + i] = substring[i];
-    ASSERT(sp->string_value[sp->string_len] == '\0');
+    assert(sp->string_value[sp->string_len] == '\0');
 }
 
 int strings_cmp(obj_t str1, obj_t str2)

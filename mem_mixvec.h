@@ -1,6 +1,8 @@
 #ifndef MEM_MIXVEC_INCLUDED
 #define MEM_MIXVEC_INCLUDED
 
+#include <assert.h>
+
 #include "except.h"
 #include "mem.h"
 
@@ -35,7 +37,7 @@ extern void mem_mixvec_create_ops(mem_ops_t *,
 									\
     static inline word_t MVMN##_get_int(obj_t mv, size_t index)		\
     {									\
-        ASSERT(index < M);						\
+        assert(index < M);						\
 	return ((mixvec_##MN##_t *)mv)->mv_##MN##_ints[index];		\
     }									\
 									\
@@ -43,19 +45,19 @@ extern void mem_mixvec_create_ops(mem_ops_t *,
 				      size_t index,			\
 				      intptr_t value)			\
     {									\
-        ASSERT(index < M);						\
+        assert(index < M);						\
 	((mixvec_##MN##_t *)mv)->mv_##MN##_ints[index] = value;		\
     }									\
 									\
     static inline obj_t MVMN##_get_ptr(obj_t mv, size_t index)		\
     {									\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	return ((mixvec_##MN##_t *)mv)->mv_##MN##_ptrs[index];		\
     }									\
 									\
     static inline void MVMN##_set_ptr(obj_t mv, size_t index, obj_t ptr)\
     {									\
-	ASSERT(index < N);						\
+	assert(index < N);						\
 	((mixvec_##MN##_t *)mv)->mv_##MN##_ptrs[index] = ptr;		\
     }
 

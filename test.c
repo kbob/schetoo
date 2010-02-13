@@ -9,6 +9,7 @@ void self_test()
 
 #define TEST_TRACE 0
 
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -32,7 +33,7 @@ static char *phase_name(test_phase_t phase)
     switch (phase) {
     case TP_READ: return "read";
     case TP_EVAL: return "eval";
-    default:      ASSERT(0);
+    default:      assert(0);
 		  return NULL;
     }
 }
@@ -47,10 +48,10 @@ static void handle_lowex(lowex_type_t type, obj_t ex)
 	longjmp(test_restart, type);
 
     case LT_SIGNALLED:
-	ASSERT(false);
+	assert(false);
 
     default:
-	ASSERT(false);
+	assert(false);
     }
 }
 
@@ -85,11 +86,11 @@ static int read_driver(const test_case_descriptor_t *tc)
 	in = make_string_instream(tc->tcd_input, wcslen(tc->tcd_input));
 	ok = read_stream(in, &obj);
 	ok = ok;
-	ASSERT(ok);
+	assert(ok);
 	break;
 
     default:
-	ASSERT(false);
+	assert(false);
     }
     deregister_lowex_handler(handle_lowex);
     delete_instream(in);

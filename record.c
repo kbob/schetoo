@@ -1,5 +1,7 @@
 #include "record.h"
 
+#include <assert.h>
+
 #include "env.h"
 #include "obj_boolean.h"
 #include "obj_pair.h"
@@ -23,7 +25,7 @@ static void init_rec(rec_descriptor_t *desc)
 	field_mutability_t m = fields[i].fd_mutability;
 	if (m == FM_END)
 	    break;
-	ASSERT(m == FM_MUTABLE || m == FM_IMMUTABLE);
+	assert(m == FM_MUTABLE || m == FM_IMMUTABLE);
     }
     size_t field_count = i;
 

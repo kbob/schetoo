@@ -1,5 +1,7 @@
 #include "unicode.h"
 
+#include <assert.h>
+
 #include "bool.h"
 #include "except.h"
 
@@ -82,6 +84,6 @@ const wchar_t *unicode_gc_short_name(unicode_general_category_t cat)
     case UGC_OTHER_PRIVATE_USE: 	return L"Co";
     case UGC_OTHER_NOT_ASSIGNED: 	return L"Cn";
     }
-    ASSERT(false);
+    assert(false);
     return NULL;
 }
