@@ -18,21 +18,7 @@
 static const char *prog_name;
 static const char *prog_short_name;
 
-#ifndef NDEBUG
-
-void assertion_failed(const char *file,
-		      int	 line,
-		      const char *fn,
-		      const char *expr)
-{
-    fprintf(stderr, "%s: %s:%d: %s: Assertion `%s' failed.\n",
-	    program_short_name(), file, line, fn, expr);
-    abort();
-}
-
-#endif
-
-void raise(obj_t *ct, obj_t obj, const wchar_t *msg, ...)
+void throw(obj_t *ct, obj_t obj, const wchar_t *msg, ...)
 {
 #if 0
     {
@@ -75,12 +61,6 @@ void raise(obj_t *ct, obj_t obj, const wchar_t *msg, ...)
     send_exception(ex);
 }
     
-void raise_continuable(obj_t *ct, obj_t obj, const wchar_t *msg)
-{
-    // XXX implement me
-    raise(ct, obj, msg);
-}
-
 void set_program_name(const char *path)
 {
     prog_name = path;

@@ -120,10 +120,9 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	obj_t formal;
 	obj_t actual;
 	while (!is_null(formals) || !is_null(actuals)) {
-	    CHECK(!is_null(formals), operator, "too many arguments", arg_list);
+	    CHECK(!is_null(formals), NULL, "too many arguments");
 	    if (is_pair(formals)) {
-		CHECK(!is_null(actuals),
-		      operator, "not enough arguments", arg_list);
+		CHECK(!is_null(actuals), NULL, "not enough arguments");
 		formal  = CAR(formals);
 		formals = CDR(formals);
 		actual  = CAR(actuals);
@@ -235,7 +234,7 @@ static cv_t default_handler(obj_t cont, obj_t values)
 	}
     }
     obj_t who_p = FALSE_OBJ;
-    obj_t irr_p = EMPTY_LIST;
+    obj_t irr_p = UNDEFINED_OBJ;
     for (i = 0; i < size; i++) {
 	obj_t p = vector_ref(parts, i);
 	obj_t rtd = record_rtd(p);
@@ -249,13 +248,13 @@ static cv_t default_handler(obj_t cont, obj_t values)
 	else if (rtd == irritants)
 	    irr_p = record_get_field(p, 0);
     }
-    if (who_p != FALSE_OBJ && irr_p != EMPTY_LIST) {
+    if (who_p != FALSE_OBJ && irr_p != UNDEFINED_OBJ) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, CONS(who_p, irr_p));
 	psn = "";
     } else if (who_p != FALSE_OBJ) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, who_p);
 	psn = "";
-    } else if (irr_p != EMPTY_LIST) {
+    } else if (irr_p != UNDEFINED_OBJ) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, irr_p);
 	psn = "";
     }
@@ -282,6 +281,7 @@ static cv_t c_exception_returned(obj_t cont, obj_t values)
 
 obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
 {
+    //oprintf("add_who_irritants: cont_proc = %p\n", cont_proc(cont));
     //oprintf("add_who_irritants: cont4_arg = %O\n", cont4_arg(cont));
     //oprintf("add_who_irritants: values = %O\n", values);
     cont_proc_t proc = cont_proc(cont);
@@ -291,6 +291,12 @@ obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
 	obj_t who_sym = procedure_is_C(op) ? procedure_name(op) : FALSE_OBJ;
 	obj_t who_ex = MAKE_RECORD(who, who_sym);
 	obj_t irr_ex = MAKE_RECORD(irritants, reverse_list(values));
+	return MAKE_COMPOUND_CONDITION(who_ex, irr_ex, ex);
+    }
+    if (proc == c_eval_operator) {
+	obj_t arg = cont4_arg(cont);
+	obj_t who_ex = MAKE_RECORD(who, CAR(arg));
+	obj_t irr_ex = MAKE_RECORD(irritants, CDR(arg));
 	return MAKE_COMPOUND_CONDITION(who_ex, irr_ex, ex);
     }
     if (proc == c_eval) {

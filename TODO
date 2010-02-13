@@ -22,6 +22,7 @@ DONE	Rename all ASSERT to assert.
 DONE	Rename RAISE to THROW.
 	Remove 2nd arg from CHECK and RAISE (aka THROW).
 	read.c should use &lexical, not &syntax.
+	Move apply_proc() from prim.c to eval.c.
 
 Heap
 DONE	Implement records.
