@@ -29,13 +29,11 @@
  */
 
 DEFINE_STATIC_RECORD_TYPE(dyn_env, L"dynamic-environment", NULL, RF_OPAQUE) = {
-    { FM_MUTABLE, L"environment" },
     { FM_MUTABLE, L"dynamic-unwind" },
     { FM_MUTABLE, L"exception-handler" },
     { FM_END }
 };
 typedef enum dyn_env_fields {
-    DE_ENV,
     DE_UNWIND,
     DE_HANDLER,
 } dyn_env_fields_t;
@@ -366,7 +364,7 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 {
     obj_t cont   = make_cont4(c_eval, EMPTY_LIST, env, expr);
     obj_t values = EMPTY_LIST;
-    eval_dyn_env = MAKE_RECORD(dyn_env, env, EMPTY_LIST, dhproc);
+    eval_dyn_env = MAKE_RECORD(dyn_env, EMPTY_LIST, dhproc);
 
     if (sigsetjmp(eval_sigrestart, 1)) {
 	/* On Linux, siglongjmp is 30X slower than longjmp. */
