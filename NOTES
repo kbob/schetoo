@@ -670,3 +670,120 @@ How about this for a target message format?
             div: 1 0
 
 Source file and line number would be nice, but...
+
+----------------------------------
+2010.02.13
+
+Time to 'blog.
+
+First, introduce the new Scheme.  List its major features.
+(Lots of datatypes, lots of primitives, some cool stuff
+like call/cc and exceptions.
+
+Second, talk about the eval environment.
+1. Bounded stack use (with exceptions).
+1. It uses trampolines.
+2. Pseudo-VM.  cont, values, and dynamic environment.
+
+Third, talk about the setjmp/longjmp hack.
+
+--
+
+Son of Scheme: Introducing Schetoo
+
+I've started a new Scheme project.  This one is called Schetoo.  The
+name has connotations of "Scheme Two", "me too", and "Gentoo" (a
+hardcore Linux distribution and a breed of penguin).
+
+A 'blogger named Peter Michaux started a series in January called <a
+href="http://peter.michaux.ca/index#Scheme%20from%20Scratch">Scheme
+from Scratch</a>.  His goal was to write a very quick and dirty
+Scheme, just enough to bootstrap a Scheme compiler.  I read his
+postings and decided to get started again.
+
+Schetoo is similar in concept to my first Scheme, <a href="http://kernelbob.wordpress.com/tag/kbscheme/">kbscheme</a>.  In fact,
+I reused a fair amount of code to get Schetoo up and running faster.
+But at the same time, I'm applying what I learned to try to get a
+better design.
+
+I've published the code on GitHub.
+<a href="http://github.com/kbob/schetoo">http://github.com/kbob/schetoo</a>
+---
+Goals
+
+The primary goal for Schetoo is pedagogical.  I want to understand the
+Scheme language and how to design language runtimes.  I intend to
+focus on performance more than last time, because kbscheme was running
+for many seconds just initializing itself.
+
+Another goal is to have no dynamic memory outside of the heap.  No
+recursion so stack size is bounded.  No mallocs.  At present, it falls
+short of that in two ways.  My I/O subsystem uses malloc for memory
+buffers, and the print routine is recursive.  Both were thrown
+together early on to get something running, and both will eventually
+be rewritten.  I'll rewrite I/O in C and rewrite print in Scheme so it
+can remain recursive.
+
+The third goal is to integrate a macro processor into Schetoo.
+I'm not sure how that will work.
+
+Status
+
+Right now, Schetoo is usable for toy programs.
+
+It has a heap with lots of primitive data types: bindings,
+bytevectors, Booleans, Unicode characters, continuations, fixnums,
+pairs, procedures, records, record type descriptors (RTDs), strings,
+symbols, and vectors.  The interpreter also has a hierarchy of
+condition types constructed from records.  (A Scheme condition is like
+a Python exception object.)
+
+It has an assortment of primitives for operating on and converting
+among those types.  I count 44 primitives at the moment.
+
+The reader came from kbscheme, and just like kbscheme, it handles the
+whole R6RS Scheme language except for non-fixnum numbers.
+
+It also has an evaluator with a nice extension mechanism for adding
+more procedures and special forms.  Some of the more interesting forms
+I've implemented are apply, call/cc, define, eval, if, lambda, quote
+and set!.
+
+There is an exception mechanism, and all the forms are wired to
+generate exceptions as needed.  There is no way to set an exception
+handler yet -- the default handler just prints the message and pops
+back to the REPL.
+
+Finally, there's a clever mechanism to track stack-based heap roots
+with zero overhead.  That will be the subject of a future post.
+
+I'm planning to implement dynamic-wind and multiple-value expressions
+someday.  The evaluator was designed with them in mind, but they're
+not implemented yet.
+
+Design
+
+Once again, the implementation language is C.  The overall structure
+is a trampoline-style interpreter using explicit continuations.  This
+time, I'm planning to write less C and more Scheme.  I'm almost at the
+point where the read-eval-print loop (REPL) can be written in Scheme.
+
+I used the same basic heap and garbage collector design as last time.
+There are two significant differences, though.
+
+First, small objects are stored as immediate pointers.  Those include
+fixnums, (Unicode) characters, Booleans, the empty list, and some
+other constants.  For example, the Boolean false is represented as a
+pointer with the binary value 0x0000000E.  There's nothing stored at
+address 0x0000000E, it's just a bit pattern.
+
+Second, I've implemented records.  Records are Scheme's objects.  Each
+record has a class (called a record type descriptor or RTD), and
+classes have single inheritance.  Those both went into the heap design
+fairly easily.
+
+The evaluator is also similar at a high level, but completely
+different in the details.  There is a virtual machine (VM), and the VM
+is a little better defined than last time.  I think I'll write a
+future post about the VM design, too.
+

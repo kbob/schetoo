@@ -59,3 +59,4 @@
 (factorial2 7)
 (factorial3 7)
 (plus3 5)
+(* 2 (plus3 6))
