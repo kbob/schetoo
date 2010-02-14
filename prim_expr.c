@@ -52,14 +52,14 @@ DEFINE_SPECIAL_FORM(L"if")(obj_t cont, obj_t values)
 
 static cv_t c_continue_set(obj_t cont, obj_t values)
 {
-    obj_t form  = cont4_arg(cont);
+    obj_t p  = cont4_arg(cont);
     obj_t env   = cont_env(cont);
-    obj_t var   = CADR(form);
+    obj_t var   = CAR(p);
     obj_t value = CAR(values);
     obj_t bdg   = env_lookup(env, var);
     EVAL_LOG("var=%O value=%O", var, value);
     /* N.B., allocate values list before mutating environment. */
-    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(values));
+    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(p));
     binding_set_value(bdg, value);
     return cv(cont_cont(cont), new_values);
 }
@@ -71,7 +71,10 @@ DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)
     EVAL_LOG("form=%O", form);
     CHECK(list_length(form) == 3, "set! takes 2 arguments");
     obj_t expr = CADDR(form);
-    obj_t second = make_cont4(c_continue_set, cont_cont(cont), env, form);
+    obj_t second = make_cont4(c_continue_set,
+			      cont_cont(cont),
+			      env,
+			      CONS(CADR(form), CDR(values)));
     obj_t first = make_cont4(c_eval, second, env, expr);
     return cv(first, EMPTY_LIST);
 }

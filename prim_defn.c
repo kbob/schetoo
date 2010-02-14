@@ -5,11 +5,11 @@
 
 static cv_t c_continue_define(obj_t cont, obj_t values)
 {
-    EVAL_LOG("var=%O value=%O", cont4_arg(cont), CAR(values));
+    EVAL_LOG("var=%O values=%O", cont4_arg(cont), values);
     /* N.B., allocate new values before mutating environment. */
-    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(values));
+    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(cont4_arg(cont)));
     env_bind(cont_env(cont),
-	     cont4_arg(cont),
+	     CAR(cont4_arg(cont)),
 	     BT_LEXICAL,
 	     M_MUTABLE,
 	     CAR(values));
@@ -21,11 +21,13 @@ DEFINE_SPECIAL_FORM(L"define")(obj_t cont, obj_t values)
     obj_t form = cont4_arg(cont);
     obj_t env  = cont_env(cont);
     EVAL_LOG("form=%O", form);
-    //oprintf("define  \tform=%O\n", form);
     CHECK(list_length(form) == 3, "define takes 2 arguments");
     obj_t var  = CADR(form);
     obj_t expr = CADDR(form);
-    obj_t second = make_cont4(c_continue_define, cont_cont(cont), env, var);
+    obj_t second = make_cont4(c_continue_define,
+			      cont_cont(cont),
+			      env,
+			      CONS(var, CDR(values)));
     obj_t first = make_cont4(c_eval, second, env, expr);
     return cv(first, EMPTY_LIST);
 }
