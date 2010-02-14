@@ -144,7 +144,7 @@ static void print_procedure(obj_t obj, outstream_t *out)
 			 procedure_args_evaluated(obj) ? "" : "S",
 			 procedure_is_C(obj) ? "C" : "",
 			 procedure_is_raw(obj) ? "R" : "");
-	print_symbol(procedure_name(obj), out);
+	print_form(procedure_name(obj), out);
 	outstream_putwc(L'>', out);
     } else {
 #if 1
@@ -213,6 +213,11 @@ static void print_record(obj_t obj, outstream_t *out)
     outstream_putwc(L'>', out);
 }
 
+static void print_undefined(obj_t obj, outstream_t *out)
+{
+    outstream_printf(out, L"#<undefined>");
+}
+
 static void print_form(obj_t obj, outstream_t *out)
 {
     if (is_null(obj) || is_pair(obj)) {
@@ -239,6 +244,8 @@ static void print_form(obj_t obj, outstream_t *out)
 	print_rtd(obj, out);
     } else if (is_record(obj)) {
 	print_record(obj, out);
+    } else if (is_undefined(obj)) {
+	print_undefined(obj, out);
     } else {
 	outstream_printf(out, L"#<%ls-%p>", obj_type_name(obj), obj);
     }
