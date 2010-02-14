@@ -23,8 +23,9 @@ DONE	Remove 2nd arg from CHECK and RAISE (aka THROW).
 DONE	read.c should use &lexical, not &syntax.
 DONE	Move apply_proc() from prim.c to eval.c.
 	Most exceptions shouldn't supply irritants.
-	Move env from cont to dyn_env.
+drop	Move env from cont to dyn_env.
 	Split cont4 into cont3 and cont4.
+	Define raw_proc_t in obj_proc.h and adjust function prototypes.
 
 Heap
 DONE	Implement records.
@@ -51,6 +52,7 @@ Eval
 DONE	Design eval main loop.
 DONE	  -- setjmp
 DONE	  -- exceptions
+DONE	  -- call/cc
 	  -- multiple values
 	  -- arg lists
 	  -- nice calling convention for primitive procs

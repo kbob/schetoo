@@ -45,9 +45,17 @@
 	     1
 	     (* n (fact (- n 1))))))))
 
+(define plus3 '())
+
+(+ 3 (call/cc
+      (lambda (exit)
+        (set! plus3 exit)
+        4)))
+
 (map double '(0 1 2 3))
 (count 3)
 (count 5)
 (factorial1 7)
 (factorial2 7)
 (factorial3 7)
+(plus3 5)

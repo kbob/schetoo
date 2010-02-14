@@ -61,6 +61,12 @@ extern void register_prim(prim_descriptor_t *desc)
     prim_descs = desc;
 }
 
+extern void register_alias(alias_descriptor_t *desc)
+{
+    desc->ad_next = alias_descs;
+    alias_descs = desc;
+}
+
 extern void register_primitives(void)
 {
     obj_t root_env = root_environment();
