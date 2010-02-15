@@ -24,7 +24,7 @@ scheme_cfiles := main.c charbuf.c conditions.c env.c eval.c except.c	\
 scheme_ldlibs := -lreadline
 
 
-     CPPFLAGS := -std=c99 -D_XOPEN_SOURCE -iquote. $(FEATURES)
+     CPPFLAGS := -ansi -std=c99 -D_XOPEN_SOURCE -iquote. $(FEATURES)
        CFLAGS := -g -Wall -Werror -Winline
       libtype := static
 

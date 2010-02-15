@@ -1,12 +1,8 @@
 #include "read.h"
 
 #include <assert.h>
-#include <limits.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "roots.h"
 #include "scan.h"
 #include "test.h"
 #include "types.h"

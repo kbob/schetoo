@@ -80,10 +80,15 @@ static inline obj_t rtd_protocol(obj_t rtd)
     return ((rtd_obj_t *)rtd)->rtd_protocol;
 }
 
+static inline size_t rtd_field_count_unchecked(obj_t rtd)
+{
+    return ((rtd_obj_t *)rtd)->rtd_flags >> RF_SHIFT;
+}
+
 static inline size_t rtd_field_count(obj_t rtd)
 {
     CHECK(is_rtd(rtd), "must be rtd", rtd);
-    return ((rtd_obj_t *)rtd)->rtd_flags >> RF_SHIFT;
+    return rtd_field_count_unchecked(rtd);
 }
 
 static inline obj_t rtd_fields(obj_t rtd)

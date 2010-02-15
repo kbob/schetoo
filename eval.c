@@ -400,6 +400,7 @@ extern obj_t core_eval(obj_t expr, obj_t env)
 	cv_t ret = cont_proc(cont)(cont, values);
 	cont   = ret.cv_cont;
 	values = ret.cv_values;
+	COMMIT_ALLOCATIONS();
 #if DEBUG_EVAL
 	int n = 0;
 	obj_t p;

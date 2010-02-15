@@ -724,7 +724,7 @@ together early on to get something running, and both will eventually
 be rewritten.  I'll rewrite I/O in C and rewrite print in Scheme so it
 can remain recursive.
 
-The third goal is to integrate a macro processor into Schetoo.
+The third goal is to integrate macro translation into Schetoo.
 I'm not sure how that will work.
 
 Status
@@ -764,9 +764,10 @@ not implemented yet.
 Design
 
 Once again, the implementation language is C.  The overall structure
-is a trampoline-style interpreter using explicit continuations.  This
-time, I'm planning to write less C and more Scheme.  I'm almost at the
-point where the read-eval-print loop (REPL) can be written in Scheme.
+is a trampoline-style interpreter using explicit continuations instead
+of a call stack.  This time, I'm planning to write less C and more
+Scheme.  I'm almost at the point where the read-eval-print loop (REPL)
+can be written in Scheme.
 
 I used the same basic heap and garbage collector design as last time.
 There are two significant differences, though.
@@ -787,3 +788,16 @@ different in the details.  There is a virtual machine (VM), and the VM
 is a little better defined than last time.  I think I'll write a
 future post about the VM design, too.
 
+And exceptions got designed in early.  That's an important part of
+building a usable interactive environment.
+
+Next Steps
+
+I'd like to get the REPL into Scheme.  To do that, I need user
+exception handlers and I/O primitives.
+
+----------------------------------
+2010.02.14
+
+Scan and read need to be rewritten to be leaf routines.  That will be
+challenging.  Right now, I'm severely limited

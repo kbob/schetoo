@@ -1,8 +1,11 @@
+#define _SVID_SOURCE			/* for MAP_ANONYMOUS */
+
 #include "heap.h"
 
 #include <assert.h>
 #include <stdio.h>			/* XXX */
 #include <stdlib.h>
+#include <sys/mman.h>
 
 #include "except.h"
 #include "low_ex.h"
@@ -13,23 +16,34 @@
 #include "obj_undefined.h"
 #include "roots.h"
 
-#define DEBUG_HEAP 0
 #if DEBUG_HEAP
-#include <stdio.h>
-#endif /* DEBUG_HEAP */
+    #include <stdio.h>
+#endif
 
-#define INITIAL_HEAP_WORDS (1 << 18)
+#define GROW_HEAP
+#ifdef GROW_HEAP
+#define INITIAL_HEAP_WORDS (1 << 13)
+#define MAX_HEAP_UTILIZATION (0.6)
+#define MIN_HEAP_UTILIZATION (0.1)
+#else
+#define INITIAL_HEAP_WORDS (1 << 17)
+#endif
 #define INITIAL_HEAP_BYTES (INITIAL_HEAP_WORDS * sizeof (word_t))
 
+#ifndef GROW_HEAP
 static void *the_heap;
+#endif
+
 static size_t heap_size_bytes = INITIAL_HEAP_BYTES;
-static void *tospace;
-static void *tospace_end;
-static void *next_alloc;
-static void *alloc_end;
-static void *next_scan;
-static void *fromspace, *fromspace_end;
-static bool heap_is_initialized;
+static void  *tospace;
+static void  *tospace_end;
+static void  *committed;
+static void  *next_alloc;
+static void  *alloc_end;
+static void  *next_scan;
+static void  *fromspace, *fromspace_end;
+static bool   heap_is_initialized;
+static float  utilization;
 
 static inline bool is_in_tospace(const obj_t obj)
 {
@@ -61,6 +75,10 @@ static inline size_t aligned_size(size_t size)
 	for (i = 0; i < n_known_ops; i++)
 	    if (ops == known_ops[i])
 		return true;
+	ops = (mem_ops_t *)forwarded_obj((obj_t)ops);
+	extern mem_ops_t rtd_ops;
+	if (*(mem_ops_t **)ops == &rtd_ops)
+	    return true;
 	return false;
     }
 
@@ -89,8 +107,11 @@ static inline size_t aligned_size(size_t size)
 	    }
 	    else {
 		assert(is_in_tospace(ptr) || IS_IN_FROMSPACE(ptr));
-		if (is_heap(ptr))
+		if (is_heap(ptr)) {
+		    if (obj_is_forwarded(ptr))
+			ptr = (obj_t)obj_fwd_ptr(ptr);
 		    assert(is_known_ops(obj_mem_ops(ptr)));
+		}
 	    }
 	}
     }
@@ -112,12 +133,13 @@ static inline size_t aligned_size(size_t size)
 	    printf("verify_heap: to_space=%p\n", tospace);
 	    printf("            next_scan=%p\n", next_scan);
 	    printf("                    p=%p\n", p);
+	    printf("            committed=%p\n", committed);
 	    printf("           next_alloc=%p\n", next_alloc);
 	    printf("         to_space_end=%p\n", tospace_end);
 	    printf("            alloc_end=%p\n", alloc_end);
 	}
 	assert(p == next_scan);
-	while (p < next_alloc) {
+	while (p < committed) {
 	    obj_t obj = (obj_t)p;
 	    heap_object_t *hobj = obj_heap_object(obj);
 	    mem_ops_t *ops = heap_object_mem_ops(hobj);
@@ -141,10 +163,47 @@ static inline size_t aligned_size(size_t size)
 
 #endif
 
+#ifdef GROW_HEAP
+static void *create_region(size_t size)
+{
+    int flags = MAP_PRIVATE | MAP_ANONYMOUS;
+    void *p = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+    if (p == MAP_FAILED) {
+	perror("mmap");
+	abort();
+    }
+    return p;
+}
+
+static void destroy_region(void *addr, size_t size)
+{
+    int r = munmap(addr, size);
+    assert(r == 0);
+}
+#endif
+
 static void flip()
 {
     fromspace = tospace;
     fromspace_end = tospace_end;
+#ifdef GROW_HEAP
+    size_t orig_heap_size = heap_size_bytes;
+    while (utilization > MAX_HEAP_UTILIZATION) {
+	heap_size_bytes *= 2;
+	utilization /= 2;
+    }
+    while (utilization && utilization < MIN_HEAP_UTILIZATION) {
+	heap_size_bytes /= 2;
+	utilization *= 2;
+    }
+    if (heap_size_bytes != orig_heap_size) {
+	printf("%sing heap from %d to %d bytes\n",
+	       (heap_size_bytes > orig_heap_size) ? "grow" : "shrink",
+	       orig_heap_size, heap_size_bytes);
+    }
+    tospace = create_region(heap_size_bytes);
+    alloc_end = tospace_end = tospace + heap_size_bytes;
+#else
     if (tospace == the_heap) {
 	tospace = the_heap + heap_size_bytes / 2;
 	alloc_end = tospace_end = the_heap + heap_size_bytes;
@@ -152,7 +211,8 @@ static void flip()
 	tospace = the_heap;
 	alloc_end = tospace_end = the_heap + heap_size_bytes / 2;
     }
-    next_alloc = next_scan = tospace;
+#endif
+    next_alloc = committed = next_scan = tospace;
     if (debug_heap) {
 	word_t *p;
 	for (p = (word_t *)tospace; p < (word_t *)tospace_end; p++)
@@ -174,6 +234,7 @@ static obj_t move_obj(obj_t obj)
     next_alloc += size;
     heap_object_mem_ops(hobj)->mo_move(hobj, obj_heap_object(new_obj));
     heap_object_set_fwd_ptr(hobj, new_obj);
+    committed = next_alloc;
     return new_obj;
 }
 
@@ -191,6 +252,7 @@ static void *scan_obj(heap_object_t *hobj)
 
 static void copy_heap()
 {
+    printf("copy_heap\n");
     /* with lock */ {
 	verify_heap();
 	flip();
@@ -205,13 +267,19 @@ static void copy_heap()
 	    verify_heap();
 	}
 	assert(next_scan == next_alloc);
-	/* if (debug_heap)
-	 *     alloc_end = next_alloc;
-	 *else*/ if (alloc_end - next_alloc < (tospace_end - tospace) / 2)
-		 fprintf(stderr, "increase heap size\n");
+#ifdef GROW_HEAP
+	destroy_region(fromspace, fromspace_end - fromspace);
+	fromspace = fromspace_end = 0;
+	utilization = (float)(alloc_end - next_alloc) / (float)(tospace_end - tospace);
+	printf("%d of %d used, utilization = %g\n", alloc_end - next_alloc, tospace_end - tospace, utilization);
+#else
+	if (alloc_end - next_alloc < (tospace_end - tospace) / 2)
+	    fprintf(stderr, "increase heap size\n");
+#endif
     }
 }
 
+#ifndef GROW_HEAP
 void set_heap_size_bytes(size_t size_bytes)
 {
     assert(!heap_is_initialized);
@@ -219,17 +287,22 @@ void set_heap_size_bytes(size_t size_bytes)
 	heap_size_bytes = size_bytes;
     }	
 }
+#endif
 
 void init_heap(void)
 {
     assert(!heap_is_initialized);
+#ifdef GROW_HEAP
+    tospace = create_region(heap_size_bytes);
+    alloc_end = tospace_end = tospace + heap_size_bytes;
+#else
     the_heap = malloc(heap_size_bytes);
     tospace = the_heap;
     alloc_end = tospace_end = the_heap + heap_size_bytes / 2;
-    next_alloc = the_heap;
-    next_scan = the_heap;
-    // if (debug_heap)
-    //     alloc_end = next_alloc;
+#endif
+    next_alloc = tospace;
+    committed = tospace;
+    next_scan = tospace;
 
     heap_is_initialized = true;
 }
@@ -274,6 +347,15 @@ const wchar_t *obj_type_name(const obj_t obj)
 	return L"special";
     return obj_mem_ops(obj)->mo_name;
 }
+
+#if DEBUG_HEAP
+
+void commit_allocations(void)
+{
+    committed = next_alloc;
+}
+
+#endif
 
 #ifndef NDEBUG
 

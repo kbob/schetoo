@@ -1,8 +1,6 @@
 #include "scan.h"
 
 #include <assert.h>
-#include <string.h>
-#include <wctype.h>
 
 #include "charbuf.h"
 #include "except.h"

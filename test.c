@@ -7,7 +7,7 @@ void self_test()
 
 #else
 
-#define TEST_TRACE 0
+#define TEST_TRACE 1
 
 #include <assert.h>
 #include <string.h>
@@ -38,8 +38,7 @@ static char *phase_name(test_phase_t phase)
     }
 }
 
-static void handle_lowex(lowex_type_t type, obj_t ex) NORETURN;
-static void handle_lowex(lowex_type_t type, obj_t ex) 
+NORETURN static void handle_lowex(lowex_type_t type, obj_t ex) 
 {
     switch (type) {
 
