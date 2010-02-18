@@ -120,15 +120,18 @@ static int digit_value(wchar_t wc)
 static bool inline_hex_scalar(instream_t *in, wchar_t *xchr, wchar_t end)
 {
     int xval = 0;
+    bool empty = true;
     wchar_t wc;
-    while ((wc = instream_getwc(in)) != WEOF && is_xdigit(wc))
+    while ((wc = instream_getwc(in)) != WEOF && is_xdigit(wc)) {
 	xval = 0x10 * xval + digit_value(wc);
+	empty = false;
+    }
     if (end) {
 	if (wc == WEOF || wc != end)
 	    return false;
     } else if (wc != WEOF)
 	instream_ungetwc(wc, in);
-    if (xval > 0x10ffff || (xval >= 0xd800 && xval <= 0xdfff))
+    if (empty || xval > 0x10ffff || (xval >= 0xd800 && xval <= 0xdfff))
 	return false;
     *xchr = (wchar_t)xval;
     return true;
@@ -643,7 +646,7 @@ TEST_READ(L"\\x3BB;",			L"\x3bb");
 #define TEST_CHAR(input, expected)					\
     TEST_READ(L"#\\" input, expected);					\
     TEST_EVAL(L"(char? '#\\" input L")", L"#t");
-#define TEST_CHAR_LEXICAL_EXCEPTION(input) TEST_READ(L"#\\" input, &lexical)
+#define TEST_CHAR_LEXICAL_EXCEPTION(input) TEST_READ(L"#\\" input, L"&lexical")
 
 /* from r6rs section 4.2.6 */
 TEST_CHAR(L"a",				L"#\\a");
@@ -688,7 +691,7 @@ TEST_CHAR_LEXICAL_EXCEPTION(L"xD800");
 #define TEST_STRING(input, expected)					\
     TEST_READ(L ## input, L ## expected);				\
     TEST_EVAL(L"(string? " L ## input L")", L"#t");
-#define TEST_STRING_LEXICAL_EXCEPTION(input) TEST_READ(L ## input, &lexical)
+#define TEST_STRING_LEXICAL_EXCEPTION(input) TEST_READ(L ## input, L"&lexical")
 
 TEST_STRING("\"foo\"", "\"foo\"");
 TEST_STRING("\"\"", "\"\"");

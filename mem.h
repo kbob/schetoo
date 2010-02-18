@@ -3,7 +3,7 @@
 
 #include "obj.h"
 
-#define DEBUG_HEAP 1
+#define DEBUG_HEAP 0
 
 /*
  * Low-level memory manager definitions.

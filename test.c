@@ -7,7 +7,7 @@ void self_test()
 
 #else
 
-#define TEST_TRACE 1
+#define TEST_TRACE 0
 
 #include <assert.h>
 #include <string.h>
@@ -19,12 +19,16 @@ void self_test()
 #include "heap.h"
 #include "io.h"
 #include "low_ex.h"
+#include "obj_record.h"
+#include "obj_rtd.h"
+#include "obj_vector.h"
 #include "print.h"
 #include "read.h"
 #include "roots.h"
 
 typedef int (*test_driver_t)(const test_case_descriptor_t *);
 
+static obj_t test_ex;
 static jmp_buf test_restart;
 static test_case_descriptor_t *test_case_descriptors;
 
@@ -43,6 +47,8 @@ NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
     switch (type) {
 
     case LT_THROWN:
+	test_ex = ex;
+	/* fall through */
     case LT_HEAP_FULL:
 	longjmp(test_restart, type);
 
@@ -60,16 +66,6 @@ static int read_driver(const test_case_descriptor_t *tc)
 #if TEST_TRACE
     printf("%s:%d read %ls\n", tc->tcd_file, tc->tcd_lineno, tc->tcd_input);
 #endif
-    /*
-    static int counter;
-    if (++counter < 147) {
-	return 0;
-    }
-    printf("counter = %d\n", counter);
-    */
-    if (tc->tcd_expected == (wchar_t *)&lexical) {
-	return err_count;	    /* XXX exceptions unimplemented */
-    }
     instream_t *in = NULL;
     obj_t obj;
     bool ok;
@@ -86,6 +82,10 @@ static int read_driver(const test_case_descriptor_t *tc)
 	ok = read_stream(in, &obj);
 	ok = ok;
 	assert(ok);
+	break;
+
+    case LT_THROWN:
+	obj = rtd_name(record_rtd(vector_ref(record_get_field(test_ex, 0), 0)));
 	break;
 
     default:
