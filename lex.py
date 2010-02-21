@@ -4,14 +4,13 @@ from collections import defaultdict
 from ply import lex, yacc
 from ply.lex import TOKEN
 
-# What's the smallest language worth scanning?
-# (, ., ), symbol, signed decimal int, char, string, whitespace, ;comment
-
 # #| is a token.  On recognizing it, eat until matching |#, then
 # get another token.
 
 # #; is a token.  Pass it to reader.
 
+
+re_count = 0
 
 class RE(object):
 
@@ -20,6 +19,11 @@ class RE(object):
     # RE expressions: __or__, __mul__, __call__, __and__, __invert__
     # RE Precedence: | 0, & 1, * 2, ~ 3, () 4, CC 5, ε 6
 
+    def __new__(cls, *args, **kwargs):
+        global re_count
+        re_count += 1
+        return super(RE, cls).__new__(cls)
+
     def __eq__(self, other):
         return self.cmp(other) == 0
 
@@ -27,7 +31,6 @@ class RE(object):
         return self.cmp(other) != 0
     
     def __lt__(self, other):
-        #print('lt(%.8r, %.8r) => %s' % (self, other, self.cmp(other) < 0))
         return self.cmp(other) < 0
 
     def __le__(self, other):
@@ -45,86 +48,53 @@ class RE(object):
         if diff > 0: return +1
         return self.cmp_like(other)
 
-    terms = []
-
-    def vfy_total_ordering(self, terms):
-        v = sorted(terms)
-        for i in range(len(v)):
-            for j in range(len(v)):
-                assert (v[i] == v[j]) == (i == j)
-                assert (v[i] != v[j]) == (i != j)
-                assert (v[i] < v[j]) == (i < j)
-                assert (v[i] > v[j]) == (i > j)
-                assert (v[i] <= v[j]) == (i <= j)
-                assert (v[i] >= v[j]) == (i >= j)
+    def __ror__(self, other):
+        return self.canonicalize(other) | self
 
     def __or__(self, other):
-        #print('__or__(%r, %r)' % (self, other))
-        #print('  self = %s %r' % (self.__class__.__name__, self))
-        #print('  other = %s %r' % (other.__class__.__name__, other))
-        assert       self != other
-        assert not  (self == other)
-        assert      (self < other) or  (self > other)
-        assert not ((self < other) and (self > other))
-        #print('  a < b' if self < other else '  a > b')
-        if 1:
-            if self not in self.terms:
-                self.terms.append(self)
-            if other not in self.terms:
-                self.terms.append(other)
-            self.vfy_total_ordering(self.terms);
-            #print('  %d terms' % len(self.terms))
+        other = self.canonicalize(other)
+        assert(isinstance(other, RE))
         if self == empty_set:           # ∅ | r ≈ r
-            #print('  =>1 %r' % other)
             return other
         if other == empty_set:          # r | ∅ ≈ r
-            #print('  =>2 %r' % self)
             return self
         if self == ~empty_set:          # ¬∅ | r ≈ ∅
-            #print('  =>3 %r' % ~empty_set)
             return ~empty_set
         if other == ~empty_set:         # r | ¬∅ ≈ ∅
-            #print('  =>4 %r' % ~empty_set)
             return ~empty_set
         if self == other:               # r | r ≈ r
-            #print('  =>5 %r' % self)
             return self
         if isinstance(self, CC) and isinstance(other, CC):
-            #print('  =>6 CC(%r, %r)' % (self, other))
             return CC(self, other)
         if isinstance(self, CC) and isinstance(other, alt):
             if isinstance(other.left, CC):
-                #print('  =>7.5 CC(%r, %r) | %r' %
-                #      (self, other.left, other.right))
                 return CC(self, other.left) | other.right
             if isinstance(other.right, CC):
-                #print('  =>7.6 CC(%r, %r) | %r' %
-                #      (self, other.right, other.left))
                 return CC(self, other.right) | other.left
+        if isinstance(self, alt) and isinstance(other, CC):
+            if isinstance(self.left, CC):
+                return self.right | CC(self.left, other)
+            if isinstance(self.right, CC):
+                return self.left | CC(self.right, other)
         if self > other:                # s | r ≈ r | s
-            #print('  =>7 %r | %r' % (other, self))
             return other | self
         if isinstance(self, alt):
             v = [self.left, self.right, other]
             sv = sorted(v)
             if v != sv:
-                #print('  =>8 (%r | %r) | %r' % (sv[0], sv[1], sv[2]))
                 return sv[0] | sv[1] | sv[2]
         if isinstance(other, alt):      # r | (s | t) ≈ (r | s) | t
             v = [self, other.left, other.right]
-            t = ['a +-|...', 'b ->(...)*', 'c {}.{}']
-            #print('SOR')
-            st = sorted(t, key=lambda h: v[ord(h[0]) - ord('a')])
             sv = sorted(v)
-            #print('TED %r' % st)
-            if v != sv:
-                #print('  =>9 (%r | %r) | %r' % (sv[0], sv[1], sv[2]))
-                return sv[0] | sv[1] | sv[2]
-        #print('  =>10 alt(%r, %r)' % (self, other))
+            return sv[0] | sv[1] | sv[2]
         return alt(self, other)
 
+    def __rand__(self, other):
+        return self.canonicalize(other) & self
+
     def __and__(self, other):
-        assert False
+        assert False, 'never been here'
+        other = self.canonicalize(other)
         if self == empty_set:           # ∅ & r ≈ ε
             return empty_set
         if other == empty_set:          # r & ∅ ≈ ε
@@ -141,8 +111,11 @@ class RE(object):
             return (self & other.left) & other.right
         return intersect(self, other)
 
+    def __rmul__(self, other):
+        return self.canonicalize(other) * self
+
     def __mul__(self, other):
-        #print('__mul__(%r, %r)' % (self, other))
+        other = self.canonicalize(other)
         if self == empty_set:           # ∅ * r ≈ ∅
             return empty_set
         if other == empty_set:          # r * ∅ ≈ ∅
@@ -169,6 +142,11 @@ class RE(object):
         if isinstance(self, complement): # ¬(¬r) ≈ r
             return self.r
         return complement(self)
+
+    def canonicalize(self, other):
+        if isinstance(other, str):
+            return lit(other)
+        return other
 
 
 class eps(RE):
@@ -307,7 +285,7 @@ class CC(RE):
         if not charmap & charmap - 1:
             return char_repr(chr(charmap.bit_length() - 1))
         names = []
-        for i in self.named:
+        for i in sorted(self.named, reverse=True):
             if (charmap & i) == i:
                 charmap &= ~i
                 names.append(self.named[i])
@@ -326,12 +304,16 @@ class CC(RE):
         diff = self.charmap - other.charmap
         return -1 if diff < 0 else (+1 if diff > 0 else 0)
 
-    def XXX__or__(self, other):
-        print('CC.__or__(%r, %r)' % (self, other))
-        if isinstance(other, CC):
-            print('  =>11 CC(%r, %r)' % (self, other))
-            return CC(self, other)
-        return super(CC, self).__or__(other)
+    def __sub__(self, other):
+        charmap = self.charmap & ~(other.charmap)
+        return type(self).from_charmap(charmap)
+        
+    @classmethod
+    def from_charmap(cls, charmap, name=None):
+        return cls(*[chr(i)
+                     for i in range(charmap.bit_length())
+                     if charmap & (1 << i)], name=name)
+
 
     def __and__(self, other):
         if hasattr(other, 'charmap'):
@@ -378,6 +360,10 @@ class CC(RE):
     catmap = {}
 
     @classmethod
+    def universal(cls):
+        return cls.from_charmap((1 << cls.next_cat) - 1, name='<any character>')
+
+    @classmethod
     def unicode_cat(cls, code):
         mark = chr(cls.next_cat)
         cls.next_cat += 1
@@ -402,8 +388,18 @@ class CC(RE):
         return cls.catmap[code]
 
 
+def lit(s):
+    if len(s) == 0:
+        return ε
+    if len(s) == 1:
+        return CC(s)
+    x = CC(s[0])
+    for c in s[1:]:
+        x = cat(x, CC(c))
+    return x
+
+
 empty_set = CC()
-# print(CC('a') | ε)
 Lu = CC.unicode_cat('Lu')
 Ll = CC.unicode_cat('Ll')
 Lt = CC.unicode_cat('Lt')
@@ -434,70 +430,131 @@ Cf = CC.unicode_cat('Cf')
 Cs = CC.unicode_cat('Cs')
 Co = CC.unicode_cat('Co')
 Cn = CC.unicode_cat('Cn')
+next_line = CC.unicode_cat('next_line')
+line_separator = CC.unicode_cat('line_separator')
 
-def lit(s):
-    x = CC(s[0])
-    for c in s[1:]:
-        x = cat(x, CC(c))
-    return x
 
-#z = CC('a', 'b') | CC('c', 'd') | (CC('e', 'f') | lit('xy'))
-#print(z)
-#exit()
+def r6rs_lexical_syntax():
 
-letter = CC('a-z', 'A-Z', name='<letter>')
-print('letter')
-# constituent = CC(letter, Lu, Ll, Lt, Lm, Lo, Mn,
-#                  Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co)
-constituent = CC(letter, Lu)
-print('constituent')
-special_initial = CC('!', '$', '%', '&', '*', '/', ':', '<', '=',
-                     '>', '?', '^', '_', '~', name='<special initial>')
-print('special_initial')
-digit = CC('0-9', name='<digit>')
-print('digit')
-hex_digit = CC(digit, 'a-f', 'A-F', name='<hex digit>')
-print('hex_digit')
-hex_scalar_value = hex_digit * hex_digit()
-print('hex_scalar_value')
-inline_hex_escape = lit(r'\x') * hex_scalar_value * lit(';')
-print('inline_hex_escape')
-initial = constituent | special_initial | inline_hex_escape
-print('initial')
-special_subsequent = CC('+', '-', '.', '@')
-print('special_subsequent')
-subsequent = initial | digit | CC(Nd, Mc, Me) | special_subsequent
-print('subsequent')
-# print(subsequent)
-# exit()
+    # This grammar is a straight transcription of the lexical grammar in
+    # R6RS §4.2.1.
 
-if 0:
-    print('\n\n')
-    a = CC('+', '-')
-    print('a', a)
-    b = lit('...')
-    print('b', b)
-    c = lit('->') * subsequent()
-    print('c', c)
-    print('\n\n')
-    print('a < a', a < a)
-    print('a < b', a < b)
-    print('a < c', a < c)
-    print('b < a', b < a)
-    print('b < b', b < b)
-    print('b < c', b < c)
-    print('c < a', c < a)
-    print('c < b', c < b)
-    print('c < c', c < c)
-    print('sorted', sorted([a, b, c]))
-    exit()
+    line_ending = (CC('\n') | '\r'
+                   | '\r\n' | next_line
+                   | '\r' * next_line | line_separator)
+    letter = CC('a-z', 'A-Z', name='<letter>')
+    constituent = CC(letter, Lu, Ll, Lt, Lm, Lo, Mn,
+                     Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co)
+    special_initial = CC('!', '$', '%', '&', '*', '/', ':', '<', '=',
+                         '>', '?', '^', '_', '~', name='<special initial>')
+    digit_ = CC('0-9', name='<digit>')
+    hex_digit = CC(digit_, 'a-f', 'A-F', name='<hex digit>')
+    hex_scalar_value = hex_digit * hex_digit()
+    inline_hex_escape = r'\x' * hex_scalar_value * ';'
+    initial = constituent | special_initial | inline_hex_escape
+    special_subsequent = CC('+', '-', '.', '@')
+    subsequent = initial | digit_ | CC(Nd, Mc, Me) | special_subsequent
+    peculiar_identifier = lit('+') | '-' | '...' | '->' * subsequent()
+    identifier = initial * subsequent() | peculiar_identifier
 
-peculiar_identifier = CC('+') | CC('-') | lit('...') | lit('->') * subsequent()
-print('peculiar_identifier')
-identifier = initial * subsequent() | peculiar_identifier
-print('identifier')
-print(identifier)
-exit()
+    boolean = lit('#t') | '#T' | '#f' | '#F'
+
+    def digit(R):
+        return {
+            2: CC('0-1'),
+            8: CC('0-7', name='<digit 8>'),
+            10: digit_,
+            16: hex_digit,
+            }[R]
+    def radix(R):
+        return {
+            2: lit('#b') | '#B',
+            8: lit('#o') | '#O',
+            10: ε | '#d' | '#D',
+            16: lit('#x') | '#X',
+            }[R]
+    exactness = ε | '#i' | '#I' | '#e' | '#E'
+    sign = ε | '+' | '-'
+    mantissa_width = ε | '|' * digit(10)
+    exponent_marker = CC('e', 'E', 's', 'S', 'f', 'F',
+                         'd', 'D', 'l', 'L')
+    suffix = ε | exponent_marker * sign * digit(10) * digit(10)()
+
+    def prefix(R):
+        return radix(R) * exactness | exactness * radix(R)
+    def uinteger(R):
+        return digit(R) * digit(R)()
+    def decimal(R):
+        if R == 10:
+            return (uinteger(10) * suffix
+                    | '.' * digit(10) * digit(10)() * suffix
+                    | digit(10) * digit(10)() * '.' * digit(10)() * suffix
+                    | digit(10) * digit(10)() * '.' * suffix)
+        return empty_set
+    def ureal(R):
+        return (uinteger(R)
+                | uinteger(R) * '/' * uinteger(R)
+                | decimal(R) * mantissa_width)
+    naninf = lit('nan.0') | 'inf.0'
+    def real(R):
+        return sign * ureal(R) | '+' * naninf | '-' * naninf
+    def complex(R):
+        return (real(R) | real(R) * '@' * real(R)
+                | real(R) * '+' * ureal(R)*'i' | real(R) * '-' * ureal(R)*'i'
+                | real(R) * '+' * naninf * 'i' | real(R) * '-' * naninf * 'i'
+                | real(R) * '+i' | real(R) * '-i'
+                | '+' * ureal(R) * 'i' | '-' * ureal(R) * 'i'
+                | '+' * naninf * 'i' | '-' * naninf * 'i'
+                | '+i' | '-i')
+    def num(R):
+        return prefix(R) * complex(R)
+    num_8 = num_10 = num_16 = empty_set
+    number = num(2) | num(8) | num(10) | num(16)
+
+    character_name = CC('a-z', name='<a-z>')()
+    character = ('#\\' * CC.universal()
+                 | '#\\' * character_name
+                 | '#\\x' * hex_scalar_value)
+
+    intraline_whitespace = '\t' | Zs
+    string_element = (CC.universal() - CC('"', '\\')
+                      | r'\a' | r'\b' | r'\t' | r'\n' | r'\v' | r'\f' | r'\r'
+                      | r'\"' | r'\\'
+                      | '\\' * intraline_whitespace * line_ending
+                        * intraline_whitespace
+                      | inline_hex_escape)
+    string = '"' * string_element() * '"'
+
+    return [
+        identifier,
+        boolean,
+        number,
+        character,
+        string,
+        CC('('),
+        CC(')'),
+        CC('['),
+        CC(']'),
+        lit('#('),
+        lit('#vu8('),
+        CC('\''),
+        CC('`'),
+        CC(','),
+        lit(',@'),
+        CC('.'),
+        lit('#\''),
+        lit('#`'),
+        lit('#,'),
+        lit('#,@'),
+        ]
+
+
+print(r6rs_lexical_syntax())
+
+
+print('%d REs' % re_count)
+
+
 
 
 ##############################################################################
