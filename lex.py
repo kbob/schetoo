@@ -1,8 +1,11 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+import sys
+if sys.version_info < (3, 1):
+    raise Exception('need Python 3.1 or later')
 
 from collections import defaultdict
-from ply import lex, yacc
-from ply.lex import TOKEN
 
 # #| is a token.  On recognizing it, eat until matching |#, then
 # get another token.
@@ -12,7 +15,7 @@ from ply.lex import TOKEN
 
 re_count = 0
 
-class RE(object):
+class RE:
 
     # Predefined REs: empty_set (empty set), ε (empty string)
     # RE subclasses: CC, alt, cat, kc, intersect, complement, epsilon
@@ -43,7 +46,10 @@ class RE(object):
         return self.cmp(other) > 0
 
     def cmp(self, other):
-        diff = self.precedence - other.precedence
+        try:
+            diff = self.precedence - other.precedence
+        except AttributeError:
+            return -1                   # ???
         if diff < 0: return -1
         if diff > 0: return +1
         return self.cmp_like(other)
@@ -67,24 +73,24 @@ class RE(object):
         if isinstance(self, CC) and isinstance(other, CC):
             return CC(self, other)
         if isinstance(self, CC) and isinstance(other, alt):
-            if isinstance(other.left, CC):
-                return CC(self, other.left) | other.right
-            if isinstance(other.right, CC):
-                return CC(self, other.right) | other.left
+            if isinstance(other.r, CC):
+                return CC(self, other.r) | other.s
+            if isinstance(other.s, CC):
+                return CC(self, other.s) | other.r
         if isinstance(self, alt) and isinstance(other, CC):
-            if isinstance(self.left, CC):
-                return self.right | CC(self.left, other)
-            if isinstance(self.right, CC):
-                return self.left | CC(self.right, other)
+            if isinstance(self.r, CC):
+                return self.s | CC(self.r, other)
+            if isinstance(self.s, CC):
+                return self.r | CC(self.s, other)
         if self > other:                # s | r ≈ r | s
             return other | self
         if isinstance(self, alt):
-            v = [self.left, self.right, other]
+            v = [self.r, self.s, other]
             sv = sorted(v)
             if v != sv:
                 return sv[0] | sv[1] | sv[2]
         if isinstance(other, alt):      # r | (s | t) ≈ (r | s) | t
-            v = [self, other.left, other.right]
+            v = [self, other.r, other.s]
             sv = sorted(v)
             return sv[0] | sv[1] | sv[2]
         return alt(self, other)
@@ -107,7 +113,7 @@ class RE(object):
         if self > other:                # s & r ≈ r & s
             return other & self
         if isinstance(other, intersect): # r & (s & t) ≈ (r & s) & t
-            return (self & other.left) & other.right
+            return (self & other.r) & other.s
         return intersect(self, other)
 
     def __rmul__(self, other):
@@ -124,7 +130,7 @@ class RE(object):
         if other == ε:                  # r * ε ≈ r
             return self
         if isinstance(other, cat):      # r * (s * t) ≈ (r * s) * t
-            return (self * other.left) * other.right
+            return (self * other.r) * other.s
         return cat(self, other)
 
     def __call__(self, plus=None):
@@ -162,6 +168,9 @@ class eps(RE):
         assert other is ε
         return 0
 
+    def __hash__(self):
+        return hash(self.__class__)
+
     def ν(self):
         return ε
 
@@ -177,101 +186,109 @@ class eps(RE):
 class alt(RE):
 
     def __init__(self, r, s):
-        self.left = r
-        self.right = s
+        self.r = r
+        self.s = s
         self.precedence = 0
 
     def __repr__(self):
-        lrep = repr(self.left)
-        rrep = repr(self.right)
-        if self.left.precedence < self.precedence:
-            lrep = '(%s)' % lrep
-        if self.right.precedence <= self.precedence:
+        rrep = repr(self.r)
+        srep = repr(self.s)
+        if self.r.precedence < self.precedence:
             rrep = '(%s)' % rrep
-        return '%s|%s' % (lrep, rrep)
+        if self.s.precedence <= self.precedence:
+            srep = '(%s)' % srep
+        return '%s|%s' % (rrep, srep)
 
     def cmp_like(self, other):
         assert isinstance(other, alt)
-        return self.left.cmp(other.left) or self.right.cmp(other.right)
+        return self.r.cmp(other.r) or self.s.cmp(other.s)
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(self.r) ^ hash(self.s)
 
     def ν(self):
-        if self.left.ν() == ε:
+        if ν(self.r) == ε:
             return ε
-        return self.right.ν()
+        return ν(self.s)
 
     def partial(self, c):
-        return self.left.partial(c) | self.right.partial(c)
+        return d(self.r, c) | d(self.s, c)
 
     def C(self):
-        return {Sr & Ss for Sr in self.left.C() for Ss in self.right.C()}
+        return {Sr & Ss for Sr in C(self.r) for Ss in C(self.s)}
 
 
 class intersect(RE):
 
     def __init__(self, r, s):
-        self.left = r
-        self.right = s
+        self.r = r
+        self.s = s
         self.precedence = 1
 
     def __repr__(self):
-        lrep = repr(self.left)
-        rrep = repr(self.right)
-        if self.left.precedence < self.precedence:
-            lrep = '(%s)' % lrep
-        if self.right.precedence <= self.precedence:
+        rrep = repr(self.r)
+        srep = repr(self.s)
+        if self.r.precedence < self.precedence:
             rrep = '(%s)' % rrep
-        return '%s&%s' % (lrep, rrep)
+        if self.s.precedence <= self.precedence:
+            srep = '(%s)' % srep
+        return '%s&%s' % (rrep, srep)
 
     def cmp_like(self, other):
         assert isinstance(other, alt)
-        return self.left.cmp(other.left) or self.right.cmp(other.right)
+        return self.r.cmp(other.r) or self.s.cmp(other.s)
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(self.r) ^ hash(self.s)
 
     def ν(self):
-        if self.left.ν() == ε:
-            return self.right.ν()
+        if ν(self.r) == ε:
+            return ν(self.s)
         return empty_set
 
     def partial(self, c):
-        return self.left.partial(c) & self.right.partial(c)
+        return d(self.r, c) & d(self.s, c)
 
     def C(self):
-        return {Sr & Ss for Sr in self.left.C() for Ss in self.right.C()}
+        return {Sr & Ss for Sr in C(self.r) for Ss in C(self.s)}
 
 
 class cat(RE):
 
     def __init__(self, r, s):
-        self.left = r
-        self.right = s
+        self.r = r
+        self.s = s
         self.precedence = 2
 
     def __repr__(self):
-        lrep = repr(self.left)
-        rrep = repr(self.right)
-        if self.left.precedence < self.precedence:
-            lrep = '(%s)' % lrep
-        if self.right.precedence <= self.precedence:
+        rrep = repr(self.r)
+        srep = repr(self.s)
+        if self.r.precedence < self.precedence:
             rrep = '(%s)' % rrep
-        return '%s%s' % (lrep, rrep)
+        if self.s.precedence <= self.precedence:
+            srep = '(%s)' % srep
+        return '%s%s' % (rrep, srep)
 
     def cmp_like(self, other):
         assert isinstance(other, cat)
-        return self.left.cmp(other.left) or self.right.cmp(other.right)
+        return self.r.cmp(other.r) or self.s.cmp(other.s)
+
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(self.r) ^ ~hash(self.s)
 
     def ν(self):
-        if self.left.ν() == ε:
-            return self.right.ν()
+        if ν(self.r) == ε:
+            return ν(self.s)
         return empty_set
 
     def partial(self, c):
-        return (self.left.partial(c) * self.right |
-                self.left.ν() * self.right.partial(c))
+        return d(self.r, c) * self.s | ν(self.r) * d(self.s, c)
 
     def C(self):
-        if self.left.ν() != ε:
-            return self.left.C()
+        if ν(self.r) != ε:
+            return C(self.r)
         else:
-            return {Sr & Ss for Sr in self.left.C() for Ss in self.right.C()}
+            return {Sr & Ss for Sr in C(self.r) for Ss in C(self.s)}
 
 
 class complement(RE):
@@ -282,23 +299,26 @@ class complement(RE):
 
     def __repr__(self):
         rrep = repr(self.r)
-        if r.precedence < 4:
+        if self.r.precedence < 4:
             rrep = '(%s)' % rrep
         return '¬' + rrep
 
     def cmp_like(self, other):
         return self.r.cmp(other.r)
 
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(self.r)
+
     def ν(self):
-        if self.r.ν() == ε:
+        if ν(self.r) == ε:
             return empty_set
         return ε
 
     def partial(self, c):
-        return ~self.r.partial(c)
+        return ~d(self.r, c)
 
     def C(self):
-        return self.r.C()
+        return C(self.r)
 
 
 class kc(RE):
@@ -318,14 +338,17 @@ class kc(RE):
         assert isinstance(other, kc)
         return self.r.cmp(other.r)
 
+    def __hash__(self):
+        return hash(self.__class__) ^ hash(self.r)
+
     def ν(self):
         return ε
 
     def partial(self, c):
-        return self.r.partial(c) * self
+        return d(self.r, c) * self
 
     def C(self):
-        return self.r.C()
+        return C(self.r)
 
 
 class CC(RE):
@@ -351,12 +374,15 @@ class CC(RE):
         if name:
             self.named[self.charmap] = name
 
-    def chars(self, ):
+    def chars(self):
         return [chr(i) for i in self.ints()]
             
     def ints(self):
         return [i for i in range(self.charmap.bit_length() + 1)
                 if self.charmap & (1 << i)]
+
+    def any_member(self):
+        return self.chars()[0]
 
     def __find_range(self, n):
         end = n
@@ -374,6 +400,8 @@ class CC(RE):
         charmap = self.charmap
         if charmap == 0:
             return '∅'
+        if charmap == Σ.charmap:
+            return 'Σ'
         if not charmap & charmap - 1:
             return char_repr(chr(charmap.bit_length() - 1))
         names = []
@@ -383,7 +411,7 @@ class CC(RE):
                 names.append(self.named[i])
         names.extend(char_repr(chr(i))
                      for i in range(charmap.bit_length() + 1)
-                     if  charmap & (1 << i) )
+                     if charmap & (1 << i))
         rep = ' '.join(names)
         return '{%s}' % rep
         if charmap & charmap - 1:
@@ -396,11 +424,14 @@ class CC(RE):
         diff = self.charmap - other.charmap
         return -1 if diff < 0 else (+1 if diff > 0 else 0)
 
+    def __bool__(self):
+        return self.charmap != 0
+
     def ν(self):
         return empty_set
 
     def partial(self, c):
-        if self.charmap & (1 << ord(c)):
+        if c in self:
             return ε
         else:
             return empty_set
@@ -408,18 +439,19 @@ class CC(RE):
     def C(self):
         return {self, Σ - self}
 
+    def __contains__(self, c):
+        return bool(self.charmap & (1 << ord(c)))
+
     def __sub__(self, other):
         charmap = self.charmap & ~(other.charmap)
         return type(self).from_charmap(charmap)
         
     def __hash__(self):
-        return hash(id(self.__class__)) ^ hash(self.charmap)
+        return hash(self.__class__) ^ hash(self.charmap)
 
     @classmethod
     def from_charmap(cls, charmap, name=None):
-        return cls(*[chr(i)
-                     for i in range(charmap.bit_length())
-                     if charmap & (1 << i)], name=name)
+        return cls(charmap, name=name)
 
 
     def __and__(self, other):
@@ -429,6 +461,8 @@ class CC(RE):
 
     @classmethod
     def __make_charmap(cls, *args):
+        if len(args) == 1 and isinstance(args[0], int):
+            return args[0]
         charmap = 0
         for arg in args:
             try:
@@ -468,7 +502,7 @@ class CC(RE):
 
     @classmethod
     def universal(cls):
-        return cls.from_charmap((1 << cls.next_cat) - 1, name='<any character>')
+        return cls.from_charmap((1 << cls.next_cat) - 1, name='Σ')
 
     @classmethod
     def unicode_cat(cls, code):
@@ -494,6 +528,34 @@ class CC(RE):
                     cls.catmap[ccode].append(chr(cpt))
         return cls.catmap[code]
 
+
+# Helper functions
+
+def ν(r):
+    try:
+        return r.ν()
+    except AttributeError:
+        return any(ν(q) for q in r)
+
+def C(r):
+    try:
+        return r.C()
+    except AttributeError:
+        # How do you write this more cleanly?
+        # Want something like reduce().
+        cc = {Σ}
+        for q in r:
+            cc = {Sr & Ss for Sr in cc for Ss in C(q)}
+        return cc
+
+def d(r, u):
+    try:
+        r.partial
+    except AttributeError:
+        return tuple(d(q, u) for q in r)
+    if u == '' or u == ε:
+        return r
+    return d(r.partial(u[0]), u[1:])
 
 def lit(s):
     if len(s) == 0:
@@ -541,16 +603,63 @@ next_line = CC.unicode_cat('next_line')
 line_separator = CC.unicode_cat('line_separator')
 Σ = CC.universal()
 
-z = lit('3')() * '4' & '3' * lit('4')() | CC('2-4') * CC('3', '5')
-print(z)
-if 1:
-    print(z.partial('3'))
-    print(z.partial('3').partial('4'))
-    print(z.partial('A'))
-    print(Σ)
-    print(z.C())
 
-exit()
+class DFA:
+
+    def __init__(self, r):
+        """r may be a RE or a sequence of REs."""
+        q0 = d(r, ε)
+        self.q0 = q0
+        self.Q = {q0}
+        self.δ = {}
+        self.cc = set()
+        self.explore(q0)
+
+    def explore(self, q):
+        for S in C(q):
+            self.cc.add(S)
+            self.goto(q, S)
+
+    def goto(self, q, S):
+        if S:
+            c = S.any_member()
+            qc = d(q, c)
+            if qc in self.Q:
+                self.δ[q, S] = qc
+            else:
+                self.Q.add(qc)
+                self.δ[q, S] = qc
+                self.explore(qc)
+
+
+if 0:
+    z1 = lit('a')() * 'b' & 'a' * lit('b')()
+    z2 = CC('a-c') * CC('b', 'd')
+    z = z1 | z2
+    if 0:
+        print(z1)
+        print(z2)
+        print(d(z, 'a'))
+        print(d(z, 'ab'))
+        print(d(z, 'e'))
+        print(Σ)
+        print(C(z))
+
+    dfa = DFA([z1, z2])
+    print()
+    print('q0 = %r' % (dfa.q0,))
+    print()
+    for q in dfa.Q:
+        print('ACCEPT' if ν(q) else '      ', q)
+    print()
+    for t in dfa.δ:
+        Srep = repr(t[1])
+        if len(Srep) > 20:
+            Srep = '{...}'
+        print('%-50.50s -> %r' % ('δ(%r, %s)' % (t[0], Srep), dfa.δ[t]))
+    print()
+    exit()
+
 
 def r5rs_lexical_syntax():
 
@@ -637,9 +746,11 @@ def r5rs_lexical_syntax():
             CC('('), CC(')'), lit('#('), CC('\''), CC('`'), CC(','), lit(',@'), CC('.')
             ]
 
-for p in r5rs_lexical_syntax():
-    print(p)
+# for p in r5rs_lexical_syntax():
+#     print(p)
 
+# dfa = DFA(r5rs_lexical_syntax())
+# exit()
 
 def r6rs_lexical_syntax():
 
@@ -757,312 +868,25 @@ def r6rs_lexical_syntax():
 
 # print(r6rs_lexical_syntax())
 
+dfa = DFA(r6rs_lexical_syntax())
+if 0:
+    print('q0 = %r' % (dfa.q0,))
+    print()
+    print('Q:')
+    for q in dfa.Q:
+        print('ACCEPT' if ν(q) else '      ', q)
+    print()
+    print('δ:')
+    for d in dfa.δ:
+        # print('%-30.30s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
+        print('%s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
+    print()
+    print('%d states, %d transitions, %d character classes' % (len(dfa.Q), len(dfa.δ), len(dfa.cc)))
+
 
 print('%d REs' % re_count)
 exit()
 
-
-
-##############################################################################
-
-
-class MyLexicalError(RuntimeError):
-    pass
-
-
-class Token(object):
-    def __init__(self, type, constructor=None, value=None):
-        self.type = type
-        self.constructor = constructor
-        self.value = value
-
-
-class Context(object):
-    def __init__(self, state, buf):
-        self.state = state
-        self.buf = buf
-
-
-class DFA(object):
-
-    def __init__(self):
-        self.transitions = [[]]
-        self.delimiter_needed = []
-        self.accept = []
-        # self.char_class = []
-
-    def char_class(c):
-        try:
-            return '\n"#\'()-.;\\ft'.index(c)
-        except ValueError:
-            if c in ' \t':
-                return 12
-            if c.isalpha():
-                return 13
-            if c.isdigit():
-                return 14
-            raise MyLexicalError('illegal char %r' % c)
-
-    def make_token(self, state, buf):
-        return self.accept[state](buf)
-
-    def scan(c, ctx):
-        state = ctx.state
-        buf = ctx.buf
-        tokens = []
-        cc = self.char_class[c]
-        if is_delimiter(cc) and self.delimiter_needed[state]:
-            tokens.append(self.make_token(state, buf))
-            buf = ''
-        state = self.transition[state][cc]
-        buf += c
-        if state == self.error_state:
-            raise MyLexicalError()
-        if self.accept[state] and not self.delimiter_needed[state]:
-            tokens.append(self.make_token(state, buf))
-            buf = ''
-        return Context(state, buf), tokens
-
-
-def ident(buf):
-    return Token('SIMPLE', 'symbol', buf)
-
-def number(buf):
-    n = int(buf)
-    if 0 <= n <= 255:
-        type = 'EXACT_NUMBER'
-    else:
-        type = 'SIMPLE'
-    return Token(type, 'fixnum', buf)
-
-def lparen(buf):
-    return Token('LPAREN')
-
-def period(buf):
-    return Token('PERIOD')
-
-def rparen(buf):
-    return Token('RPAREN')
-
-def apostrophe(buf):
-    return Token('ABBREV', 'symbol', 'quote')
-
-def string(buf):
-    return Token('SIMPLE', 'string', buf[1:-1])
-
-def character(buf):
-    return Token('SIMPLE', 'character', buf[-1])
-
-def true(buf):
-    return Token('SIMPLE', 'boolean', True)
-
-def false(buf):
-    return Token('SIMPLE', 'boolean', False)
-
-# A = alphabetic
-# C = any character
-# D = digit
-# Q = not doublequote
-
-patterns = (
-    (r';.*\n', None),
-    (r' \t\n', None),
-    (r'A(A|D)*', ident),
-    (r'(|-)AA*', number),
-    ('(', lparen),
-    ('.', period),
-    (')', rparen),
-    ("'", apostrophe),
-    ('"Q*"', string),
-    ('#\C', character),
-    ('#(T|t)', true),
-    ('#(F|f)', false),
-    )
-
-rstar = [p for (p, c) in patterns]
-
-class MySyntaxError(RuntimeError):
-    pass
-
-tokens = (
-    'EXACT_NUMBER',
-    'SIMPLE',
-    'ABBREV',
-    'COMMENT',
-    'BEGIN_VECTOR',
-    'BEGIN_BYTEVECTOR',
-    'LPAREN',
-    'RPAREN',
-    'PERIOD',
-    'LBRACKET',
-    'RBRACKET',
-    'EOF',
-    'ident',
-    'dot_ident',
-    'boolean',
-    'char',
-    'decimal_number',
-    'nondecimal_number',
-    )
-
-t_ignore = '[\t\n\v\f\r \u0085\\s]'
-
-# delimiter must follow ident, ., number, char, boolean.
-# delimiter is optional after ( #( #vu8( ) [ ] string abbrev #; EOF
-delimiter = r'(?=[()[\]";\#]|%s|\Z)' % t_ignore
-
-t_COMMENT = r'\#;'
-t_BEGIN_VECTOR = r'\#\('
-t_BEGIN_BYTEVECTOR = r'\#vu8\('
-t_LPAREN = r'\('
-t_RPAREN = r'\)'
-t_PERIOD = r'\.' + delimiter
-t_LBRACKET = r'\['
-t_RBRACKET = r']'
-
-# Things grouped under SIMPLE:
-# ident .ident #t #f char number - -> ->ident -number + +number string
-
-@TOKEN(r'[-!\$%&\*/:<=>\?^_~\w][-!\$%&\*/:<=>\?^_~\w\d]*' + delimiter)
-def t_ident(t):
-    t.type = 'SIMPLE'
-    t.value = 'symbol(%s)' % t.value
-    return t
-    
-@TOKEN(r'\.[-!$%&\*/:<=>\?\^_~\w\d]+' + delimiter)
-def t_dot_ident(t):
-    t.type = 'SIMPLE'
-    t.value = 'symbol(%s)' % t.value
-    return t
-
-@TOKEN(r'\#[TtFf]' + delimiter)
-def t_boolean(t):
-    t.type = 'SIMPLE'
-    t.value = 't' in t.value.lower()
-    return t
-
-@TOKEN(r'\#\\(?:[a-z]+|x[0-9a-fA-F]+|.)' + delimiter)
-def t_char(t):
-    z = t.value[2:]
-    if len(z) > 1:
-        if z[0] == 'x':
-            z = chr(int(z[3:], 0x10))
-        else:
-            z = {
-                'nul': '\0',
-                'alarm': '\a',
-                'backspace': '\b',
-                'tab': '\t',
-                'linefeed': '\n',
-                'newline': '\n',
-                'vtab': '\v',
-                'page': '\f',
-                'return': '\r',
-                'esc': '\33',
-                'space': ' ',
-                'delete': '\177',
-                }.get(z, None)
-            if z == None:
-                raise MyLexicalError(t.value)
-    t.type = 'SIMPLE'
-    t.value = 'character(%d)' % ord(z)
-    return t
-
-# uint = 123
-# decimal = 123 | 123e4 | 123e+4 | 123e-4 | .123e4 | 1.23e4 | 123.e4
-# ureal (base 10) = 123 | 123/456 | decimal | decimal|7
-# ureal = 123 | 123/456
-# real = ureal | +ureal | -ureal
-# complex = R | R@R | R+Ui | R+nan.0i | R+inf.0i | +U+i | +nan.0i | +i
-# prefix = #b | #i#b | #b#i
-# prefix (base 10) = #d | #i#d | #d#i | (empty)
-# number = prefix complex
-
-def number_pattern(flag, digit_pattern):
-    def expand(pat, vars):
-        # vars = dict((k, vars[k]) for k in vars if len(k) == 1)
-        while any(v in pat for v in vars):
-            for v in vars:
-                if v in pat:
-                    pat = pat.replace(v, vars[v])
-        return pat
-    # Don't use B O D X I E S F D L
-    base = r'\#[%s%s]' % (flag.upper(), flag.lower())
-    prefix = r'(?:base|base\#[IiEe]|\#[IiEe]base)'
-    uint = 'digit_pattern+'
-    U = ureal = r'(?:uint|uint/uint)'
-    if flag == 'd':
-        prefix = r'(?:|base|base\#[IiEe]|\#[IiEe]base)'
-        suffix = r'(?:|[EeSsFfDdLl]\d+)'
-        decimal = r'(?:\d+suffix|\.\d+suffix|\d+.\d*suffix)'
-        mantwid = r'(?:|\|\d+)'
-        U = ureal = r'(?:uint|uint/uint|decimalmantwid)'
-    R = real = r'[+-]?U'
-    naninf = r'(?:nan|inf)\.0'
-    complex = r'(?:R|R@R|R[+-]Ui|R[+-]naninfi|R[+-]i|[+-]Ui|[+-]naninfi|[+-]i)'
-    number = prefix + complex
-    return expand(number, locals())
-
-@TOKEN('(?:%s|%s|%s)%s' % (number_pattern('b', '[01]'),
-                           number_pattern('o', '[0-7]'),
-                           number_pattern('x', '[\dA-Fa-f]'),
-                           delimiter))
-def t_nondecimal_number(t):
-    z = t.value
-    radix = 10
-    exact = True
-    while z.startswith('#'):
-        f = z[1].lower()
-        if f == 'e':
-            exact = True
-        elif f == 'i':
-            exact = False
-        elif f == 'b':
-            radix = 2
-        elif f == 'o':
-            radix = 8
-        elif f == 'x':
-            radix = 0x10
-        else:
-            assert f == 'e'
-        z = z[2:]
-    value = int(z, radix)
-    if exact:
-        t.value = value
-        t.type = 'EXACT_NUMBER' if 0 <= value <= 255 else 'SIMPLE'
-    else:
-        t.value = float(value)
-        t.type = 'SIMPLE'
-
-
-@TOKEN(number_pattern('d', r'\d') + delimiter)
-def t_decimal_number(t):
-    'a'
-    pass
-
-# print(t_nondecimal_number.__doc__)
-# print(t_decimal_number.__doc__)
-
-
-def t_ABBREV(t):
-    # ' ` , ,@ #' #` #, #,@
-    r"\#?(?:'|`|,@|,)"
-    t.value = {
-        "'": 'quote',
-        "`": 'quasiquote',
-        ",": 'unquote',
-        ",@": 'unquote-splicing',
-        "#'": 'syntax',
-        "#`": 'quasisyntax',
-        "#,": 'unsyntax',
-        "#,@": 'unsyntax-splicing',
-        }[t.value]
-    return t
-
-def t_error(t):
-    raise MySyntaxError(t)
-
-# scanner = lex.lex()
 
 grammar = r'''
 <lexeme> -> <identifier> | <boolean> | <number>
