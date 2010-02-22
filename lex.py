@@ -93,7 +93,6 @@ class RE(object):
         return self.canonicalize(other) & self
 
     def __and__(self, other):
-        assert False, 'never been here'
         other = self.canonicalize(other)
         if self == empty_set:           # ∅ & r ≈ ε
             return empty_set
@@ -128,7 +127,9 @@ class RE(object):
             return (self * other.left) * other.right
         return cat(self, other)
 
-    def __call__(self):
+    def __call__(self, plus=None):
+        if plus:
+            return self * self()
         if isinstance(self, kc):        # (r*)* ≈ r*
             return self
         if self == ε:                   # ε* ≈ ε
@@ -161,6 +162,15 @@ class eps(RE):
         assert other is ε
         return 0
 
+    def ν(self):
+        return ε
+
+    def partial(self, c):
+        return empty_set
+
+    def C(self):
+        return {Σ}
+
 ε = eps()
 
 
@@ -184,6 +194,49 @@ class alt(RE):
         assert isinstance(other, alt)
         return self.left.cmp(other.left) or self.right.cmp(other.right)
 
+    def ν(self):
+        if self.left.ν() == ε:
+            return ε
+        return self.right.ν()
+
+    def partial(self, c):
+        return self.left.partial(c) | self.right.partial(c)
+
+    def C(self):
+        return {Sr & Ss for Sr in self.left.C() for Ss in self.right.C()}
+
+
+class intersect(RE):
+
+    def __init__(self, r, s):
+        self.left = r
+        self.right = s
+        self.precedence = 1
+
+    def __repr__(self):
+        lrep = repr(self.left)
+        rrep = repr(self.right)
+        if self.left.precedence < self.precedence:
+            lrep = '(%s)' % lrep
+        if self.right.precedence <= self.precedence:
+            rrep = '(%s)' % rrep
+        return '%s&%s' % (lrep, rrep)
+
+    def cmp_like(self, other):
+        assert isinstance(other, alt)
+        return self.left.cmp(other.left) or self.right.cmp(other.right)
+
+    def ν(self):
+        if self.left.ν() == ε:
+            return self.right.ν()
+        return empty_set
+
+    def partial(self, c):
+        return self.left.partial(c) & self.right.partial(c)
+
+    def C(self):
+        return {Sr & Ss for Sr in self.left.C() for Ss in self.right.C()}
+
 
 class cat(RE):
 
@@ -205,6 +258,21 @@ class cat(RE):
         assert isinstance(other, cat)
         return self.left.cmp(other.left) or self.right.cmp(other.right)
 
+    def ν(self):
+        if self.left.ν() == ε:
+            return self.right.ν()
+        return empty_set
+
+    def partial(self, c):
+        return (self.left.partial(c) * self.right |
+                self.left.ν() * self.right.partial(c))
+
+    def C(self):
+        if self.left.ν() != ε:
+            return self.left.C()
+        else:
+            return {Sr & Ss for Sr in self.left.C() for Ss in self.right.C()}
+
 
 class complement(RE):
 
@@ -217,6 +285,21 @@ class complement(RE):
         if r.precedence < 4:
             rrep = '(%s)' % rrep
         return '¬' + rrep
+
+    def cmp_like(self, other):
+        return self.r.cmp(other.r)
+
+    def ν(self):
+        if self.r.ν() == ε:
+            return empty_set
+        return ε
+
+    def partial(self, c):
+        return ~self.r.partial(c)
+
+    def C(self):
+        return self.r.C()
+
 
 class kc(RE):
 
@@ -235,10 +318,19 @@ class kc(RE):
         assert isinstance(other, kc)
         return self.r.cmp(other.r)
 
+    def ν(self):
+        return ε
+
+    def partial(self, c):
+        return self.r.partial(c) * self
+
+    def C(self):
+        return self.r.C()
+
 
 class CC(RE):
 
-    """character class"""
+    """Character Class is both a regular expression and a set of characters."""
 
     all = {}
     named = {}
@@ -304,10 +396,25 @@ class CC(RE):
         diff = self.charmap - other.charmap
         return -1 if diff < 0 else (+1 if diff > 0 else 0)
 
+    def ν(self):
+        return empty_set
+
+    def partial(self, c):
+        if self.charmap & (1 << ord(c)):
+            return ε
+        else:
+            return empty_set
+
+    def C(self):
+        return {self, Σ - self}
+
     def __sub__(self, other):
         charmap = self.charmap & ~(other.charmap)
         return type(self).from_charmap(charmap)
         
+    def __hash__(self):
+        return hash(id(self.__class__)) ^ hash(self.charmap)
+
     @classmethod
     def from_charmap(cls, charmap, name=None):
         return cls(*[chr(i)
@@ -317,7 +424,7 @@ class CC(RE):
 
     def __and__(self, other):
         if hasattr(other, 'charmap'):
-            raise NotImplementedError
+            return type(self).from_charmap(self.charmap & other.charmap)
         return super(CC, self).__and__(other)
 
     @classmethod
@@ -432,6 +539,106 @@ Co = CC.unicode_cat('Co')
 Cn = CC.unicode_cat('Cn')
 next_line = CC.unicode_cat('next_line')
 line_separator = CC.unicode_cat('line_separator')
+Σ = CC.universal()
+
+z = lit('3')() * '4' & '3' * lit('4')() | CC('2-4') * CC('3', '5')
+print(z)
+if 1:
+    print(z.partial('3'))
+    print(z.partial('3').partial('4'))
+    print(z.partial('A'))
+    print(Σ)
+    print(z.C())
+
+exit()
+
+def r5rs_lexical_syntax():
+
+    # delimiter
+    # whitespace
+    # comment
+    # atmosphere
+    # intertoken_space
+    peculiar_identifier = lit('+') | '-' | '...'
+    digit_ = CC('0-9')
+    letter = CC('a-z')
+    special_initial = CC('!', '$', '%', '&', '*', '/', ':', '<', '=',
+                         '>', '?', '^', '_', '~')
+    special_subsequent = CC('+', '-', '.', '@')
+    initial = letter | special_initial
+    subsequent = initial | digit_ | special_subsequent
+    identifier = initial * subsequent() | peculiar_identifier
+
+    # expression_keyword = (lit('quote') | 'lambda' | 'if'
+    #                       | 'set!' | 'begin' | 'cond' | 'and' | 'or' | 'case'
+    #                       | 'let' | 'let*' | 'letrec' | 'do' | 'delay'
+    #                       | 'quasiquote')
+    # syntactic_keyword = (expression_keyword
+    #                      | 'else' | '=>' | 'define'
+    #                      | 'unquote' | 'unquote-splicing')
+    # variable = identifier & ~syntactic_keyword
+
+    boolean = lit('#t') | '#f'
+
+    character_name = lit('space') | 'newline'
+    character = '#\\' * Σ | '#\\' * character_name
+
+    string_element = (Σ - CC('"', '\\')
+                      | r'\"' | r'\\')
+    string = '"' * string_element * '"'
+
+    def digit(R):
+        return {
+            2: CC('0-1'),
+            8: CC('0-7'),
+            10: digit_,
+            16: CC('0-9', 'a-f'),
+            }[R]
+        
+    def radix(R):
+        return {
+            2: lit('#b'),
+            8: lit('#o'),
+            10: ε | '#d',
+            16: lit('#x'),
+            }[R]
+
+    exactness = ε | '#i' | '#e'
+    sign = ε | '+' | '-'
+    exponent_marker = CC('e') | 's' | 'f' | 'd' | 'l'
+    suffix = ε | exponent_marker * sign * digit(10)(1)
+    def prefix(R):
+        return radix(R) * exactness | exactness * radix(R)
+    def uinteger(R):
+        return digit(R) * digit(R)() * lit('#')()
+    def decimal(R):
+        if R == 10:
+            return (uinteger(10) * suffix
+                    | '.' * digit(10)(1) * lit('#')() * suffix
+                    | digit(10)(1) * '.' * digit(10)() * lit('#')() * suffix
+                    | digit(10)(1) * lit('#')(1) * '.' * lit('#')() * suffix)
+        else:
+            return empty_set
+    def ureal(R):
+        return (uinteger(R)
+                | uinteger(R) * '/' * uinteger(R)
+                | decimal(R))
+    def real(R):
+        return sign * ureal(R)
+    def complex(R):
+        return (real(R) | real(R) * '@' * real(R)
+                | real(R) * '+' * ureal(R)*'i' | real(R) * '-' * ureal(R)*'i'
+                | real(R) * '+i' | real(R) * '-i'
+                | '+' * ureal(R) * 'i' | '-' * ureal(R) * 'i' | '+i' | '-i')
+    def num(R):
+        return prefix(R) * complex(R)
+    number = num(2) | num(8) | num(10) | num(16)
+    return [identifier, boolean, number, character, string,
+            CC('('), CC(')'), lit('#('), CC('\''), CC('`'), CC(','), lit(',@'), CC('.')
+            ]
+
+for p in r5rs_lexical_syntax():
+    print(p)
 
 
 def r6rs_lexical_syntax():
@@ -478,18 +685,18 @@ def r6rs_lexical_syntax():
     mantissa_width = ε | '|' * digit(10)
     exponent_marker = CC('e', 'E', 's', 'S', 'f', 'F',
                          'd', 'D', 'l', 'L')
-    suffix = ε | exponent_marker * sign * digit(10) * digit(10)()
+    suffix = ε | exponent_marker * sign * digit(10)(1)
 
     def prefix(R):
         return radix(R) * exactness | exactness * radix(R)
     def uinteger(R):
-        return digit(R) * digit(R)()
+        return digit(R)(1)
     def decimal(R):
         if R == 10:
             return (uinteger(10) * suffix
-                    | '.' * digit(10) * digit(10)() * suffix
-                    | digit(10) * digit(10)() * '.' * digit(10)() * suffix
-                    | digit(10) * digit(10)() * '.' * suffix)
+                    | '.' * digit(10)(1) * suffix
+                    | digit(10)(1) * '.' * digit(10)() * suffix
+                    | digit(10)(1) * '.' * suffix)
         return empty_set
     def ureal(R):
         return (uinteger(R)
@@ -512,12 +719,12 @@ def r6rs_lexical_syntax():
     number = num(2) | num(8) | num(10) | num(16)
 
     character_name = CC('a-z', name='<a-z>')()
-    character = ('#\\' * CC.universal()
+    character = ('#\\' * Σ
                  | '#\\' * character_name
                  | '#\\x' * hex_scalar_value)
 
     intraline_whitespace = '\t' | Zs
-    string_element = (CC.universal() - CC('"', '\\')
+    string_element = (Σ - CC('"', '\\')
                       | r'\a' | r'\b' | r'\t' | r'\n' | r'\v' | r'\f' | r'\r'
                       | r'\"' | r'\\'
                       | '\\' * intraline_whitespace * line_ending
@@ -548,12 +755,11 @@ def r6rs_lexical_syntax():
         lit('#,@'),
         ]
 
-
-print(r6rs_lexical_syntax())
+# print(r6rs_lexical_syntax())
 
 
 print('%d REs' % re_count)
-
+exit()
 
 
 
