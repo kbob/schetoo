@@ -12,8 +12,21 @@ from collections import defaultdict
 
 # #; is a token.  Pass it to reader.
 
-
 re_count = 0
+
+
+def memoize1(f):
+    d = {}
+    def helper(arg):
+        try:
+            return d[arg]
+        except KeyError:
+            x = f(arg)
+            d[arg] = x
+            return x
+    helper.__name__ = f.__name__
+    return helper
+
 
 class RE:
 
@@ -27,8 +40,18 @@ class RE:
         re_count += 1
         return super(RE, cls).__new__(cls)
 
+    def __hash__(self):
+        if not hasattr(self, 'hash'):
+            self.hash = self.calc_hash()
+        return self.hash
+
     def __eq__(self, other):
-        return self.cmp(other) == 0
+        try:
+            if self.precedence != other.precedence:
+                return False
+        except AttributeError:
+            return False
+        return self.cmp_eq(other)
 
     def __ne__(self, other):
         return self.cmp(other) != 0
@@ -60,13 +83,13 @@ class RE:
     def __or__(self, other):
         other = self.canonicalize(other)
         assert(isinstance(other, RE))
-        if self == empty_set:           # ∅ | r ≈ r
+        if self is empty_set:           # ∅ | r ≈ r
             return other
-        if other == empty_set:          # r | ∅ ≈ r
+        if other is empty_set:          # r | ∅ ≈ r
             return self
-        if self == ~empty_set:          # ¬∅ | r ≈ ∅
+        if self is ~empty_set:          # ¬∅ | r ≈ ∅
             return ~empty_set
-        if other == ~empty_set:         # r | ¬∅ ≈ ∅
+        if other is ~empty_set:         # r | ¬∅ ≈ ∅
             return ~empty_set
         if self == other:               # r | r ≈ r
             return self
@@ -100,13 +123,13 @@ class RE:
 
     def __and__(self, other):
         other = self.canonicalize(other)
-        if self == empty_set:           # ∅ & r ≈ ε
+        if self is empty_set:           # ∅ & r ≈ ε
             return empty_set
-        if other == empty_set:          # r & ∅ ≈ ε
+        if other is empty_set:          # r & ∅ ≈ ε
             return empty_set
-        if self == ~empty_set:          # ¬∅ & r ≈ r
+        if self is ~empty_set:          # ¬∅ & r ≈ r
             return other
-        if other == ~empty_set:         # r & ¬∅ ≈ r
+        if other is ~empty_set:         # r & ¬∅ ≈ r
             return self
         if other == self:               # r & r ≈ r
             return self
@@ -121,13 +144,13 @@ class RE:
 
     def __mul__(self, other):
         other = self.canonicalize(other)
-        if self == empty_set:           # ∅ * r ≈ ∅
+        if self is empty_set:           # ∅ * r ≈ ∅
             return empty_set
-        if other == empty_set:          # r * ∅ ≈ ∅
+        if other is empty_set:          # r * ∅ ≈ ∅
             return empty_set
-        if self == ε:                   # ε * r ≈ r
+        if self is ε:                   # ε * r ≈ r
             return other
-        if other == ε:                  # r * ε ≈ r
+        if other is ε:                  # r * ε ≈ r
             return self
         if isinstance(other, cat):      # r * (s * t) ≈ (r * s) * t
             return (self * other.r) * other.s
@@ -138,9 +161,9 @@ class RE:
             return self * self()
         if isinstance(self, kc):        # (r*)* ≈ r*
             return self
-        if self == ε:                   # ε* ≈ ε
+        if self is ε:                   # ε* ≈ ε
             return ε
-        if self == empty_set:           # ∅* ≈ ε
+        if self is empty_set:           # ∅* ≈ ε
             return ε
         return kc(self)
     kc = __call__
@@ -164,11 +187,14 @@ class eps(RE):
     def __repr__(self):
         return 'ε'
 
+    def cmp_eq(self, other):
+        return other is ε
+
     def cmp_like(self, other):
         assert other is ε
         return 0
 
-    def __hash__(self):
+    def calc_hash(self):
         return hash(self.__class__)
 
     def ν(self):
@@ -199,11 +225,14 @@ class alt(RE):
             srep = '(%s)' % srep
         return '%s|%s' % (rrep, srep)
 
+    def cmp_eq(self, other):
+        return self.r == other.r and self.s == other.s
+
     def cmp_like(self, other):
         assert isinstance(other, alt)
         return self.r.cmp(other.r) or self.s.cmp(other.s)
 
-    def __hash__(self):
+    def calc_hash(self):
         return hash(self.__class__) ^ hash(self.r) ^ hash(self.s)
 
     def ν(self):
@@ -234,11 +263,14 @@ class intersect(RE):
             srep = '(%s)' % srep
         return '%s&%s' % (rrep, srep)
 
+    def cmp_eq(self, other):
+        return self.r == other.r and self.s == other.s
+
     def cmp_like(self, other):
         assert isinstance(other, alt)
         return self.r.cmp(other.r) or self.s.cmp(other.s)
 
-    def __hash__(self):
+    def calc_hash(self):
         return hash(self.__class__) ^ hash(self.r) ^ hash(self.s)
 
     def ν(self):
@@ -269,15 +301,18 @@ class cat(RE):
             srep = '(%s)' % srep
         return '%s%s' % (rrep, srep)
 
+    def cmp_eq(self, other):
+        return self.r == other.r and self.s == other.s
+
     def cmp_like(self, other):
         assert isinstance(other, cat)
         return self.r.cmp(other.r) or self.s.cmp(other.s)
 
-    def __hash__(self):
+    def calc_hash(self):
         return hash(self.__class__) ^ hash(self.r) ^ ~hash(self.s)
 
     def ν(self):
-        if ν(self.r) == ε:
+        if ν(self.r) is ε:
             return ν(self.s)
         return empty_set
 
@@ -285,7 +320,7 @@ class cat(RE):
         return d(self.r, c) * self.s | ν(self.r) * d(self.s, c)
 
     def C(self):
-        if ν(self.r) != ε:
+        if ν(self.r) is not ε:
             return C(self.r)
         else:
             return {Sr & Ss for Sr in C(self.r) for Ss in C(self.s)}
@@ -303,10 +338,13 @@ class complement(RE):
             rrep = '(%s)' % rrep
         return '¬' + rrep
 
+    def cmp_eq(self, other):
+        return self.r == other.r
+
     def cmp_like(self, other):
         return self.r.cmp(other.r)
 
-    def __hash__(self):
+    def calc_hash(self):
         return hash(self.__class__) ^ hash(self.r)
 
     def ν(self):
@@ -334,11 +372,14 @@ class kc(RE):
             return '(%r)*' % (self.r)
         return '%r*' % self.r
 
+    def cmp_eq(self, other):
+        return self.r == other.r
+
     def cmp_like(self, other):
         assert isinstance(other, kc)
         return self.r.cmp(other.r)
 
-    def __hash__(self):
+    def calc_hash(self):
         return hash(self.__class__) ^ hash(self.r)
 
     def ν(self):
@@ -419,6 +460,9 @@ class CC(RE):
             return '{%s}' % ' '.join(char_repr(c) for c in chars)
         return char_repr(chr(charmap.bit_length() - 1))
 
+    def cmp_eq(self, other):
+        return self.charmap == other.charmap
+
     def cmp_like(self, other):
         assert isinstance(other, CC)
         diff = self.charmap - other.charmap
@@ -436,6 +480,7 @@ class CC(RE):
         else:
             return empty_set
 
+    @memoize1
     def C(self):
         return {self, Σ - self}
 
@@ -445,8 +490,8 @@ class CC(RE):
     def __sub__(self, other):
         charmap = self.charmap & ~(other.charmap)
         return type(self).from_charmap(charmap)
-        
-    def __hash__(self):
+
+    def calc_hash(self):
         return hash(self.__class__) ^ hash(self.charmap)
 
     @classmethod
@@ -535,8 +580,9 @@ def ν(r):
     try:
         return r.ν()
     except AttributeError:
-        return any(ν(q) for q in r)
+        return ε if any(ν(q) is ε for q in r) else empty_set
 
+@memoize1
 def C(r):
     try:
         return r.C()
@@ -553,7 +599,7 @@ def d(r, u):
         r.partial
     except AttributeError:
         return tuple(d(q, u) for q in r)
-    if u == '' or u == ε:
+    if u == '' or u is ε:
         return r
     return d(r.partial(u[0]), u[1:])
 
@@ -632,6 +678,86 @@ class DFA:
                 self.explore(qc)
 
 
+class DFA:
+
+    def __init__(self, Q, q0, F, δ):
+        self.Q = Q
+        self.q0 = q0
+        self.F = F
+        self.δ = δ
+
+
+def make_DFA(r):
+    
+    """r may be a RE or a sequence of REs."""
+
+    def explore(q):
+        for S in C(q):
+            cc.add(S)
+            goto(q, S)
+
+    def goto(q, S):
+        if S:
+            c = S.any_member()
+            qc = d(q, c)
+            if qc in Q:
+                δ[q, S] = qc
+            else:
+                Q.add(qc)
+                δ[q, S] = qc
+                explore(qc)
+
+    q0 = d(r, ε)
+    Q = {q0}
+    δ = {}
+    cc = set()
+    explore(q0)
+    F = {q for q in Q if ν(q) is ε}
+    return DFA(Q, q0, F, δ)
+
+
+def minimize(dfa):
+    print('one')
+    a = dfa.F
+    print('two')
+    b = dfa.Q - dfa.F
+    print('three')
+    distinguished = {q: (a if q in a else b) for q in dfa.Q}
+    print('four')
+    print(len(distinguished))
+    nd = len(distinguished)
+    while True:
+        for q1, S in dfa.cc:
+            for q in dfa.Q:
+                t2 = dfa.δ.get((q, S)
+            for q2 in dfa.Q:
+                for c in 
+
+# A new object, call it DFAFormatter, is going to take the DFA,
+# order the states and CCs, affix user-defined actions to them,
+# and write C source code with them.
+
+# character class - 
+
+class Formatter:
+
+    def __init__(self, apv):
+        """apv is the "action-pattern vector".
+
+        It's a sequence of action-pattern pairs.  Each action is a
+        string for a C identifier.  Each pattern is a RE.  Actions are
+        in order of decreasing priority -- when a DFA state matches
+        two actions, the first one takes precedence.
+
+        We'll build the DFA, keeping track of which actions associate
+        with which patterns.  Then we can output the C source code.
+        """
+        self.a = [p[0] for p in apv]
+        self.r = [p[1] for p in apv]
+        self.dfa = DFA(self.r)
+
+
+
 if 0:
     z1 = lit('a')() * 'b' & 'a' * lit('b')()
     z2 = CC('a-c') * CC('b', 'd')
@@ -645,12 +771,12 @@ if 0:
         print(Σ)
         print(C(z))
 
-    dfa = DFA([z1, z2])
+    dfa = make_DFA([z1, z2])
     print()
     print('q0 = %r' % (dfa.q0,))
     print()
     for q in dfa.Q:
-        print('ACCEPT' if ν(q) else '      ', q)
+        print('ACCEPT' if ν(q) is ε else '      ', q)
     print()
     for t in dfa.δ:
         Srep = repr(t[1])
@@ -868,13 +994,14 @@ def r6rs_lexical_syntax():
 
 # print(r6rs_lexical_syntax())
 
-dfa = DFA(r6rs_lexical_syntax())
+dfa = make_DFA(r6rs_lexical_syntax())
+dfa = minimize(dfa)
 if 0:
     print('q0 = %r' % (dfa.q0,))
     print()
     print('Q:')
     for q in dfa.Q:
-        print('ACCEPT' if ν(q) else '      ', q)
+        print('ACCEPT' if ν(q) is ε else '      ', q)
     print()
     print('δ:')
     for d in dfa.δ:
@@ -882,7 +1009,8 @@ if 0:
         print('%s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
     print()
     print('%d states, %d transitions, %d character classes' % (len(dfa.Q), len(dfa.δ), len(dfa.cc)))
-
+    print('%d transitions to error state' %
+          sum(all(q == empty_set for q in v) for v in dfa.δ.values()))
 
 print('%d REs' % re_count)
 exit()
