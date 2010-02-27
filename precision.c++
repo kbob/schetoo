@@ -19,6 +19,7 @@ int precision(void)
 
 int main()
 {
+    PRINT_PRECISION(short);
     PRINT_PRECISION(float);
     PRINT_PRECISION(double);
     PRINT_PRECISION(long double);
