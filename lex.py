@@ -5,26 +5,56 @@ import sys
 if sys.version_info < (3, 1):
     raise Exception('need Python 3.1 or later')
 
+import builtins
 from collections import defaultdict
+from functools import reduce, wraps
+from pickle import dump, load
+
 
 # #| is a token.  On recognizing it, eat until matching |#, then
 # get another token.
 
 # #; is a token.  Pass it to reader.
 
+from time import time
+
+start_time = time()
+
+def print(*args):
+    t = time() - start_time
+    builtins.print('%7.3f' % t, *args)
+
+
 re_count = 0
 
 
 def memoize1(f):
     d = {}
+    @wraps(f)
     def helper(arg):
         try:
             return d[arg]
+        except TypeError:
+            return f(arg)
         except KeyError:
             x = f(arg)
             d[arg] = x
             return x
-    helper.__name__ = f.__name__
+    return helper
+
+
+def memoize2(f):
+    d = {}
+    @wraps(f)
+    def helper(arg1, arg2):
+        try:
+            return d[arg1, arg2]
+        except TypeError:
+            return f(arg1, arg2)
+        except KeyError:
+            x = f(arg1, arg2)
+            d[arg1, arg2] = x
+            return x
     return helper
 
 
@@ -267,7 +297,7 @@ class intersect(RE):
         return self.r == other.r and self.s == other.s
 
     def cmp_like(self, other):
-        assert isinstance(other, alt)
+        assert isinstance(other, intersect)
         return self.r.cmp(other.r) or self.s.cmp(other.s)
 
     def calc_hash(self):
@@ -466,7 +496,8 @@ class CC(RE):
     def cmp_like(self, other):
         assert isinstance(other, CC)
         diff = self.charmap - other.charmap
-        return -1 if diff < 0 else (+1 if diff > 0 else 0)
+        return (+1 if diff > 0 else -1) if diff else 0
+    
 
     def __bool__(self):
         return self.charmap != 0
@@ -603,6 +634,14 @@ def d(r, u):
         return r
     return d(r.partial(u[0]), u[1:])
 
+def accepts(r):
+    try: 
+        for i, q in enumerate(r):
+            if ν(q) == ε:
+                return i                # index
+    except TypeError:
+        return ν(r) == ε                # Boolean
+        
 def lit(s):
     if len(s) == 0:
         return ε
@@ -652,39 +691,39 @@ line_separator = CC.unicode_cat('line_separator')
 
 class DFA:
 
-    def __init__(self, r):
-        """r may be a RE or a sequence of REs."""
-        q0 = d(r, ε)
-        self.q0 = q0
-        self.Q = {q0}
-        self.δ = {}
-        self.cc = set()
-        self.explore(q0)
-
-    def explore(self, q):
-        for S in C(q):
-            self.cc.add(S)
-            self.goto(q, S)
-
-    def goto(self, q, S):
-        if S:
-            c = S.any_member()
-            qc = d(q, c)
-            if qc in self.Q:
-                self.δ[q, S] = qc
-            else:
-                self.Q.add(qc)
-                self.δ[q, S] = qc
-                self.explore(qc)
-
-
-class DFA:
-
     def __init__(self, Q, q0, F, δ):
+        print('DFA init begin')
         self.Q = Q
         self.q0 = q0
         self.F = F
-        self.δ = δ
+        self._cc = C({S for q, S in δ}) - {empty_set}
+        self._δ = {}
+        for (q1, S1), q2 in δ.items():
+            for S2 in self._cc:
+                if S2 - S1 == empty_set:
+                    self._δ[q1, S2] = q2
+        print('DFA init end')
+
+    def δ(self, q, S):
+        return self._δ[q, S]
+
+    def C(self):
+        return self._cc
+
+    @property
+    def ordered_Q(self):
+        z = [self.q0] + self.error_states()
+        return z + sorted(q for q in self.Q if q not in z)
+
+    def error_states(self):
+        def is_error_state(q):
+            if q == empty_set:
+                return True
+            if hasattr(q, '__iter__'):
+                if all(r == empty_set for r in q):
+                    return True
+            return False
+        return [q for q in self.Q if is_error_state(q)]
 
 
 def make_DFA(r):
@@ -693,7 +732,6 @@ def make_DFA(r):
 
     def explore(q):
         for S in C(q):
-            cc.add(S)
             goto(q, S)
 
     def goto(q, S):
@@ -710,34 +748,102 @@ def make_DFA(r):
     q0 = d(r, ε)
     Q = {q0}
     δ = {}
-    cc = set()
     explore(q0)
-    F = {q for q in Q if ν(q) is ε}
+    F = {q: accepts(q) for q in Q}
     return DFA(Q, q0, F, δ)
 
 
+class SymmetricMatrix:
+
+    def __init__(self, n, fill=None):
+        self.items = [[fill for j in range(i, n)] for i in range(n)]
+
+    def __getitem__(self, ij):
+        i, j = min(ij), max(ij)
+        assert 0 <= i <= j < len(self.items)
+        return self.items[i][j - i]
+
+    def __setitem__(self, ij, value):
+        i, j = ij
+        assert 0 <= i <= j < len(self.items)
+        self.items[i][j - i] = value
+
+
+def enumerate_ordered_pairs(l):
+    for i, q1 in enumerate(l):
+        for j in range(i + 1, len(l)):
+            yield i, j, q1, l[j]
+
+
+def minimize_states(dfa):
+
+    def distinguish_states(i0):
+        indistinguished = []
+        for q1, q2 in i0:
+            i, j = Qi[q1], Qi[q2]
+            for S in C(dfa):
+                d1, d2 = δ(q1, S), δ(q2, S)
+                if d1 != d2:
+                    i1, i2 = Qi[d1], Qi[d2]
+                    if distinguished[i1, i2]:
+                        distinguished[i, j] = True
+                        break
+            else:
+                indistinguished.append((q1, q2))
+        return indistinguished
+
+    Q = dfa.ordered_Q
+    Qi = {q: i for i, q in enumerate(Q)}
+    q0 = dfa.q0
+    F = dfa.F
+    δ = dfa.δ
+
+    distinguished = SymmetricMatrix(len(Q), fill=False)
+    indistinguished = []
+    for i, j, q1, q2 in enumerate_ordered_pairs(Q):
+        distinguished[i, j] = F[q1] != F[q2]
+        if F[q1] == F[q2]:
+            indistinguished.append((q1, q2))
+
+    nd = sum(sum(row) for row in distinguished.items)
+    ni = 0
+    nni = len(indistinguished)
+    while ni != nni:
+        ni = nni
+        print('%d indistinguished pairs' % ni)
+        indistinguished = distinguish_states(indistinguished)
+        nni = len(indistinguished)
+    qmap = {q: q for q in Q}
+    extras = set()
+    for q1, q2 in indistinguished:
+        qmap[q2] = q1
+        extras.add(q2)
+    new_Q = dfa.Q - extras
+    new_q0 = qmap[q0]
+    new_δ = {(q, S): qmap[δ(q, S)] for q in new_Q for S in C(dfa)}
+    new_F = {q: accepts(q) for q in new_Q}
+    return DFA(new_Q, new_q0, new_F, new_δ)
+
+def minimize_classes(dfa):
+    # x = list(C(dfa))
+    # for S1, S2 in ordered_pairs(x):
+    #     for q in Q:
+    #         if δ[q, S1] != δ[q, S2]:
+    #             S1, S2 are distinguished
+    #     else:
+    #          S1, S2 are equivalent.
+    #          del new_cc[S1], new_cc[S2]
+    #          new_cc.add(S1 | S2)
+    # new_δ = {(q, Smap(S)): dfa.δ[q, S] for q in dfa.Q for S in C(dfa)}
+    # return DFA(dfa.Q, dfa.q0, dfa.F, 
+    return dfa                          # XXX
+
 def minimize(dfa):
-    print('one')
-    a = dfa.F
-    print('two')
-    b = dfa.Q - dfa.F
-    print('three')
-    distinguished = {q: (a if q in a else b) for q in dfa.Q}
-    print('four')
-    print(len(distinguished))
-    nd = len(distinguished)
-    while True:
-        for q1, S in dfa.cc:
-            for q in dfa.Q:
-                t2 = dfa.δ.get((q, S)
-            for q2 in dfa.Q:
-                for c in 
+    return minimize_classes(minimize_states(dfa))
 
 # A new object, call it DFAFormatter, is going to take the DFA,
 # order the states and CCs, affix user-defined actions to them,
 # and write C source code with them.
-
-# character class - 
 
 class Formatter:
 
@@ -757,33 +863,61 @@ class Formatter:
         self.dfa = DFA(self.r)
 
 
+if 1:
+    if len(sys.argv) > 1 and sys.argv[1] == '-c':
+        z1 = lit('a')() * 'b' & 'a' * lit('b')()
+        z2 = CC('a-c') * CC('b', 'd')
+        z = z1 | z2
+        if 1:
+            print('z1 =', z1)
+            print('z2 =', z2)
+            print("d(z, 'a') =", d(z, 'a'))
+            print("d(z, 'ab') =", d(z, 'ab'))
+            print("d(z, 'e') =", d(z, 'e'))
+            print('Σ =', Σ)
+            print('C(z) =', C(z))
 
-if 0:
-    z1 = lit('a')() * 'b' & 'a' * lit('b')()
-    z2 = CC('a-c') * CC('b', 'd')
-    z = z1 | z2
-    if 0:
-        print(z1)
-        print(z2)
-        print(d(z, 'a'))
-        print(d(z, 'ab'))
-        print(d(z, 'e'))
-        print(Σ)
-        print(C(z))
-
-    dfa = make_DFA([z1, z2])
+        dfa = make_DFA([z1, z2])
+        print()
+        print('q0 = %r' % (dfa.q0,))
+        print()
+        for q in dfa.Q:
+            a = accepts(q)
+            print('ACCEPT %d' % a if a is not None else '        ', q)
+        print()
+        for t in dfa._δ:
+            Srep = repr(t[1])
+            if len(Srep) > 20:
+                Srep = '{...}'
+            print('%-34.34s -> %r' % ('δ(%r, %s)' % (t[0], Srep), dfa._δ[t]))
+        print()
+        print('ordered Q =', dfa.ordered_Q)
+        print('C(dfa) =', C(dfa))
+        with open('z.pickle', 'wb') as f: dump(dfa, f)
+        mdfa = minimize(dfa)
+        with open('mz.pickle', 'wb') as f: dump(mdfa, f)
+    else:
+        with open('z.pickle', 'rb') as f:
+            dfa = load(f)
+        with open('mz.pickle', 'rb') as f:
+            mdfa = load(f)
     print()
-    print('q0 = %r' % (dfa.q0,))
+    print('minimized q0 = %r' % (mdfa.q0,))
     print()
-    for q in dfa.Q:
-        print('ACCEPT' if ν(q) is ε else '      ', q)
+    for q in mdfa.Q:
+        a = accepts(q)
+        print('ACCEPT %d' % a if a is not None else '        ', q)
     print()
-    for t in dfa.δ:
+    for t in mdfa._δ:
         Srep = repr(t[1])
         if len(Srep) > 20:
             Srep = '{...}'
-        print('%-50.50s -> %r' % ('δ(%r, %s)' % (t[0], Srep), dfa.δ[t]))
+        print('%-34.34s -> %r' % ('δ(%r, %s)' % (t[0], Srep), mdfa._δ[t]))
     print()
+    print('minimized ordered Q =', mdfa.ordered_Q)
+    print('minimized C(mdfa) =', C(mdfa))
+
+    
     exit()
 
 
@@ -869,13 +1003,14 @@ def r5rs_lexical_syntax():
         return prefix(R) * complex(R)
     number = num(2) | num(8) | num(10) | num(16)
     return [identifier, boolean, number, character, string,
-            CC('('), CC(')'), lit('#('), CC('\''), CC('`'), CC(','), lit(',@'), CC('.')
+            CC('('), CC(')'), lit('#('), CC('\''), CC('`'),
+            CC(','), lit(',@'), CC('.')
             ]
 
 # for p in r5rs_lexical_syntax():
 #     print(p)
 
-# dfa = DFA(r5rs_lexical_syntax())
+# dfa = make_DFA(r5rs_lexical_syntax())
 # exit()
 
 def r6rs_lexical_syntax():
@@ -952,8 +1087,8 @@ def r6rs_lexical_syntax():
                 | '+i' | '-i')
     def num(R):
         return prefix(R) * complex(R)
-    num_8 = num_10 = num_16 = empty_set
     number = num(2) | num(8) | num(10) | num(16)
+#    number = num(10)                    # XXX
 
     character_name = CC('a-z', name='<a-z>')()
     character = ('#\\' * Σ
@@ -994,23 +1129,37 @@ def r6rs_lexical_syntax():
 
 # print(r6rs_lexical_syntax())
 
-dfa = make_DFA(r6rs_lexical_syntax())
-dfa = minimize(dfa)
-if 0:
+if len(sys.argv) > 1 and sys.argv[1] == '-c':
+    dfa = make_DFA(r6rs_lexical_syntax())
+    print('%d states, %d transitions, %d character classes' %
+          (len(dfa.Q), len(dfa._δ), len(C(dfa))))
+    with open('r6rs.pickle', 'wb') as f: dump(dfa, f)
+    mdfa = minimize(dfa)
+    print('%d states, %d transitions, %d character classes' %
+          (len(mdfa.Q), len(mdfa._δ), len(C(mdfa))))
+    with open('min_r6rs.pickle', 'wb') as f: dump(mdfa, f)
+else:
+    with open('r6rs.pickle', 'rb') as f:
+        dfa = load(f)
+    with open('min_r6rs.pickle', 'rb') as f:
+        mdfa = load(f)
+    
+if 1:
     print('q0 = %r' % (dfa.q0,))
     print()
-    print('Q:')
-    for q in dfa.Q:
-        print('ACCEPT' if ν(q) is ε else '      ', q)
-    print()
-    print('δ:')
-    for d in dfa.δ:
-        # print('%-30.30s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
-        print('%s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
-    print()
-    print('%d states, %d transitions, %d character classes' % (len(dfa.Q), len(dfa.δ), len(dfa.cc)))
+#    print('Q:')
+#    for q in dfa.Q:
+#        print('ACCEPT' if ν(q) is ε else '      ', q)
+#    print()
+#    print('δ:')
+#    for d in dfa._δ:
+#        # print('%-30.30s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
+#        print('%s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
+#    print()
+    print('%d states, %d transitions, %d character classes' %
+          (len(dfa.Q), len(dfa._δ), len(C(dfa))))
     print('%d transitions to error state' %
-          sum(all(q == empty_set for q in v) for v in dfa.δ.values()))
+          sum(all(q == empty_set for q in v) for v in dfa._δ.values()))
 
 print('%d REs' % re_count)
 exit()
