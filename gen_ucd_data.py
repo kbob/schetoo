@@ -152,7 +152,7 @@ def print_c_source(page_map, pages, cat_map):
     print
     print 'static const size_t UCD_PAGE_SIZE = %d;' % page_size
     print 'static const size_t UCD_PAGE_COUNT = %d;' % len(page_map)
-    print 'static const size_t UCD_CODEPOINT_COUNT = %d;' % cp_size
+    print 'static const size_t UCD_CODEPOINT_COUNT = 0x%x;' % cp_size
     print
     print 'static const unsigned char ucd_page_map[] = {'
     for i in range(0, len(page_map), 8):
