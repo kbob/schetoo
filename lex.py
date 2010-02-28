@@ -437,6 +437,9 @@ class CC(RE):
             cls.all[charmap] = new
             return new
 
+    def __getnewargs__(self):
+        return (self.charmap,)
+
     def __init__(self, *args, name=None):
         # N.B., init is idempotent.
         self.precedence = 5
@@ -692,20 +695,15 @@ line_separator = CC.unicode_cat('line_separator')
 class DFA:
 
     def __init__(self, Q, q0, F, δ):
-        print('DFA init begin')
         self.Q = Q
         self.q0 = q0
         self.F = F
         self._cc = C({S for q, S in δ}) - {empty_set}
-        self._δ = {}
+        self.δ = {}
         for (q1, S1), q2 in δ.items():
             for S2 in self._cc:
                 if S2 - S1 == empty_set:
-                    self._δ[q1, S2] = q2
-        print('DFA init end')
-
-    def δ(self, q, S):
-        return self._δ[q, S]
+                    self.δ[q1, S2] = q2
 
     def C(self):
         return self._cc
@@ -775,6 +773,12 @@ def enumerate_ordered_pairs(l):
             yield i, j, q1, l[j]
 
 
+def ordered_pairs(l):
+    for i, q1 in enumerate(l):
+        for j in range(i + 1, len(l)):
+            yield q1, l[j]
+
+
 def minimize_states(dfa):
 
     def distinguish_states(i0):
@@ -782,7 +786,7 @@ def minimize_states(dfa):
         for q1, q2 in i0:
             i, j = Qi[q1], Qi[q2]
             for S in C(dfa):
-                d1, d2 = δ(q1, S), δ(q2, S)
+                d1, d2 = δ[q1, S], δ[q2, S]
                 if d1 != d2:
                     i1, i2 = Qi[d1], Qi[d2]
                     if distinguished[i1, i2]:
@@ -805,7 +809,6 @@ def minimize_states(dfa):
         if F[q1] == F[q2]:
             indistinguished.append((q1, q2))
 
-    nd = sum(sum(row) for row in distinguished.items)
     ni = 0
     nni = len(indistinguished)
     while ni != nni:
@@ -820,23 +823,24 @@ def minimize_states(dfa):
         extras.add(q2)
     new_Q = dfa.Q - extras
     new_q0 = qmap[q0]
-    new_δ = {(q, S): qmap[δ(q, S)] for q in new_Q for S in C(dfa)}
+    new_δ = {(q, S): qmap[δ[q, S]] for q in new_Q for S in C(dfa)}
     new_F = {q: accepts(q) for q in new_Q}
     return DFA(new_Q, new_q0, new_F, new_δ)
 
 def minimize_classes(dfa):
-    # x = list(C(dfa))
-    # for S1, S2 in ordered_pairs(x):
-    #     for q in Q:
-    #         if δ[q, S1] != δ[q, S2]:
-    #             S1, S2 are distinguished
-    #     else:
-    #          S1, S2 are equivalent.
-    #          del new_cc[S1], new_cc[S2]
-    #          new_cc.add(S1 | S2)
-    # new_δ = {(q, Smap(S)): dfa.δ[q, S] for q in dfa.Q for S in C(dfa)}
-    # return DFA(dfa.Q, dfa.q0, dfa.F, 
-    return dfa                          # XXX
+    classes = list(C(dfa))
+    Smap = {S: S for S in classes}
+    new_C = C(dfa)
+    for S1, S2 in ordered_pairs(classes):
+        for q in dfa.Q:
+            if dfa.δ[q, S1] != dfa.δ[q,S2]:
+                # S1, S2 are distinguished
+                break
+        else:
+             # S1, S2 are equivalent.
+             Smap[S1] = Smap[S2] = S1 | S2
+    new_δ = {(q, Smap[S]): dfa.δ[q, S] for q in dfa.Q for S in C(dfa)}
+    return DFA(dfa.Q, dfa.q0, dfa.F, new_δ)
 
 def minimize(dfa):
     return minimize_classes(minimize_states(dfa))
@@ -860,15 +864,37 @@ class Formatter:
         """
         self.a = [p[0] for p in apv]
         self.r = [p[1] for p in apv]
-        self.dfa = DFA(self.r)
+        self.dfa = make_DFA(self.r)
+        self.cc = _sort_C(self.dfa)
+        # sort character classes
+        # sort Q
+
+    def _sort_C(self, dfa):
+        Scounts = defaultdict(int)
+        for q, S in dfa.δ:
+            Scounts[S] += 1
+        print('Scounts', Scounts)
+        return sorted(Scounts, key=lambda S: -Scounts[S])
+
+    def emit_char_classes(self):
+        pass
+
+    def emit_states(self):
+        pass
+
+    def emit_acceptances(self):
+        pass
+
+    def emit_δ(self):
+        pass
 
 
 if 1:
     if len(sys.argv) > 1 and sys.argv[1] == '-c':
         z1 = lit('a')() * 'b' & 'a' * lit('b')()
-        z2 = CC('a-c') * CC('b', 'd')
+        z2 = CC('a-c') * CC('b', 'd', 'e')
         z = z1 | z2
-        if 1:
+        if 0:
             print('z1 =', z1)
             print('z2 =', z2)
             print("d(z, 'a') =", d(z, 'a'))
@@ -878,29 +904,34 @@ if 1:
             print('C(z) =', C(z))
 
         dfa = make_DFA([z1, z2])
-        print()
-        print('q0 = %r' % (dfa.q0,))
-        print()
-        for q in dfa.Q:
-            a = accepts(q)
-            print('ACCEPT %d' % a if a is not None else '        ', q)
-        print()
-        for t in dfa._δ:
-            Srep = repr(t[1])
-            if len(Srep) > 20:
-                Srep = '{...}'
-            print('%-34.34s -> %r' % ('δ(%r, %s)' % (t[0], Srep), dfa._δ[t]))
-        print()
-        print('ordered Q =', dfa.ordered_Q)
-        print('C(dfa) =', C(dfa))
+        if 0:
+            print()
+            print('q0 = %r' % (dfa.q0,))
+            print()
+            for q in dfa.Q:
+                a = accepts(q)
+                print('ACCEPT %d' % a if a is not None else '        ', q)
+            print()
+            for t in dfa.δ:
+                Srep = repr(t[1])
+                if len(Srep) > 20:
+                    Srep = '{...}'
+                print('%-34.34s -> %r' %
+                      ('δ(%r, %s)' % (t[0], Srep), dfa.δ[t]))
+            print()
+            print('ordered Q =', dfa.ordered_Q)
+            print('C(dfa) =', sorted(C(dfa)))
         with open('z.pickle', 'wb') as f: dump(dfa, f)
         mdfa = minimize(dfa)
         with open('mz.pickle', 'wb') as f: dump(mdfa, f)
     else:
+        print('unpickle z')
         with open('z.pickle', 'rb') as f:
             dfa = load(f)
+        print('unpickle mz')
         with open('mz.pickle', 'rb') as f:
             mdfa = load(f)
+        print('done unpickling')
     print()
     print('minimized q0 = %r' % (mdfa.q0,))
     print()
@@ -908,11 +939,11 @@ if 1:
         a = accepts(q)
         print('ACCEPT %d' % a if a is not None else '        ', q)
     print()
-    for t in mdfa._δ:
+    for t in mdfa.δ:
         Srep = repr(t[1])
         if len(Srep) > 20:
             Srep = '{...}'
-        print('%-34.34s -> %r' % ('δ(%r, %s)' % (t[0], Srep), mdfa._δ[t]))
+        print('%-34.34s -> %r' % ('δ(%r, %s)' % (t[0], Srep), mdfa.δ[t]))
     print()
     print('minimized ordered Q =', mdfa.ordered_Q)
     print('minimized C(mdfa) =', C(mdfa))
@@ -1132,34 +1163,37 @@ def r6rs_lexical_syntax():
 if len(sys.argv) > 1 and sys.argv[1] == '-c':
     dfa = make_DFA(r6rs_lexical_syntax())
     print('%d states, %d transitions, %d character classes' %
-          (len(dfa.Q), len(dfa._δ), len(C(dfa))))
+          (len(dfa.Q), len(dfa.δ), len(C(dfa))))
     with open('r6rs.pickle', 'wb') as f: dump(dfa, f)
     mdfa = minimize(dfa)
     print('%d states, %d transitions, %d character classes' %
-          (len(mdfa.Q), len(mdfa._δ), len(C(mdfa))))
+          (len(mdfa.Q), len(mdfa.δ), len(C(mdfa))))
     with open('min_r6rs.pickle', 'wb') as f: dump(mdfa, f)
 else:
     with open('r6rs.pickle', 'rb') as f:
         dfa = load(f)
     with open('min_r6rs.pickle', 'rb') as f:
         mdfa = load(f)
+    print('%d states, %d transitions, %d character classes' %
+          (len(mdfa.Q), len(mdfa.δ), len(C(mdfa))))
+    dfa = minimize_classes(mdfa)
     
 if 1:
-    print('q0 = %r' % (dfa.q0,))
-    print()
+#    print('q0 = %r' % (dfa.q0,))
+#    print()
 #    print('Q:')
 #    for q in dfa.Q:
 #        print('ACCEPT' if ν(q) is ε else '      ', q)
 #    print()
 #    print('δ:')
-#    for d in dfa._δ:
+#    for d in dfa.δ:
 #        # print('%-30.30s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
 #        print('%s -> %r' % ('δ(%r, %r)' % d, dfa.δ[d]))
 #    print()
     print('%d states, %d transitions, %d character classes' %
-          (len(dfa.Q), len(dfa._δ), len(C(dfa))))
+          (len(dfa.Q), len(dfa.δ), len(C(dfa))))
     print('%d transitions to error state' %
-          sum(all(q == empty_set for q in v) for v in dfa._δ.values()))
+          sum(all(q == empty_set for q in v) for v in dfa.δ.values()))
 
 print('%d REs' % re_count)
 exit()
