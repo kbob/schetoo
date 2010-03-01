@@ -4,14 +4,6 @@
 
 #include "unicode.h"
 
-enum {
-    WHITE,
-    ONE,
-    TWO,
-    OPEN,
-    CLOSE,
-};
-
 #include "toy_data.h"
 
 int char_class(int c)
@@ -45,8 +37,8 @@ int token_needs_delimiter(toy_token_t t)
 {
     switch (t) {
 
-    case ONE:
-    case TWO:
+    case TOY_ONE:
+    case TOY_TWO:
 	return 1;
 
     default:
@@ -57,15 +49,15 @@ int token_needs_delimiter(toy_token_t t)
 const char *token_name(toy_token_t t)
 {
     switch (t) {
-    case WHITE:
-	return "white";
-    case ONE:
+    case TOY_ATMOSPHERE:
+	return "atmosphere";
+    case TOY_ONE:
 	return "ab";
-    case TWO:
+    case TOY_TWO:
 	return "[a-c][bde]";
-    case OPEN:
+    case TOY_OPEN:
 	return "open";
-    case CLOSE:
+    case TOY_CLOSE:
 	return "close";
     default:
 	return "???";
@@ -90,8 +82,8 @@ toy_state_t scan_char(toy_state_t state, int c)
 	next_state = TOY_COMMON_STATE;
     if (next_state < TOY_ACCEPT_COUNT) {
 	toy_token_t tok = toy_accepts[next_state];
-	if (tok == WHITE) {
-	    printf("whitespace\n");
+	if (tok == TOY_ATMOSPHERE) {
+	    printf("atmosphere\n");
 	    next_state = TOY_INITIAL_STATE;
 	}
 	else if (!token_needs_delimiter(tok)) {
@@ -102,7 +94,7 @@ toy_state_t scan_char(toy_state_t state, int c)
 	printf("error\n");
 	state = TOY_INITIAL_STATE;
     }
-    printf("'\\%03o' cc %d state %d -> %d\n", c, cc, state, next_state);
+    // printf("'\\%03o' cc %d state %d -> %d\n", c, cc, state, next_state);
     return next_state;
 }
 

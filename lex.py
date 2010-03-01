@@ -853,20 +853,20 @@ def minimize(dfa):
 
 class Formatter:
 
-    def __init__(self, apv, prefix='yy'):
-        """apv is the "action-pattern vector".
+    def __init__(self, tpv, prefix='yy'):
+        """tpv is the "token-pattern vector".
 
-        It's a sequence of action-pattern pairs.  Each action is a
-        string for a C identifier.  Each pattern is a RE.  Actions are
+        It's a sequence of token-pattern pairs.  Each token is a
+        string for a C identifier.  Each pattern is a RE.  Tokens are
         in order of decreasing priority -- when a DFA state matches
-        two actions, the first one takes precedence.
+        two tokens, the first one takes precedence.
 
-        We'll build the DFA, keeping track of which actions associate
+        We'll build the DFA, keeping track of which tokens associate
         with which patterns.  Then we can output the C source code.
         """
         self.prefix = prefix
-        self.a = [p[0] for p in apv]
-        self.r = [p[1] for p in apv]
+        self.tokens = [p[0] for p in tpv]
+        self.r = [p[1] for p in tpv]
         self.dfa = minimize(make_DFA(self.r))
         self.dq = self._popular_state()
         self.cc = self._sort_C()
@@ -918,6 +918,7 @@ class Formatter:
         self.emit_heading()
         self.emit_constants()
         self.emit_types()
+        self.emit_tokens()
         self.emit_char_classes()
         self.emit_states()
         self.emit_δ()
@@ -932,7 +933,7 @@ class Formatter:
         self.p('#define YY_INITIAL_STATE %d' % self.Q.index(self.dfa.q0))
         self.p('#define YY_COMMON_STATE %d' % self.Q.index(self.dq))
         self.p('#define YY_ERROR_STATE %d' % self.Q.index(self.dfa.error_states()[0]))
-        self.p('#define YY_ACCEPT_COUNT %d' % len(self.a))
+        self.p('#define YY_ACCEPT_COUNT %d' % len(self.tokens))
         self.p()
 
     def emit_types(self):
@@ -940,7 +941,7 @@ class Formatter:
             for bits in (8, 16, 32, 64):
                 if n < 1 << bits:
                     return 'uint%d_t' % bits
-        self.p('typedef %s yy_token_t;' % int_type(len(self.a)))
+        self.p('typedef %s yy_token_t;' % int_type(len(self.tokens)))
         self.p('typedef %s yy_cc_t;' % int_type(len(self.cc)))
         self.p('typedef %s yy_state_t;' % int_type(len(self.Q)))
         nix = sum(len(row) for row in self.δ)
@@ -950,6 +951,13 @@ class Formatter:
         self.p('    yy_cc_t          yy_len;')
         self.p('    yy_state_index_t yy_index;')
         self.p('} yy_delta_row_t;')
+        self.p()
+
+    def emit_tokens(self):
+        self.p('typedef enum yy_token_name {')
+        for action in self.tokens:
+            self.p('    YY_%s,' % action)
+        self.p('} yy_token_name_t;')
         self.p()
 
     def emit_char_classes(self):
@@ -974,7 +982,7 @@ class Formatter:
         for i, q in enumerate(self.Q):
             if self.accepts[q] is None:
                 break
-            self.p('    %s,' % self.a[self.accepts[q]])
+            self.p('    YY_%s,' % self.tokens[self.accepts[q]])
         self.p('};')
         self.p()
 
@@ -1068,7 +1076,7 @@ if 1:
         print()
         print('minimized ordered Q =', mdfa.ordered_Q)
         print('minimized C(mdfa) =', C(mdfa))
-    rvec = [('WHITE', z0),
+    rvec = [('ATMOSPHERE', z0),
             ('ONE', z1),
             ('TWO', z2),
             ('OPEN', z3),
