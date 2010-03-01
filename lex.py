@@ -40,7 +40,6 @@ def memoize1(f):
         try:
             return d[arg]
         except TypeError:
-            print("warning: can't memoize %s" % type(arg), file=sys.stderr)
             return f(arg)
         except KeyError:
             x = f(arg)
@@ -56,7 +55,6 @@ def memoize2(f):
         try:
             return d[arg1, arg2]
         except TypeError:
-            print("warning: can't memoize %s and %s" % (type(arg1), type(arg2)))
             return f(arg1, arg2)
         except KeyError:
             x = f(arg1, arg2)
@@ -694,6 +692,7 @@ with open('unicode.h') as f:
 
 next_line = define_unicode_char('\u0085', 'CC_NEXT_LINE')
 line_separator = define_unicode_char('\u2028', 'CC_LINE_SEPARATOR')
+paragraph_separator = define_unicode_char('\u2029', 'CC_PARAGRAPH_SEPARATOR')
 Σ = CC.universal()
 
 
@@ -824,11 +823,13 @@ def minimize_states(dfa):
     qmap = {q: q for q in Q}
     extras = set()
     for q1, q2 in indistinguished:
-        qmap[q2] = q1
+        qmap[q2] = qmap[q1]
         extras.add(q2)
     new_Q = dfa.Q - extras
     new_q0 = qmap[q0]
+    assert new_q0 in new_Q
     new_δ = {(q, S): qmap[δ[q, S]] for q in new_Q for S in C(dfa)}
+    assert all(qz in new_Q for qz in new_δ.values())
     new_F = {q: accepts(q) for q in new_Q}
     return DFA(new_Q, new_q0, new_F, new_δ)
 
@@ -845,6 +846,7 @@ def minimize_classes(dfa):
              # S1, S2 are equivalent.
              Smap[S1] = Smap[S2] = S1 | S2
     new_δ = {(q, Smap[S]): dfa.δ[q, S] for q in dfa.Q for S in C(dfa)}
+    assert all(qz in dfa.Q for qz in new_δ.values())
     return DFA(dfa.Q, dfa.q0, dfa.F, new_δ)
 
 def minimize(dfa):
@@ -867,7 +869,13 @@ class Formatter:
         self.prefix = prefix
         self.tokens = [p[0] for p in tpv]
         self.r = [p[1] for p in tpv]
-        self.dfa = minimize(make_DFA(self.r))
+        if sys.argv[-1] == '-c':
+            self.dfa = minimize(make_DFA(self.r))
+            with open('%s.pickle' % prefix, 'wb') as f:
+                dump(self.dfa, f)
+        else:
+            with open('%s.pickle' % prefix, 'rb') as f:
+                self.dfa = load(f)
         self.dq = self._popular_state()
         self.cc = self._sort_C()
         self.icc = self._invert_C()
@@ -971,7 +979,7 @@ class Formatter:
             self.p('%-40s/* %r */' % ('    %s,' % idx(c), c))
         self.p('};')
         self.p()
-        self.p('yy_cc_t yy_unicode_catmap[] = {')
+        self.p('static const yy_cc_t yy_unicode_catmap[] = {')
         for cat in unicode_categories:
             self.p('%-40s/* %s */' % ('    %d,' % idx(cat.mark), cat.long_name))
         self.p('};')
@@ -988,7 +996,7 @@ class Formatter:
 
     def emit_δ(self):
         def emit_δ_row(i, j):
-            self.p('    { %s, %s }, // %d %r' % (len(self.δ[i]), j, i, self.Q[i]))
+            self.p('    { %s, %s }, /* %d */' % (len(self.δ[i]), j, i))
         self.p('static const yy_delta_row_t yy_delta[] = {')
         j = 0
         for i, q in enumerate(self.Q):
@@ -1012,7 +1020,7 @@ class Formatter:
         print(s.replace('yy', self.prefix).replace('YY', self.prefix.upper()))
 
 
-if 1:
+if 0:
     dot = CC(Σ - CC('\n'), name='.')
     z0 = CC(*' \t\n') | ';' * dot() * CC('\n')
     z1 = lit('a')() * 'b' & 'a' * lit('b')()
@@ -1184,9 +1192,22 @@ def r6rs_lexical_syntax():
     # This grammar is a straight transcription of the lexical grammar in
     # R6RS §4.2.1.
 
-    line_ending = (CC('\n') | '\r'
-                   | '\r\n' | next_line
-                   | '\r' * next_line | line_separator)
+    character_tabulation = CC('\t')
+    linefeed = CC('\n')
+    line_tabulation = CC('\v')
+    form_feed = CC('\f')
+    carriage_return = CC('\r')
+    whitespace = (character_tabulation
+                  | linefeed | line_tabulation | form_feed
+                  | carriage_return | next_line
+                  | CC(Zs, Zl, Zp))
+    line_ending = (linefeed | carriage_return
+                   | carriage_return * linefeed | next_line
+                   | carriage_return * next_line | line_separator)
+    comment = (';' * (Σ - linefeed - next_line)()
+               * (line_ending | paragraph_separator))
+    atmosphere = whitespace | comment
+
     letter = CC('a-z', 'A-Z', name='<letter>')
     constituent = CC(letter, Lu, Ll, Lt, Lm, Lo, Mn,
                      Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co)
@@ -1271,29 +1292,35 @@ def r6rs_lexical_syntax():
     string = '"' * string_element() * '"'
 
     return [
-        identifier,
-        boolean,
-        number,
-        character,
-        string,
-        CC('('),
-        CC(')'),
-        CC('['),
-        CC(']'),
-        lit('#('),
-        lit('#vu8('),
-        CC('\''),
-        CC('`'),
-        CC(','),
-        lit(',@'),
-        CC('.'),
-        lit('#\''),
-        lit('#`'),
-        lit('#,'),
-        lit('#,@'),
+        ('ATMOSPHERE', atmosphere),
+        ('IDENTIFIER', identifier),
+        ('BOOLEAN', boolean),
+        ('NUMBER', number),
+        ('CHARACTER', character),
+        ('STRING', string),
+        ('LPAREN', CC('(')),
+        ('RPAREN', CC(')')),
+        ('LBRACKET', CC('[')),
+        ('RBRACKET', CC(']')),
+        ('BEGIN_VECTOR', lit('#(')),
+        ('BEGIN_BYTEVECTOR', lit('#vu8(')),
+        ('QUOTE', CC('\'')),
+        ('QUASIQUOTE', CC('`')),
+        ('UNQUOTE', CC(',')),
+        ('UNQUOTE_SPLICING', lit(',@')),
+        ('PERIOD', CC('.')),
+        ('SYNTAX', lit('#\'')),
+        ('QUASISYNTAX', lit('#`')),
+        ('UNSYNTAX', lit('#,')),
+        ('UNSYNTAX_SPLICING', lit('#,@')),
+        ('BEGIN_DATUM_COMMENT', lit('#;')),
+        ('BEGIN_NESTED_COMMENT', lit('#|')),
         ]
 
-# print(r6rs_lexical_syntax())
+if 1:
+    f = Formatter(r6rs_lexical_syntax())
+    f.emit()
+    exit()
 
 if len(sys.argv) > 1 and sys.argv[1] == '-c':
     dfa = make_DFA(r6rs_lexical_syntax())

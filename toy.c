@@ -92,7 +92,7 @@ toy_state_t scan_char(toy_state_t state, int c)
 	}
     } else if (next_state == TOY_ERROR_STATE) {
 	printf("error\n");
-	state = TOY_INITIAL_STATE;
+	next_state = TOY_INITIAL_STATE;
     }
     // printf("'\\%03o' cc %d state %d -> %d\n", c, cc, state, next_state);
     return next_state;
