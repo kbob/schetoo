@@ -2,35 +2,116 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-typedef uint8_t cc_t;
-typedef uint8_t q_t;
+#include "unicode.h"
 
-#define Q_COUNT ((q_t)44)
-#define CC_COUNT ((cc_t)176)
+enum {
+    WHITE,
+    ONE,
+    TWO,
+    OPEN,
+    CLOSE,
+};
 
-//const size_t q_count = 44;
-//const size_t cc_count = 176;
-
-static cc_t cc[256];
-static q_t delta[Q_COUNT][CC_COUNT];
-
-static uint8_t cc[256];
+#include "toy_data.h"
 
 int char_class(int c)
 {
-    return cc[c];
+    if (c < 128)
+	return toy_charmap[c];
+    /* XXX handle line_separator and next_line */
+    else
+      return toy_unicode_catmap[unicode_general_category(c)];
+   return -1;
 }
 
-q_t scan_char(q_t q, int c)
+int is_delimiter(int c)
 {
-    return delta[q][cc[c]];
+    switch (c) {
+
+    case ' ':
+    case '\t':
+    case '\n':
+    case ';':
+    case '(':
+    case ')':
+	return 1;
+
+    default:
+	return 0;
+    }
 }
 
-main()
+int token_needs_delimiter(toy_token_t t)
 {
-    q_t q = 0;
+    switch (t) {
+
+    case ONE:
+    case TWO:
+	return 1;
+
+    default:
+	return 0;
+    }
+}
+
+const char *token_name(toy_token_t t)
+{
+    switch (t) {
+    case WHITE:
+	return "white";
+    case ONE:
+	return "ab";
+    case TWO:
+	return "[a-c][bde]";
+    case OPEN:
+	return "open";
+    case CLOSE:
+	return "close";
+    default:
+	return "???";
+    }
+}
+
+toy_state_t scan_char(toy_state_t state, int c)
+{
+    toy_state_t next_state;
+    if (state < TOY_ACCEPT_COUNT) {
+	toy_token_t tok = toy_accepts[state];
+	if (token_needs_delimiter(tok) && is_delimiter(c)) {
+	    printf("A token %s\n", token_name(tok));
+	    state = TOY_INITIAL_STATE;
+	}
+    }
+    toy_cc_t cc = char_class(c);
+    const toy_delta_row_t *row = &toy_delta[state];
+    if (cc < row->toy_len)
+	next_state = toy_next_states[row->toy_index + cc];
+    else
+	next_state = TOY_COMMON_STATE;
+    if (next_state < TOY_ACCEPT_COUNT) {
+	toy_token_t tok = toy_accepts[next_state];
+	if (tok == WHITE) {
+	    printf("whitespace\n");
+	    next_state = TOY_INITIAL_STATE;
+	}
+	else if (!token_needs_delimiter(tok)) {
+	    printf("B token %s\n", token_name(tok));
+	    next_state = TOY_INITIAL_STATE;
+	}
+    } else if (next_state == TOY_ERROR_STATE) {
+	printf("error\n");
+	state = TOY_INITIAL_STATE;
+    }
+    printf("'\\%03o' cc %d state %d -> %d\n", c, cc, state, next_state);
+    return next_state;
+}
+
+int main()
+{
+    toy_state_t state = TOY_INITIAL_STATE;
     int c;
     while ((c = getchar()) != EOF) {
-	q = scan_char(q, c);
+	state = scan_char(state, c);
     }
+    return 0;
 }

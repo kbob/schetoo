@@ -5,10 +5,15 @@ import sys
 if sys.version_info < (3, 1):
     raise Exception('need Python 3.1 or later')
 
+# from __past__ import print_statement
+
 import builtins
-from collections import defaultdict
+from collections import Sequence, defaultdict
 from functools import reduce, wraps
+from itertools import dropwhile
+from os.path import basename
 from pickle import dump, load
+from re import compile
 
 
 # #| is a token.  On recognizing it, eat until matching |#, then
@@ -16,13 +21,13 @@ from pickle import dump, load
 
 # #; is a token.  Pass it to reader.
 
-from time import time
-
-start_time = time()
-
-def print(*args):
-    t = time() - start_time
-    builtins.print('%7.3f' % t, *args)
+# from time import time
+# 
+# start_time = time()
+# 
+# def print(*args):
+#     t = time() - start_time
+#     builtins.print('%7.3f' % t, *args)
 
 
 re_count = 0
@@ -35,6 +40,7 @@ def memoize1(f):
         try:
             return d[arg]
         except TypeError:
+            print("warning: can't memoize %s" % type(arg), file=sys.stderr)
             return f(arg)
         except KeyError:
             x = f(arg)
@@ -50,6 +56,7 @@ def memoize2(f):
         try:
             return d[arg1, arg2]
         except TypeError:
+            print("warning: can't memoize %s and %s" % (type(arg1), type(arg2)))
             return f(arg1, arg2)
         except KeyError:
             x = f(arg1, arg2)
@@ -455,6 +462,12 @@ class CC(RE):
         return [i for i in range(self.charmap.bit_length() + 1)
                 if self.charmap & (1 << i)]
 
+    def __iter__(self):
+        return iter(self.chars())
+
+    def __len__(self):
+        return len(self.chars())
+
     def any_member(self):
         return self.chars()[0]
 
@@ -501,7 +514,6 @@ class CC(RE):
         diff = self.charmap - other.charmap
         return (+1 if diff > 0 else -1) if diff else 0
     
-
     def __bool__(self):
         return self.charmap != 0
 
@@ -589,6 +601,7 @@ class CC(RE):
         cls.next_cat += 1
         ascii_members = cls.__ascii_by_cat(code)
         cc = cls(mark, *ascii_members, name=code)
+        cc.mark = mark
         cls.named_chars[mark] = code
         return cc
 
@@ -638,11 +651,11 @@ def d(r, u):
     return d(r.partial(u[0]), u[1:])
 
 def accepts(r):
-    try: 
+    if isinstance(r, Sequence):
         for i, q in enumerate(r):
             if ν(q) == ε:
                 return i                # index
-    except TypeError:
+    else:
         return ν(r) == ε                # Boolean
         
 def lit(s):
@@ -655,40 +668,32 @@ def lit(s):
         x = cat(x, CC(c))
     return x
 
-
 empty_set = CC()
-Lu = CC.unicode_cat('Lu')
-Ll = CC.unicode_cat('Ll')
-Lt = CC.unicode_cat('Lt')
-Lm = CC.unicode_cat('Lm')
-Lo = CC.unicode_cat('Lo')
-Mn = CC.unicode_cat('Mn')
-Mc = CC.unicode_cat('Mc')
-Me = CC.unicode_cat('Me')
-Nd = CC.unicode_cat('Nd')
-Nl = CC.unicode_cat('Nl')
-No = CC.unicode_cat('No')
-Pc = CC.unicode_cat('Pc')
-Pd = CC.unicode_cat('Pd')
-Ps = CC.unicode_cat('Ps')
-Pe = CC.unicode_cat('Pe')
-Pi = CC.unicode_cat('Pi')
-Pf = CC.unicode_cat('Pf')
-Po = CC.unicode_cat('Po')
-Sm = CC.unicode_cat('Sm')
-Sc = CC.unicode_cat('Sc')
-Sk = CC.unicode_cat('Sk')
-So = CC.unicode_cat('So')
-Zs = CC.unicode_cat('Zs')
-Zl = CC.unicode_cat('Zl')
-Zp = CC.unicode_cat('Zp')
-Cc = CC.unicode_cat('Cc')
-Cf = CC.unicode_cat('Cf')
-Cs = CC.unicode_cat('Cs')
-Co = CC.unicode_cat('Co')
-Cn = CC.unicode_cat('Cn')
-next_line = CC.unicode_cat('next_line')
-line_separator = CC.unicode_cat('line_separator')
+
+unicode_categories = []
+unicode_chars = []
+def define_unicode_char(codepoint, name):
+    cc = CC.unicode_cat(name)
+    unicode_chars.append(cc)
+    return cc
+
+def define_unicode_category(long_name, sn):
+    cat = CC.unicode_cat(sn)
+    cat.long_name = long_name
+    globals().update({sn: cat})
+    unicode_categories.append(cat)
+
+
+search_cat = compile(r'(UGC_\w+).*/\* (\w\w) \*/').search
+with open('unicode.h') as f:
+    for line in f:
+        m = search_cat(line)
+        if m:
+            define_unicode_category(m.group(1), m.group(2))
+
+
+next_line = define_unicode_char('\u0085', 'CC_NEXT_LINE')
+line_separator = define_unicode_char('\u2028', 'CC_LINE_SEPARATOR')
 Σ = CC.universal()
 
 
@@ -813,7 +818,7 @@ def minimize_states(dfa):
     nni = len(indistinguished)
     while ni != nni:
         ni = nni
-        print('%d indistinguished pairs' % ni)
+        # print('%d indistinguished pair%s' % (ni, 's'[ni == 1:]))
         indistinguished = distinguish_states(indistinguished)
         nni = len(indistinguished)
     qmap = {q: q for q in Q}
@@ -845,13 +850,10 @@ def minimize_classes(dfa):
 def minimize(dfa):
     return minimize_classes(minimize_states(dfa))
 
-# A new object, call it DFAFormatter, is going to take the DFA,
-# order the states and CCs, affix user-defined actions to them,
-# and write C source code with them.
 
 class Formatter:
 
-    def __init__(self, apv):
+    def __init__(self, apv, prefix='yy'):
         """apv is the "action-pattern vector".
 
         It's a sequence of action-pattern pairs.  Each action is a
@@ -862,39 +864,157 @@ class Formatter:
         We'll build the DFA, keeping track of which actions associate
         with which patterns.  Then we can output the C source code.
         """
+        self.prefix = prefix
         self.a = [p[0] for p in apv]
         self.r = [p[1] for p in apv]
-        self.dfa = make_DFA(self.r)
-        self.cc = _sort_C(self.dfa)
-        # sort character classes
-        # sort Q
+        self.dfa = minimize(make_DFA(self.r))
+        self.dq = self._popular_state()
+        self.cc = self._sort_C()
+        self.icc = self._invert_C()
+        self.accepts = self._make_accepts()
+        self.Q = self._sort_Q()
+        self.δ  = self._sort_δ()
 
-    def _sort_C(self, dfa):
+    def _popular_state(self):
+        q_counts = defaultdict(int)
+        for q in self.dfa.δ.values():
+            q_counts[q] += 1
+        return max(self.dfa.Q, key=lambda q: q_counts[q])
+
+    def _sort_C(self):
         Scounts = defaultdict(int)
-        for q, S in dfa.δ:
-            Scounts[S] += 1
-        print('Scounts', Scounts)
-        return sorted(Scounts, key=lambda S: -Scounts[S])
+        for (q1, S), q2 in self.dfa.δ.items():
+            if q2 == self.dq:
+                Scounts[S] += 1
+        return sorted(Scounts, key=lambda S: (Scounts[S], S.any_member()))
+
+    def _invert_C(self):
+        return {c: S for S in self.cc for c in S}
+
+    def _make_accepts(self):
+        return {q: accepts(q) for q in self.dfa.Q}
+
+    def _sort_Q(self):
+        max = len(self.dfa.Q)
+        def key(q):
+            a = self.accepts[q]
+            if a is None:
+                return max
+            return a
+        return sorted(self.dfa.Q, key=key)
+
+    def _sort_δ(self):
+        def head(q):
+            def tail(x):
+                for i in range(len(x) - 1, -1, -1):
+                    if x[i] != self.dq:
+                        return i + 1
+                return 0
+            x = [self.dfa.δ[q, S] for S in self.cc]
+            return x[:tail(x)]
+        return [head(q) for q in self.Q]
+
+    def emit(self):
+        self.emit_heading()
+        self.emit_constants()
+        self.emit_types()
+        self.emit_char_classes()
+        self.emit_states()
+        self.emit_δ()
+
+    def emit_heading(self):
+        self.p('/* automatically generated by %s */' % basename(sys.argv[0]))
+        self.p()
+        self.p('#include <stdint.h>')
+        self.p()
+        
+    def emit_constants(self):
+        self.p('#define YY_INITIAL_STATE %d' % self.Q.index(self.dfa.q0))
+        self.p('#define YY_COMMON_STATE %d' % self.Q.index(self.dq))
+        self.p('#define YY_ERROR_STATE %d' % self.Q.index(self.dfa.error_states()[0]))
+        self.p('#define YY_ACCEPT_COUNT %d' % len(self.a))
+        self.p()
+
+    def emit_types(self):
+        def int_type(n):
+            for bits in (8, 16, 32, 64):
+                if n < 1 << bits:
+                    return 'uint%d_t' % bits
+        self.p('typedef %s yy_token_t;' % int_type(len(self.a)))
+        self.p('typedef %s yy_cc_t;' % int_type(len(self.cc)))
+        self.p('typedef %s yy_state_t;' % int_type(len(self.Q)))
+        nix = sum(len(row) for row in self.δ)
+        self.p('typedef %s yy_state_index_t;' % int_type(nix))
+        self.p()
+        self.p('typedef struct yy_delta_row {')
+        self.p('    yy_cc_t          yy_len;')
+        self.p('    yy_state_index_t yy_index;')
+        self.p('} yy_delta_row_t;')
+        self.p()
 
     def emit_char_classes(self):
-        pass
-
+        def idx(c):
+            S = self.icc[c]
+            return self.cc.index(S)
+        self.p('static const yy_cc_t yy_charmap[] = {')
+        for c in sorted(self.icc):
+            if ord(c) >= 128:
+                break
+            self.p('%-40s/* %r */' % ('    %s,' % idx(c), c))
+        self.p('};')
+        self.p()
+        self.p('yy_cc_t yy_unicode_catmap[] = {')
+        for cat in unicode_categories:
+            self.p('%-40s/* %s */' % ('    %d,' % idx(cat.mark), cat.long_name))
+        self.p('};')
+        self.p()
+            
     def emit_states(self):
-        pass
-
-    def emit_acceptances(self):
-        pass
+        self.p('static const yy_token_t yy_accepts[] = {')
+        for i, q in enumerate(self.Q):
+            if self.accepts[q] is None:
+                break
+            self.p('    %s,' % self.a[self.accepts[q]])
+        self.p('};')
+        self.p()
 
     def emit_δ(self):
-        pass
+        def emit_δ_row(i, j):
+            self.p('    { %s, %s }, // %d %r' % (len(self.δ[i]), j, i, self.Q[i]))
+        self.p('static const yy_delta_row_t yy_delta[] = {')
+        j = 0
+        for i, q in enumerate(self.Q):
+            emit_δ_row(i, j)
+            j += len(self.δ[i])
+        self.p('};')
+        self.p()
+
+        self.p('static const yy_state_t yy_next_states[] = {')
+        def emit_δ_row(i):
+            x = self.δ[i]
+            if x:
+                self.p('    %s' % ' '.join('%d,' % self.Q.index(q) for q in x))
+        j = 0
+        for i, q in enumerate(self.Q):
+            emit_δ_row(i)
+            j += len(self.δ[i])
+        self.p('};')
+
+    def p(self, s=''):
+        print(s.replace('yy', self.prefix).replace('YY', self.prefix.upper()))
 
 
 if 1:
+    dot = CC(Σ - CC('\n'), name='.')
+    z0 = CC(*' \t\n') | ';' * dot() * CC('\n')
+    z1 = lit('a')() * 'b' & 'a' * lit('b')()
+    z2 = CC('a-c') * CC('b', 'd', 'e')
+    z3 = lit('(')
+    z4 = lit(')')
+    z = z0 | z1 | z2
     if len(sys.argv) > 1 and sys.argv[1] == '-c':
-        z1 = lit('a')() * 'b' & 'a' * lit('b')()
-        z2 = CC('a-c') * CC('b', 'd', 'e')
-        z = z1 | z2
         if 0:
+            print('z0 =', z0)
             print('z1 =', z1)
             print('z2 =', z2)
             print("d(z, 'a') =", d(z, 'a'))
@@ -903,7 +1023,7 @@ if 1:
             print('Σ =', Σ)
             print('C(z) =', C(z))
 
-        dfa = make_DFA([z1, z2])
+        dfa = make_DFA([z0, z1, z2])
         if 0:
             print()
             print('q0 = %r' % (dfa.q0,))
@@ -925,30 +1045,37 @@ if 1:
         mdfa = minimize(dfa)
         with open('mz.pickle', 'wb') as f: dump(mdfa, f)
     else:
-        print('unpickle z')
+        # print('unpickle z')
         with open('z.pickle', 'rb') as f:
             dfa = load(f)
-        print('unpickle mz')
+        # print('unpickle mz')
         with open('mz.pickle', 'rb') as f:
             mdfa = load(f)
-        print('done unpickling')
-    print()
-    print('minimized q0 = %r' % (mdfa.q0,))
-    print()
-    for q in mdfa.Q:
-        a = accepts(q)
-        print('ACCEPT %d' % a if a is not None else '        ', q)
-    print()
-    for t in mdfa.δ:
-        Srep = repr(t[1])
-        if len(Srep) > 20:
-            Srep = '{...}'
-        print('%-34.34s -> %r' % ('δ(%r, %s)' % (t[0], Srep), mdfa.δ[t]))
-    print()
-    print('minimized ordered Q =', mdfa.ordered_Q)
-    print('minimized C(mdfa) =', C(mdfa))
-
-    
+        # print('done unpickling')
+    if 0:
+        print()
+        print('minimized q0 = %r' % (mdfa.q0,))
+        print()
+        for q in mdfa.Q:
+            a = accepts(q)
+            print('ACCEPT %d' % a if a is not None else '        ', q)
+        print()
+        for t in mdfa.δ:
+            Srep = repr(t[1])
+            if len(Srep) > 20:
+                Srep = '{...}'
+            print('%-34.34s -> %r' % ('δ(%r, %s)' % (t[0], Srep), mdfa.δ[t]))
+        print()
+        print('minimized ordered Q =', mdfa.ordered_Q)
+        print('minimized C(mdfa) =', C(mdfa))
+    rvec = [('WHITE', z0),
+            ('ONE', z1),
+            ('TWO', z2),
+            ('OPEN', z3),
+            ('CLOSE', z4),
+            ]
+    f = Formatter(rvec, prefix='toy')
+    f.emit()
     exit()
 
 
@@ -1165,10 +1292,10 @@ if len(sys.argv) > 1 and sys.argv[1] == '-c':
     print('%d states, %d transitions, %d character classes' %
           (len(dfa.Q), len(dfa.δ), len(C(dfa))))
     with open('r6rs.pickle', 'wb') as f: dump(dfa, f)
-    mdfa = minimize(dfa)
-    print('%d states, %d transitions, %d character classes' %
-          (len(mdfa.Q), len(mdfa.δ), len(C(mdfa))))
-    with open('min_r6rs.pickle', 'wb') as f: dump(mdfa, f)
+#    mdfa = minimize(dfa)
+#    print('%d states, %d transitions, %d character classes' %
+#          (len(mdfa.Q), len(mdfa.δ), len(C(mdfa))))
+#    with open('min_r6rs.pickle', 'wb') as f: dump(mdfa, f)
 else:
     with open('r6rs.pickle', 'rb') as f:
         dfa = load(f)
@@ -1178,7 +1305,7 @@ else:
           (len(mdfa.Q), len(mdfa.δ), len(C(mdfa))))
     dfa = minimize_classes(mdfa)
     
-if 1:
+if 0:
 #    print('q0 = %r' % (dfa.q0,))
 #    print()
 #    print('Q:')
