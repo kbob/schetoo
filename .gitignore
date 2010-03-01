@@ -12,3 +12,4 @@ core
 .*.d.[0-9]*
 *.a
 *.so
+*.pickle
