@@ -3,7 +3,6 @@
 #include <wchar.h>
 
 #include "obj_string.h"
-#include "roots.h"
 
 void init_charbuf(charbuf_t *cbp, const wchar_t *prefix)
 {
