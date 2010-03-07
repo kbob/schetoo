@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-typedef enum unicode_general_category_t {
+typedef enum unicode_general_category {
 
     UGC_LETTER_UPPERCASE,		/* Lu */
     UGC_LETTER_LOWERCASE,		/* Ll */
