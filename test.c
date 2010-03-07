@@ -24,7 +24,6 @@ void self_test()
 #include "obj_vector.h"
 #include "print.h"
 #include "read.h"
-#include "roots.h"
 
 typedef int (*test_driver_t)(const test_case_descriptor_t *);
 

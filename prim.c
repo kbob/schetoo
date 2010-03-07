@@ -9,7 +9,6 @@
 #include "list.h"
 #include "obj_null.h"
 #include "obj_symbol.h"
-#include "roots.h"
 
 static prim_descriptor_t *prim_descs;
 static alias_descriptor_t *alias_descs;

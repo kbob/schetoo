@@ -10,7 +10,6 @@
 #include "prim.h"
 #include "read.h"
 #include "record.h"
-#include "roots.h"
 #include "test.h"
 #include "types.h"
 
