@@ -801,3 +801,82 @@ exception handlers and I/O primitives.
 
 Scan and read need to be rewritten to be leaf routines.  That will be
 challenging.  Right now, I'm severely limited
+
+----------------------------------
+2010.03.05
+
+I have to turn the parser and scanner inside-out.
+
+Let's assume that I have an I/O library with the equivalent of
+getchar() and peekchar(), aka ungetc(getchar(), stdin).
+
+read_datum() should repeatedly call peekchar(), and pass each
+character to the scanner's scan_char().  If that succeeds, then the
+scanner returns zero, one or two tokens which should be passed on to
+the parser.  If the parser succeeds, then the scanner can update its
+state, and the io stream can commit to reading the character.
+
+We could fail in peekchar(), which is not a problem, since peekchar()
+is the first thing to run.  getchar() after peekchar() must never
+fail.  (Should be easy enough -- getchar() just updates the file or
+buffer position.)
+
+We could fail in scan_char() when it tries to allocate a token.
+If that happens, we want to retry peekchar() and we want to leave
+the scanner's state unchanged.
+
+After the scanner has returned zero, one or two tokens, we want to
+commit that.  Save the tokens, if any, and call getchar().  Can the
+tokens be stored in a continuation?  Yes, that's the best place.
+
+"Calling" getchar() means pushing a continuation pointing to it
+then returning into that continuation.
+
+Then call the parser to update its state based on the new tokens.
+(If no tokens, continue directly to another call to peekchar()
+and scan_char().)  If we fail in the parser, we'll retry the
+parse step.
+
+So I see four entry points.
+
+   getchar()
+   peekchar()
+   scan_char()
+   parse_token()
+
+(R6RS uses the names peek-char and read-char.)
+
+1. read-char can be a simple procedure.  It takes 0-1 args.
+It returns a character.
+
+2. peek-char ditto.  It can also fail, returning EOF.
+
+Later, read-char and peek-char can be written in Scheme and use
+get-u8 and eof-object as the primitives.  But for now, I'll implement
+read-char and peek-char in C.
+
+3. scan_char() is a raw procedure.  Its arguments, which it must
+unpack itself, are a character and its starting state.  It pushes
+continuations onto the stack and returns.  If it recognizes zero
+tokens, here's the continuation stack it makes.
+
+    get-char -> discard-value -> peek-char -> scan_char -> [current TOS]
+
+If there's one token, it looks like this.
+
+    get-char -> discard-value -> parse_token -> peek-char -> scan-char -> [TOS]
+
+If scan_char() sees EOF, it doesn't push itelf.  It just pushes
+any parse_token calls and returns.
+
+I'm thinking we need a primitive "get-char and discard value".
+Or maybe I can set up the registers just so.
+
+For now, the first thing to do is implement peek-char and get-char.
+And their friends, current-input-port and open-input-file.
+
+----------------------------------
+2010.03.06
+
+Okay, I wrote a minimal I/O library.  Four procedures: read-char,
+peek-char, eof-object, and eof-object?.
