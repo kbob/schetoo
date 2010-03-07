@@ -449,7 +449,8 @@ class CC(RE):
         # N.B., init is idempotent.
         self.precedence = 5
         self.charmap = self.__make_charmap(*args)
-        self.name = name
+        if not hasattr(self, 'name'):
+            self.name = name
         if name:
             self.named[self.charmap] = name
 
@@ -669,10 +670,11 @@ def lit(s):
 empty_set = CC()
 
 unicode_categories = []
-unicode_chars = []
+special_unicode_chars = []
 def define_unicode_char(codepoint, name):
     cc = CC.unicode_cat(name)
-    unicode_chars.append(cc)
+    cc.codepoint = codepoint
+    special_unicode_chars.append(cc)
     return cc
 
 def define_unicode_category(long_name, sn):
@@ -690,9 +692,9 @@ with open('unicode.h') as f:
             define_unicode_category(m.group(1), m.group(2))
 
 
-next_line = define_unicode_char('\u0085', 'CC_NEXT_LINE')
-line_separator = define_unicode_char('\u2028', 'CC_LINE_SEPARATOR')
-paragraph_separator = define_unicode_char('\u2029', 'CC_PARAGRAPH_SEPARATOR')
+next_line = define_unicode_char('\u0085', 'next_line')
+line_separator = define_unicode_char('\u2028', 'line_separator')
+paragraph_separator = define_unicode_char('\u2029', 'paragraph_separator')
 Σ = CC.universal()
 
 
@@ -938,9 +940,10 @@ class Formatter:
         self.p()
         
     def emit_constants(self):
+        es = self.dfa.error_states()[0]
         self.p('#define YY_INITIAL_STATE %d' % self.Q.index(self.dfa.q0))
         self.p('#define YY_COMMON_STATE %d' % self.Q.index(self.dq))
-        self.p('#define YY_ERROR_STATE %d' % self.Q.index(self.dfa.error_states()[0]))
+        self.p('#define YY_ERROR_STATE %d' % self.Q.index(es))
         self.p('#define YY_ACCEPT_COUNT %d' % len(self.tokens))
         self.p()
 
@@ -970,7 +973,10 @@ class Formatter:
 
     def emit_char_classes(self):
         def idx(c):
-            S = self.icc[c]
+            try:
+                S = self.icc[c]
+            except KeyError:
+                return -1
             return self.cc.index(S)
         self.p('static const yy_cc_t yy_charmap[] = {')
         for c in sorted(self.icc):
@@ -983,6 +989,11 @@ class Formatter:
         for cat in unicode_categories:
             self.p('%-40s/* %s */' % ('    %d,' % idx(cat.mark), cat.long_name))
         self.p('};')
+        self.p()
+        for wc in special_unicode_chars:
+            self.p('%-40s/* U+%04X */' %
+                   ('#define YY_%s_CC %#x' % (wc.name.upper(), idx(wc.mark)),
+                    ord(wc.codepoint)));
         self.p()
             
     def emit_states(self):
