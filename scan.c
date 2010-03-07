@@ -1,5 +1,8 @@
 #include "scan.h"
 
+#define OLD_SCANNER 1
+#if OLD_SCANNER
+
 #include <assert.h>
 
 #include "charbuf.h"
@@ -229,7 +232,7 @@ static token_type_t scan_number(int sign, obj_t *lvalp, instream_t *in)
     if (wc != WEOF)
 	instream_ungetwc(wc, in);
     *lvalp = make_fixnum(sign * ival);
-    return TOK_EXACT_NUMBER;
+    return TOK_U8;
 }
 
 extern token_type_t yylex(obj_t *lvalp, instream_t *in)
@@ -510,12 +513,420 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
     return TOK_EOF;
 }
 
+#else
+
+#include "scan.h"
+#include "dfa_data.h"
+
+#include <assert.h>
+
+#include "obj_cont.h"
+#include "record.h"
+#include "test.h"
+#include "types.h"
+#include "unicode.h"
+
+DEFINE_STATIC_RECORD_TYPE(scan_ctx, L"scan-context", NULL, 0) = {
+    { FM_IMMUTABLE, L"state" },
+    { FM_MUTABLE, L"buf" },
+    { FM_MUTABLE, L"pos" },
+};
+
+static inline yy_state_t scan_ctx_state(obj_t ctx)
+{
+    return fixnum_value(record_get_field(ctx, 0));
+}
+
+static inline obj_t scan_ctx_buf(obj_t ctx)
+{
+    return record_get_field(ctx, 1);
+}
+
+static inline size_t scan_ctx_pos(obj_t ctx)
+{
+    return fixnum_value(record_get_field(ctx, 2));
+}
+
+static inline size_t scan_ctx_len(obj_t ctx)
+{
+    return string_len(scan_ctx_buf(ctx));
+}
+
+static inline obj_t make_scan_ctx(yy_state_t state, obj_t buf, size_t pos)
+{
+    return MAKE_RECORD(make_fixnum(state), buf, make_fixnum(pos));
+}
+
+static inline obj_t make_new_scan_ctx(void)
+{
+    return make_scan_ctx(YY_INITIAL_STATE, make_string_fill(16, L'\0'), 0);
+}
+
+static obj_t scan_ctx_append_char(obj_t ctx, char_t ch)
+{
+    yy_state_t state = scan_ctx_state(ctx);
+    obj_t      buf   = scan_ctx_buf  (ctx);
+    size_t     pos   = scan_ctx_pos  (ctx);
+    size_t     len   = scan_ctx_len  (ctx);
+    assert(pos <= len);
+    if (pos < len)
+	string_set_char(buf, pos, ch);
+    else {
+	obj_t old = buf;
+	buf = make_string_fill(2 * pos, L'\0');
+	string_set_substring(buf, 0, pos, string_value(old));
+    }
+    return make_scan_ctx(state, buf, pos + 1);
+}
+
+static inline bool is_digit(wchar_t wc)
+{
+    return L'0' <= wc && wc <= L'9';
+}
+
+static inline bool is_xdigit(wchar_t wc)
+{
+    if (is_digit(wc))
+	return true;
+    return (L'a' <= wc && wc <= L'f') || (L'A' <= wc && wc <= L'F');
+}
+
+static yy_cc_t char_class(wint_t wc)
+{
+    if (wc < 128)
+	return yy_charmap[wc];
+    else if (wc == L'\x0085')
+	return YY_NEXT_LINE_CC;
+    else if (wc == L'\x2028')
+	return YY_LINE_SEPARATOR_CC;
+    else if (wc == L'\x2029')
+	return YY_PARAGRAPH_SEPARATOR_CC;
+    else
+      return yy_unicode_catmap[unicode_general_category(wc)];
+   return -1;
+}
+
+static bool is_delimiter(wint_t wc)
+{
+    if (wc == WEOF)
+	return true;
+    if (wc < 128) {
+	switch (wc) {
+
+	case L'(':
+	case L')':
+	case L'[':
+	case L']':
+	case L'"':
+	case L';':
+	case L'#':
+	case L'\t':
+	case L'\n':
+	case L'\v':
+	case L'\f':
+	case L'\r':
+	    return true;
+
+	default:
+	    return false;
+	}
+    } else {
+	if (wc == L'\x0085')
+	    return true;
+	switch (unicode_general_category(wc)) {
+
+	case UGC_SEPARATOR_SPACE:
+	case UGC_SEPARATOR_LINE:
+	case UGC_SEPARATOR_PARAGRAPH:
+	    return true;
+
+	default:
+	    return false;
+	}
+    }
+}
+
+static bool token_needs_delimiter(yy_token_t t)
+{
+    switch (t) {
+
+    case YY_IDENTIFIER:
+    case YY_PERIOD:
+    case YY_NUMBER:
+    case YY_CHARACTER:
+    case YY_BOOLEAN:
+	return true;
+
+    default:
+	return false;
+    }
+}
+
+static yy_state_t XXXscan_char(yy_state_t state, wint_t wc)
+{
+    yy_state_t next_state;
+    if (state < YY_ACCEPT_COUNT) {
+	yy_token_t tok = yy_accepts[state];
+	if (token_needs_delimiter(tok) && is_delimiter(wc)) {
+	    printf("A token %s\n", token_name(tok));
+	    state = YY_INITIAL_STATE;
+	}
+    }
+    yy_cc_t cc = char_class(wc);
+    const yy_delta_row_t *row = &yy_delta[state];
+    if (cc < row->yy_len)
+	next_state = yy_next_states[row->yy_index + cc];
+    else
+	next_state = YY_COMMON_STATE;
+    if (next_state < YY_ACCEPT_COUNT) {
+	yy_token_t tok = yy_accepts[next_state];
+	if (tok == YY_ATMOSPHERE) {
+	    printf("atmosphere\n");
+	    next_state = YY_INITIAL_STATE;
+	}
+	else if (!token_needs_delimiter(tok)) {
+	    printf("B token %s\n", token_name(tok));
+	    next_state = YY_INITIAL_STATE;
+	}
+    } else if (next_state == YY_ERROR_STATE) {
+	printf("error\n");
+	next_state = YY_INITIAL_STATE;
+    }
+    // printf("U+%04X cc %d state %d -> %d\n", wc, cc, state, next_state);
+    return next_state;
+}
+
+static int digit_value(char_t wc)
+{
+    if (L'0' <= wc && wc <= L'9')
+	return wc - L'0';
+    if (L'a'<= wc && wc <= L'f')
+	return wc - L'a' + 0xa;
+    assert(L'A'<= wc && wc <= L'F');
+    return wc - L'A' + 0xA;
+}
+
+static word_t scan_hex_scalar(const char_t *str, char_t end)
+{
+    word_t xval = 0;
+    bool empty = true;
+    while (*str && is_xdigit(*str)) {
+	xval = 0x10 * xval + digit_value(*str);
+	empty = false;
+	str++;
+    }
+    if (empty || *str != end)
+	THROW(&lexical, "malformed hex value", make_string_from_C_str(str));
+    return xval;
+}
+
+static obj_t scan_identifier(const char_t *str, size_t length)
+{
+    return FALSE_OBJ;
+}
+
+static obj_t scan_number(const char_t *str, size_t length)
+{
+    return FALSE_OBJ;
+}
+
+static obj_t scan_character(const char_t *str, size_t length)
+{
+    typedef struct char_name_map {
+	wchar_t *cn_name;
+	wchar_t  cn_char;
+    } char_name_map_t;
+
+    static const char_name_map_t char_names[] = {
+	{ L"alarm",     L'\a'   },
+	{ L"backspace", L'\b'   },
+	{ L"delete",    L'\177' },
+	{ L"esc",       L'\33'  },
+	{ L"linefeed",  L'\n'   },
+	{ L"newline",   L'\n'   },		/* deprecated */
+	{ L"nul",       L'\0'   },
+	{ L"page",      L'\f'   },
+	{ L"return",    L'\r'   },
+	{ L"space",     L' '    },
+	{ L"tab",       L'\t'   },
+	{ L"vtab",      L'\v'   },
+    };
+
+    static size_t char_name_count = sizeof char_names / sizeof *char_names;
+
+    // #\a  #\newline #\x03b8;
+    assert(str[0] == L'#' && str[1] == L'\\');
+    assert(wcslen(str) == length);
+    if (length == 3)
+	return make_character(str[2]);
+    assert(length > 3);
+    if (str[2] == L'x') {
+	word_t xval = scan_hex_scalar(str + 3, L'\0');
+	if (xval > 0x10ffff || (xval >= 0xd800 && xval <= 0xdfff))
+	    THROW(&lexical, "character out of range",
+		  make_string_from_C_str(str));
+	return make_character(xval);
+    }
+    const char_name_map_t *p;
+    for (p = char_names; p < char_names + char_name_count; p++)
+	if (!wcscmp(str, p->cn_name))
+	    return make_character(p->cn_char);
+    THROW(&lexical, "unknown character name", make_string_from_C_str(str));
+}
+
+static obj_t scan_string(const char_t *str, size_t length)
+{
+    return FALSE_OBJ;
+}
+
+static obj_t make_token(yy_state_t state, obj_t buf, size_t len)
+{
+    assert(state << YY_ACCEPT_COUNT);
+    const char_t *str = string_value(buf);
+    obj_t yylval = UNDEFINED_OBJ;
+    token_type_t toktype;
+    switch (yy_accepts[state]) {
+
+    case YY_IDENTIFIER:
+	toktype = TOK_SIMPLE;
+	yylval = scan_identifier(str, len);
+	break;
+
+    case YY_NUMBER:
+	toktype = TOK_SIMPLE;
+	yylval = scan_number(str, len);
+	if (is_fixnum(yylval)) {
+	    word_t n = fixnum_value(yylval);
+	    if (0 <= n && n <= 255)
+		toktype = TOK_U8;
+	}
+	break;
+
+    case YY_CHARACTER:
+	toktype = TOK_SIMPLE;
+	yylval = scan_character(str, len);
+	break;
+	
+    case YY_STRING:
+	toktype = TOK_SIMPLE;
+	yylval = scan_string(str, len);
+	break;
+
+    case YY_LPAREN:
+	toktype = TOK_LPAREN;
+	break;
+
+    case YY_RPAREN:
+	toktype = TOK_RPAREN;
+	break;
+
+    case YY_LBRACKET:
+	toktype = TOK_LBRACKET;
+	break;
+
+    case YY_RBRACKET:
+	toktype = TOK_RBRACKET;
+	break;
+
+    case YY_BEGIN_VECTOR:
+	toktype = TOK_BEGIN_VECTOR;
+	break;
+
+    case YY_BEGIN_BYTEVECTOR:
+	toktype = TOK_BEGIN_BYTEVECTOR;
+	break;
+
+    default:
+	assert(false);
+    }
+    return CONS(make_fixnum(toktype), yylval);
+}
+
+cv_t scan_char(obj_t cont, obj_t values)
+{
+    obj_t      ch    = CAR(values);
+    obj_t      ctx   = CADR(values);
+    yy_state_t state = scan_ctx_state(ctx);
+    yy_state_t next_state;
+    //obj_t      buf   = scan_ctx_buf(ctx);
+    //size_t     len   = scan_ctx_pos(ctx);
+
+    obj_t first_token = make_undefined();
+    obj_t second_token = make_undefined();
+
+    if (state < YY_ACCEPT_COUNT) {
+	yy_token_t tok = yy_accepts[state];
+	if (token_needs_delimiter(tok) && is_delimiter(character_value(ch))) {
+	    first_token = make_token(state, ctx);
+	    ctx = make_initial_scan_ctx();
+	    state = scan_ctx_state(ctx);
+	}
+    }
+    if (is_eof(ch)) {
+	// Build
+	second_token = CONS(make_fixnum(TOK_EOF), UNDEFINED_OBJ);
+    } else {
+	const yy_delta_row_t *row = &yy_delta[state];
+	yy_cc_t cc = char_class(character_value(ch));
+	if (cc < row->yy_len)
+	    next_state = yy_next_states[row->yy_index + cc];
+	else
+	    next_state = YY_COMMON_STATE;
+	if (next_state < YY_ACCEPT_COUNT) {
+	    yytoken_t tok = yy_accepts[next_state];
+	    if (tok == YY_ATMOSPHERE) {
+		ctx = make_initial_scan_ctx();
+	    } else if (!token_needs_delimiter(tok)) {
+		second_token = make_token(next_state, ctx);
+		ctx = make_initial_scan_ctx();
+	    }
+	}
+	else if (next_state == YY_ERROR_STATE)
+	    THROW(&lexical, "lexical error");
+    }
+    obj_t next = cont;
+    if (!is_undefined(first_token))
+	next = make_cont(..., next, ...);
+    if (!is_undefined(second_token))
+	next = make_cont(..., next, ...);
+    cont = ...;
+    if (something)
+	ctx_append_char(ctx, character_value(ch));
+    return cv(cont, ...);
+}
+
+obj_t XXXyylex()
+{
+    while (is_null(token_stash)) {
+        if ((c = getchar()) == WEOF)
+	    return TOK_EMPTY;
+	state = scan_char(c, callback);
+    }
+    token = CAR(token_stash);
+    token_stash = CDR(token_stash);
+    return token;
+}	    
+
+extern token_type_t yylex(obj_t *lvalp, instream_t *in)
+{
+    yy_state_t state = YY_INITIAL_STATE;
+    wint_t wc;
+    while (is_null(token_stash)) {
+	if ((wc = instream_getwc(in)) == WEOF)
+	    if accepting delimiter-needing token, append token to stash;
+	    append TOK_EMPTY to stash;
+	state = scan_char(state, wc);
+    }
+}
+
+#endif
+
 const char *token_name(token_type_t tok)
 {
     switch (tok) {
 #define CASE(x) case (x): return #x;
 	CASE(TOK_EOF)
-	CASE(TOK_EXACT_NUMBER)
+	CASE(TOK_U8)
 	CASE(TOK_SIMPLE)
 	CASE(TOK_ABBREV)
 	CASE(TOK_COMMENT)

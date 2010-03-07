@@ -880,3 +880,11 @@ And their friends, current-input-port and open-input-file.
 
 Okay, I wrote a minimal I/O library.  Four procedures: read-char,
 peek-char, eof-object, and eof-object?.
+
+----------------------------------
+2010.03.07
+
+When EOF is reached, scan_char should exit the loop.
+The continuation stack should look like this.
+
+    parse_token -> [TOS]

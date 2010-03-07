@@ -84,7 +84,7 @@ obj_t make_C_procedure(C_procedure_t code,
     return make_proc(flags, (obj_t)code, name, make_fixnum(arg_range), env);
 }
 
-obj_t make_raw_procedure(C_procedure_t code, obj_t name, obj_t env)
+obj_t make_raw_procedure(cont_proc_t code, obj_t name, obj_t env)
 {
     CHECK_OBJ(env);
     proc_flags_t flags = PF_COMPILED_C | PF_RAW | PF_ARGS_EVALUATED;
@@ -109,7 +109,7 @@ obj_t make_C_special_form_procedure(C_procedure_t code,
     return make_proc(flags, (obj_t)code, name, make_fixnum(arg_range), env);
 }
 
-obj_t make_raw_special_form_procedure(C_procedure_t code, obj_t name, obj_t env)
+obj_t make_raw_special_form_procedure(cont_proc_t code, obj_t name, obj_t env)
 {
     CHECK_OBJ(env);
     proc_flags_t flags = PF_COMPILED_C | PF_RAW;

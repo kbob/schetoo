@@ -5,7 +5,7 @@
 #include "obj.h"
 
 typedef enum token_type {
-    TOK_EXACT_NUMBER,
+    TOK_U8,
     TOK_SIMPLE,
     TOK_ABBREV,
     TOK_COMMENT,

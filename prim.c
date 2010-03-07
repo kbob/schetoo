@@ -23,7 +23,7 @@ extern obj_t create_proc(const prim_descriptor_t *desc)
 
 extern obj_t create_raw_proc(const prim_descriptor_t *desc)
 {
-    return make_raw_procedure(desc->pd_code,
+    return make_raw_procedure((cont_proc_t)desc->pd_code,
 			      make_symbol_from_C_str(desc->pd_name),
 			      root_environment());
 }
@@ -31,7 +31,7 @@ extern obj_t create_raw_proc(const prim_descriptor_t *desc)
 extern obj_t create_special_form(const prim_descriptor_t *desc)
 {
     obj_t name = make_symbol_from_C_str(desc->pd_name);
-    return make_raw_special_form_procedure(desc->pd_code,
+    return make_raw_special_form_procedure((cont_proc_t)desc->pd_code,
 					   name,
 					   root_environment());
 }

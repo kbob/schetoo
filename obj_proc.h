@@ -1,6 +1,7 @@
 #ifndef OBJ_PROC_INCLUDED
 #define OBJ_PROC_INCLUDED
 
+#include "cv.h"
 #include "except.h"
 #include "interval.h"
 #include "mem.h"
@@ -33,7 +34,7 @@ extern obj_t make_C_procedure		    (C_procedure_t code,
 					     obj_t	   name,
 					     interval_t    arg_range,
 					     obj_t         env);
-extern obj_t make_raw_procedure             (C_procedure_t code,
+extern obj_t make_raw_procedure             (cont_proc_t   code,
 					     obj_t	   name,
 					     obj_t         env);
 extern obj_t make_special_form_procedure    (obj_t         code,
@@ -42,7 +43,7 @@ extern obj_t make_C_special_form_procedure  (C_procedure_t code,
 					     obj_t	   name,
 					     interval_t    arg_range,
 					     obj_t         env);
-extern obj_t make_raw_special_form_procedure(C_procedure_t code,
+extern obj_t make_raw_special_form_procedure(cont_proc_t   code,
 					     obj_t	   name,
 					     obj_t         env);
 

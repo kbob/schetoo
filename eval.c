@@ -305,9 +305,7 @@ static cv_t default_handler(obj_t cont, obj_t values)
 ROOT_CONSTRUCTOR(dhproc)
 {
     obj_t proc_name = make_symbol_from_C_str(L"default-exception-handler");
-    return make_raw_procedure((C_procedure_t)default_handler,
-			      proc_name,
-			      root_environment());
+    return make_raw_procedure(default_handler, proc_name, root_environment());
 }
 
 static cv_t c_exception_returned(obj_t cont, obj_t values)

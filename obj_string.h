@@ -11,6 +11,8 @@ extern obj_t         make_string_uninitialized
 extern obj_t         make_string_fill    (size_t len, char_t fill);
 extern obj_t         make_string_from_chars
                                          (const char_t *value, size_t len);
+extern obj_t         make_string_from_C_str
+                                         (const char_t *value);
 extern size_t        string_len          (obj_t);
 extern const char_t *string_value        (obj_t);
 extern void          string_set_char     (obj_t, size_t index, char_t wc);

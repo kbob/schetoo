@@ -22,10 +22,11 @@ DONE	Rename RAISE to THROW.
 DONE	Remove 2nd arg from CHECK and RAISE (aka THROW).
 DONE	read.c should use &lexical, not &syntax.
 DONE	Move apply_proc() from prim.c to eval.c.
-	Most exceptions shouldn't supply irritants.
+DONE	Most exceptions shouldn't supply irritants.
 drop	Move env from cont to dyn_env.
-	Split cont4 into cont3 and cont4.
-	Define raw_proc_t in obj_proc.h and adjust function prototypes.
+	Split cont4 into cont3 and cont4. (cont4 and cont5?)
+DONE	Define cont_proc_t in obj_proc.h and adjust function prototypes.
+	There should be some field accessors in conditions.h.
 
 Heap
 DONE	Implement records.

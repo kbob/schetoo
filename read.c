@@ -201,7 +201,7 @@ static const production_t grammar[] = {
     { 'p', "d",                         }, /* program ::= datum */
     { 'p', "",                          }, /* program ::= (empty) */
 
-    { 'd', "N",                         }, /* datum ::= EXACT_NUMBER */
+    { 'd', "U",                         }, /* datum ::= U8 */
     { 'd', "S",                         }, /* datum ::= SIMPLE */
     { 'd', "(i)",  ACTION_BEGIN_LIST    }, /* datum ::= ( interior ) */
     { 'd', "[i]",  ACTION_BEGIN_LIST    }, /* datum ::= [ interior ] */
@@ -222,7 +222,7 @@ static const production_t grammar[] = {
     { 'e', "xe",                        }, /* elements ::= comment elements */
     { 'e', "",     ACTION_END_SEQUENCE  }, /* elements ::= (empty) */
 
-    { 'b', "Nb",                        }, /* bytes ::= EXACT_NUMBER bytes */
+    { 'b', "Ub",                        }, /* bytes ::= U8 bytes */
     { 'b', "xb",                        }, /* bytes ::= comment bytes */
     { 'b', "",     ACTION_END_SEQUENCE  }, /* bytes ::= (empty) */
 
@@ -238,7 +238,7 @@ static const size_t grammar_size = sizeof grammar / sizeof *grammar;
  * token_type_t values that the scanner returns.
  */
 static token_pair_t token_pairs[] = {
-    { 'N', TOK_EXACT_NUMBER },
+    { 'U', TOK_U8 },
     { 'S', TOK_SIMPLE },
     { 'A', TOK_ABBREV },
     { ';', TOK_COMMENT },
