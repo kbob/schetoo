@@ -5,7 +5,7 @@
      programs := scheme
  test_scripts := selftest.sh
 
-  prim_groups := arith boolean char ctrl defn env eq eval expr list	\
+  prim_groups := arith boolean char ctrl defn env eq eval expr io list	\
 		 proc string sym
 
     obj_types := binding bytevector boolean cont pair proc record rtd	\
