@@ -3,6 +3,8 @@
 
 #include "obj.h"
 
+#define UNDEFINED_REPR L"#<undefined>"
+
 static inline obj_t make_undefined(void)
 {
     return UNDEFINED_OBJ;

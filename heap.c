@@ -22,7 +22,7 @@
 
 #define GROW_HEAP
 #ifdef GROW_HEAP
-#define INITIAL_HEAP_WORDS (1 << 16)
+#define INITIAL_HEAP_WORDS (1 << 20)
 #define MAX_HEAP_UTILIZATION (0.6)
 #define MIN_HEAP_UTILIZATION (0.1)
 #else

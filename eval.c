@@ -16,6 +16,7 @@
 #include "prim.h"
 #include "record.h"
 #include "roots.h"
+#include "test.h"
 #include "types.h"
 
 /*
@@ -413,3 +414,18 @@ extern obj_t core_eval(obj_t expr, obj_t env)
     assert(is_null(CDR(values)));
     return CAR(values);
 }
+
+TEST_EVAL(L"#t",				L"#t");
+TEST_EVAL(L"#f",				L"#f");
+TEST_EVAL(L"-23",				L"-23");
+TEST_EVAL(L"#\\a",				L"#\\a");
+TEST_EVAL(L"\"foo\"",				L"\"foo\"");
+
+TEST_EVAL(L"+",					L"#<proc-C-+>");
+TEST_EVAL(L"((lambda () +))",			L"#<proc-C-+>");
+TEST_EVAL(L"((lambda (x) x) #t)",		L"#t");
+TEST_EVAL(L"((lambda (a)\n"
+	  L"   ((lambda (b)\n"
+	  L"      a)\n"
+	  L"    2))\n"
+	  L" 1)",				L"1");

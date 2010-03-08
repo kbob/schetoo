@@ -1,6 +1,8 @@
 #include "env.h"
 #include "list.h"
 #include "prim.h"
+#include "obj_undefined.h"
+#include "test.h"
 #include "types.h"
 
 static cv_t c_continue_define(obj_t cont, obj_t values)
@@ -31,3 +33,6 @@ DEFINE_SPECIAL_FORM(L"define")(obj_t cont, obj_t values)
     obj_t first = make_cont4(c_eval, second, env, expr);
     return cv(first, EMPTY_LIST);
 }
+
+TEST_EVAL(L"(define v0 3) v0",			L"3");
+TEST_EVAL(L"(define v5 1)",			UNDEFINED_REPR);

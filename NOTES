@@ -954,4 +954,22 @@ updates env.
 
 The source code is in regbench.c.
 
+Implementing version 3 is also cleaner -- less bookkeeping passing env
+around in routines that don't care about env.  Which is the real reason
+to do it.
 
+---
+
+How to get there.
+
+Step 0. Add test cases to exercise all relevant code paths.
+
+Step 1. Add assertion to every cont_proc to verify it has the
+        right kind of continuation. "assert(is_cont4(cont));"
+
+Step 2. Add global env, use it, and ignore the env passed in the
+        continuation.
+
+Step 3. Rename cont4 to cont3, remove the env member, reorder args.
+
+Step 4. Create cont4 for c_apply_proc and call/cc.  Cut them over.
