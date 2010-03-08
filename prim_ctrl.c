@@ -12,13 +12,12 @@ DEFINE_RAW_PROC(L"apply")(obj_t cont, obj_t values)
 	arg_list = CONS(CAR(p), arg_list);
 	p = CDR(p);
     }
-    obj_t operator = CAR(p);
-    EVAL_LOG("operator=%O arg_list=%O", operator, arg_list);
+    EVAL_LOG("operator=%O arg_list=%O", CAR(p), arg_list);
     
     return cv(make_cont4(c_apply_proc,
 			 cont_cont(cont),
 			 cont_env(cont),
-			 CONS(operator, CDR(expr))),
+			 expr),
 	      reverse_list(arg_list));
 }
 

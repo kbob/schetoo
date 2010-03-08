@@ -888,3 +888,16 @@ When EOF is reached, scan_char should exit the loop.
 The continuation stack should look like this.
 
     parse_token -> [TOS]
+
+Expand the earlier stack a bit (zero tokens case).
+
+    get-char -> discard-value -> peek-char -> scan-char -> [TOS]
+
+expands to
+    get-char      w/ values = ()
+    discard-value w/ values = (char)
+    peek-char     w/ values = ()
+    scan-char     w/ values = reverse(char scan-ctx)
+    TOS		  w/ values = whatever
+
+saved values are stored in CDR(cont4_arg(cont)).

@@ -33,6 +33,7 @@ DEFINE_STATIC_RECORD_TYPE(dyn_env, L"dynamic-environment", NULL, RF_OPAQUE) = {
     { FM_MUTABLE, L"exception-handler" },
     { FM_END }
 };
+
 typedef enum dyn_env_fields {
     DE_UNWIND,
     DE_HANDLER,
@@ -315,7 +316,7 @@ static cv_t c_exception_returned(obj_t cont, obj_t values)
     THROW(&non_continuable, "exception handler returned", handler);
 }
 
-obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
+static obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
 {
     //oprintf("add_who_irritants: cont_proc = %p\n", cont_proc(cont));
     //oprintf("add_who_irritants: cont4_arg = %O\n", cont4_arg(cont));
