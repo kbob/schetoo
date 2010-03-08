@@ -15,7 +15,7 @@ DEFINE_PROC(L"=", 2-)(obj_t z1, obj_t z2, obj_t zs)
     CHECK(is_fixnum(z1), "must be fixnum");
     while (true) {
 	CHECK(is_fixnum(z2), "must be fixnum");
-	if (!(z1 == z2))
+	if (!(fixnum_value(z1) == fixnum_value(z2)))
 	    return FALSE_OBJ;
 	if (is_null(zs))
 	    return TRUE_OBJ;
@@ -30,7 +30,7 @@ DEFINE_PROC(L"<", 2-)(obj_t z1, obj_t z2, obj_t zs)
     CHECK(is_fixnum(z1), "must be fixnum");
     while (true) {
 	CHECK(is_fixnum(z2), "must be fixnum");
-	if (!(z1 < z2))
+	if (!(fixnum_value(z1) < fixnum_value(z2)))
 	    return FALSE_OBJ;
 	if (is_null(zs))
 	    return TRUE_OBJ;
@@ -45,7 +45,7 @@ DEFINE_PROC(L">", 2-)(obj_t z1, obj_t z2, obj_t zs)
     CHECK(is_fixnum(z1), "must be fixnum");
     while (true) {
 	CHECK(is_fixnum(z2), "must be fixnum");
-	if (!(z1 > z2))
+	if (!(fixnum_value(z1) > fixnum_value(z2)))
 	    return FALSE_OBJ;
 	if (is_null(zs))
 	    return TRUE_OBJ;
