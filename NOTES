@@ -901,3 +901,57 @@ expands to
     TOS		  w/ values = whatever
 
 saved values are stored in CDR(cont4_arg(cont)).
+
+----------------------------------
+2010.03.08
+
+It's time to make some changes to continuations before I delve into
+the messy project of building them into the new reader.
+
+Goals.
+
+  - (G.ENV) Remove env from continuation, keep as separate register,
+    saved and restored as needed.
+
+  - (G.SEP) Separate c_apply_proc's proc and saved_values parameters.
+
+  - (G.ORD) Rearrange make_cont's arguments like this.
+    [opcode, arg ..., env(?), next].
+
+  - (G.VFY) Add an assertion to every cont proc that it is called
+    with the right continuation type.
+
+I'm not sure that G.ENV will actually be faster, though.  The cv_t
+will become a triple, cve_t, and each cont proc will be called with
+three args instead of two.  If we didn't have the trampoline, it
+would definitely be faster.
+
+Maybe I should write a benchmark comparing the current thing
+vs. cve_t vs. keeping env in a global root.
+
+---
+
+Benchmark results are in.  V3 is fastest.  (with my compiler on my
+PC today)
+
+    ~/scheme2> time ./a.out
+    version 1 result 1000000000 time 10.4975
+    version 2 result 1000000000 time 10.3443
+    version 3 result 1000000000 time 9.79096
+    30.629u 0.000s 0:30.63 99.9%    0+0k 0+0io 0pf+0w
+
+Version 1 is what we have today.  Each cont_proc takes two arguments,
+cont and values.  It returns a cv_t structure which contains cont
+and values.  Env is in the continuation structure, and is copied
+by every op.
+
+Version 2 is the cve_t idea.  Each cont_proc takes three arguments,
+cont, values, and env.  It returns a cve_t structure which contains
+cont, values, and env.
+
+Version 3 keeps env in a global variable.  Every tenth operation
+updates env.
+
+The source code is in regbench.c.
+
+
