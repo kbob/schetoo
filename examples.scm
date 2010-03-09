@@ -111,3 +111,11 @@ max
       a)
     #\b))
  #\a)
+
+((lambda (a)
+   (cons
+    ((lambda (a)
+       a)
+     3)
+    a))
+ 2)

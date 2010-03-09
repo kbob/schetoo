@@ -7,6 +7,7 @@
 
 static cv_t c_continue_define(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     EVAL_LOG("var=%O values=%O", cont4_arg(cont), values);
     /* N.B., allocate new values before mutating environment. */
     obj_t new_values = CONS(UNDEFINED_OBJ, CDR(cont4_arg(cont)));
@@ -20,6 +21,7 @@ static cv_t c_continue_define(obj_t cont, obj_t values)
 
 DEFINE_SPECIAL_FORM(L"define")(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t form = cont4_arg(cont);
     obj_t env  = cont_env(cont);
     EVAL_LOG("form=%O", form);

@@ -114,6 +114,7 @@ static obj_t apply_proc(obj_t proc, obj_t arg_list)
 /* N.B., c_eval_seq discards CAR(values) so pass it an extra value. */
 static cv_t c_eval_seq(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t env = cont_env(cont);
     obj_t exprs = cont4_arg(cont);
     EVAL_LOG("exprs=%O", exprs);
@@ -126,6 +127,7 @@ static cv_t c_eval_seq(obj_t cont, obj_t values)
 
 extern cv_t c_apply_proc(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t next = cont_cont(cont);
     obj_t p = cont4_arg(cont);
     obj_t operator = CAR(p);
@@ -169,6 +171,7 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 
 static cv_t c_eval_operator(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t appl = cont4_arg(cont);
     obj_t operator = CAR(values);
     EVAL_LOG("appl=%O operator=%O", appl, operator);
@@ -201,6 +204,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 
 extern cv_t c_eval(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t expr = cont4_arg(cont);
     EVAL_LOG("expr=%O", expr);
     if (is_self_evaluating(expr))
@@ -249,6 +253,7 @@ static cv_t default_handler(obj_t cont, obj_t values)
      * If who or irritants given, print (cons who irritants).
      */
 
+    assert(is_cont4(cont));
     EVAL_LOG("cont=%O values=%O", cont, values);
     obj_t ex = CAR(values);
     obj_t parts = record_get_field(ex, 0);
@@ -301,6 +306,7 @@ ROOT_CONSTRUCTOR(dhproc)
 
 static cv_t c_exception_returned(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t handler = cont4_arg(cont);
     EVAL_LOG("handler=%O", handler);
     THROW(&non_continuable, "exception handler returned", handler);
@@ -311,6 +317,7 @@ static obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
     //oprintf("add_who_irritants: cont_proc = %p\n", cont_proc(cont));
     //oprintf("add_who_irritants: cont4_arg = %O\n", cont4_arg(cont));
     //oprintf("add_who_irritants: values = %O\n", values);
+    assert(is_cont4(cont));
     cont_proc_t proc = cont_proc(cont);
     if (proc == c_apply_proc) {
 	obj_t arg = cont4_arg(cont);
@@ -336,6 +343,7 @@ static obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
 
 static cv_t push_exception(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t ex = add_who_irritants(cont, values, eval_exception);
     obj_t handler = record_get_field(eval_dyn_env, DE_HANDLER);
     obj_t second = make_cont4(c_exception_returned,
@@ -419,3 +427,10 @@ TEST_EVAL(L"((lambda (a)\n"
 	  L"    2))\n"
 	  L" 1)",				L"1");
 TEST_EVAL(L"(+ 3 ((lambda (x) x (+ x x)) 5))",	L"13");
+TEST_EVAL(L"((lambda (a)\n"
+	  L"   (cons\n"
+	  L"    ((lambda (a)\n"
+	  L"       a)\n"
+	  L"     3)\n"
+	  L"    a))\n"
+	  L" 2)",				L"(3 . 2)");

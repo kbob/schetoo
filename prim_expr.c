@@ -29,6 +29,7 @@ TEST_EVAL(L"''a",			L"(quote a)");
 
 DEFINE_SPECIAL_FORM(L"lambda")(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t expr    = cont4_arg(cont);
     obj_t formals = CADR(expr);
     obj_t body    = CDDR(expr);
@@ -64,6 +65,7 @@ TEST_EVAL(L"((lambda (x y . z) z)\n"
 
 static cv_t c_continue_if(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     EVAL_LOG("values=%O", values);
     //oprintf("c_continue_if: values = %O\n", values);
     bool success = CAR(values) != FALSE_OBJ;
@@ -84,6 +86,7 @@ static cv_t c_continue_if(obj_t cont, obj_t values)
 
 DEFINE_SPECIAL_FORM(L"if")(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t form = cont4_arg(cont);
     EVAL_LOG("form=%O", form);
     size_t len = list_length(form);
@@ -110,6 +113,7 @@ TEST_EVAL(L"(if #f #f)",		UNDEFINED_REPR);
 
 static cv_t c_continue_set(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t p  = cont4_arg(cont);
     obj_t env   = cont_env(cont);
     obj_t var   = CAR(p);
@@ -124,6 +128,7 @@ static cv_t c_continue_set(obj_t cont, obj_t values)
 
 DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t form = cont4_arg(cont);
     obj_t env = cont_env(cont);
     EVAL_LOG("form=%O", form);

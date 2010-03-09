@@ -999,6 +999,7 @@ Modified:
  - implicitly when eval of a procedure body finishes.
 
 Used:
+ - c_eval
  - define
  - set!
 

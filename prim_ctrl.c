@@ -46,6 +46,7 @@ TEST_EVAL(L"(apply + (list 3 4))",		L"7");
 
 static cv_t escape_callcc(obj_t cont, obj_t values)
 {
+    assert(is_cont4(cont));
     obj_t self = CAR(cont4_arg(cont));
     obj_t escape_cont = CAR(procedure_env(self));
     obj_t escape_values = CDR(procedure_env(self));
