@@ -61,18 +61,6 @@
 (plus3 5)
 (* 2 (plus3 6))
 
-(define caar
-  (lambda (pair)
-    (car (car pair))))
-
-(define cdar
-  (lambda (pair)
-    (cdr (car pair))))
-
-(define negative?
-  (lambda (z)
-    (< z 0)))
-
 (define call-negative-max
   (lambda (proc list)
     (if (null? list)
@@ -81,9 +69,9 @@
            (if (< n 0)
                (proc n))
            (if (> n max)
-               (set! max n)
+               (set! max n))
            (call-negative-max proc
-                              (cdr list))))
+                              (cdr list)))
          (car list)))))
 
 (define max -999)

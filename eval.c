@@ -111,18 +111,7 @@ static obj_t apply_proc(obj_t proc, obj_t arg_list)
     }
 }
 
-static cv_t c_continue_seq(obj_t cont, obj_t values)
-{
-    obj_t env = cont_env(cont);
-    obj_t exprs = cont4_arg(cont);
-    EVAL_LOG("exprs=%O", exprs);
-    obj_t second = cont_cont(cont);
-    if (!is_null(CDR(exprs)))
-	second = make_cont4(c_continue_seq, second, env, CDR(exprs));
-    obj_t first = make_cont4(c_eval, second, env, CAR(exprs));
-    return cv(first, CDR(values));
-}
-
+/* N.B., c_eval_seq discards CAR(values) so pass it an extra value. */
 static cv_t c_eval_seq(obj_t cont, obj_t values)
 {
     obj_t env = cont_env(cont);
@@ -130,9 +119,9 @@ static cv_t c_eval_seq(obj_t cont, obj_t values)
     EVAL_LOG("exprs=%O", exprs);
     obj_t second = cont_cont(cont);
     if (!is_null(CDR(exprs)))
-	second = make_cont4(c_continue_seq, second, env, CDR(exprs));
+	second = make_cont4(c_eval_seq, second, env, CDR(exprs));
     obj_t first = make_cont4(c_eval, second, env, CAR(exprs));
-    return cv(first, values);
+    return cv(first, CDR(values));
 }
 
 extern cv_t c_apply_proc(obj_t cont, obj_t values)
@@ -174,7 +163,7 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	    }
 	    env_bind(new_env, formal, BT_LEXICAL, M_MUTABLE, actual);
 	}
-	return cv(make_cont4(c_eval_seq, next, new_env, body), saved_values);
+	return cv(make_cont4(c_eval_seq, next, new_env, body), p);
     }
 }
 
@@ -429,3 +418,4 @@ TEST_EVAL(L"((lambda (a)\n"
 	  L"      a)\n"
 	  L"    2))\n"
 	  L" 1)",				L"1");
+TEST_EVAL(L"(+ 3 ((lambda (x) x (+ x x)) 5))",	L"13");

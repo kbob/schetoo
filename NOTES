@@ -973,3 +973,33 @@ Step 2. Add global env, use it, and ignore the env passed in the
 Step 3. Rename cont4 to cont3, remove the env member, reorder args.
 
 Step 4. Create cont4 for c_apply_proc and call/cc.  Cut them over.
+
+---
+
+Complication.  There is no obvious place to restore the environment
+after evaluating a procedure application.
+
+ - I could link another cont_proc in to restore the environment.
+   But that would destroy tail call optimization.
+
+ - The environment is only used in c_eval. (Is that true?)  So it
+   could be an explicit arg to c_eval and live in a global variable
+   the rest of the time.
+
+ - Or keep the current scheme where env is a field in each continuation.
+
+Let's map all the places where the env is changed and all the places
+where it is used.  The interpreter is complete enough that they're
+all accounted for, I think.
+
+Modified:
+
+ - core_eval()
+ - c_apply_proc() if proc is not C.
+ - implicitly when eval of a procedure body finishes.
+
+Used:
+ - define
+ - set!
+
+
