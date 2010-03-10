@@ -7,12 +7,12 @@
 
 static cv_t c_continue_define(obj_t cont, obj_t values)
 {
-    assert(is_cont4(cont));
-    EVAL_LOG("var=%O values=%O", cont4_arg(cont), values);
+    assert(is_cont5(cont));
+    EVAL_LOG("var=%O values=%O", cont5_arg1(cont), values);
     /* N.B., allocate new values before mutating environment. */
-    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(cont4_arg(cont)));
+    obj_t new_values = CONS(UNDEFINED_OBJ, cont5_arg2(cont));
     env_bind(cont_env(cont),
-	     CAR(cont4_arg(cont)),
+	     cont5_arg1(cont),
 	     BT_LEXICAL,
 	     M_MUTABLE,
 	     CAR(values));
@@ -28,10 +28,11 @@ DEFINE_SPECIAL_FORM(L"define")(obj_t cont, obj_t values)
     CHECK(list_length(form) == 3, "define takes 2 arguments");
     obj_t var  = CADR(form);
     obj_t expr = CADDR(form);
-    obj_t second = make_cont4(c_continue_define,
+    obj_t second = make_cont5(c_continue_define,
 			      cont_cont(cont),
 			      env,
-			      CONS(var, CDR(values)));
+			      var,
+			      CDR(values));
     obj_t first = make_cont4(c_eval, second, env, expr);
     return cv(first, EMPTY_LIST);
 }

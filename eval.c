@@ -127,12 +127,12 @@ static cv_t c_eval_seq(obj_t cont, obj_t values)
 
 extern cv_t c_apply_proc(obj_t cont, obj_t values)
 {
-    assert(is_cont4(cont));
+    assert(is_cont5(cont));
     obj_t next = cont_cont(cont);
-    obj_t p = cont4_arg(cont);
-    obj_t operator = CAR(p);
-    obj_t saved_values = CDR(p);
-    EVAL_LOG("op=%O values=%O p=%O", operator, values, p);
+    obj_t operator = cont5_arg1(cont);
+    obj_t saved_values = cont5_arg2(cont);
+    EVAL_LOG("op=%O values=%O operator=%O saved_values=%O",
+	     operator, values, operator, saved_values);
     obj_t arg_list = reverse_list(values);
     if (procedure_is_C(operator)) {
 	if (procedure_is_raw(operator))
@@ -165,7 +165,9 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	    }
 	    env_bind(new_env, formal, BT_LEXICAL, M_MUTABLE, actual);
 	}
-	return cv(make_cont4(c_eval_seq, next, new_env, body), p);
+	// Push a value for c_eval_seq to discard.
+	obj_t new_values = CONS(UNDEFINED_OBJ, saved_values);
+	return cv(make_cont4(c_eval_seq, next, new_env, body), new_values);
     }
 }
 
@@ -191,10 +193,11 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 	}
     }
     obj_t arg_list = reverse_list(application_operands(appl));
-    cont = make_cont4(c_apply_proc,
+    cont = make_cont5(c_apply_proc,
 		      cont_cont(cont),
 		      cont_env(cont),
-		      CONS(operator, CDR(values)));
+		      operator,
+		      CDR(values));
     while (!is_null(arg_list)) {
 	cont = make_cont4(c_eval, cont, cont_env(cont), CAR(arg_list));
 	arg_list = CDR(arg_list);
@@ -253,7 +256,7 @@ static cv_t default_handler(obj_t cont, obj_t values)
      * If who or irritants given, print (cons who irritants).
      */
 
-    assert(is_cont4(cont));
+    assert(is_cont(cont));
     EVAL_LOG("cont=%O values=%O", cont, values);
     obj_t ex = CAR(values);
     obj_t parts = record_get_field(ex, 0);
@@ -317,23 +320,25 @@ static obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
     //oprintf("add_who_irritants: cont_proc = %p\n", cont_proc(cont));
     //oprintf("add_who_irritants: cont4_arg = %O\n", cont4_arg(cont));
     //oprintf("add_who_irritants: values = %O\n", values);
-    assert(is_cont4(cont));
+    assert(is_cont(cont));
     cont_proc_t proc = cont_proc(cont);
     if (proc == c_apply_proc) {
-	obj_t arg = cont4_arg(cont);
-	obj_t op = CAR(arg);
+	assert(is_cont5(cont));
+	obj_t op = cont5_arg1(cont);
 	obj_t who_sym = procedure_is_C(op) ? procedure_name(op) : FALSE_OBJ;
 	obj_t who_ex = MAKE_RECORD(who, who_sym);
 	obj_t irr_ex = MAKE_RECORD(irritants, reverse_list(values));
 	return MAKE_COMPOUND_CONDITION(who_ex, irr_ex, ex);
     }
     if (proc == c_eval_operator) {
+	assert(is_cont4(cont));
 	obj_t arg = cont4_arg(cont);
 	obj_t who_ex = MAKE_RECORD(who, CAR(arg));
 	obj_t irr_ex = MAKE_RECORD(irritants, CDR(arg));
 	return MAKE_COMPOUND_CONDITION(who_ex, irr_ex, ex);
     }
     if (proc == c_eval) {
+	assert(is_cont4(cont));
 	obj_t expr = cont4_arg(cont);
 	obj_t who_ex = MAKE_RECORD(who, expr);
 	return MAKE_COMPOUND_CONDITION(who_ex, ex);
@@ -343,17 +348,18 @@ static obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)
 
 static cv_t push_exception(obj_t cont, obj_t values)
 {
-    assert(is_cont4(cont));
+    assert(is_cont(cont));
     obj_t ex = add_who_irritants(cont, values, eval_exception);
     obj_t handler = record_get_field(eval_dyn_env, DE_HANDLER);
     obj_t second = make_cont4(c_exception_returned,
 			      EMPTY_LIST,
 			      cont_env(cont),
 			      EMPTY_LIST);
-    obj_t first = make_cont4(c_apply_proc,
+    obj_t first = make_cont5(c_apply_proc,
 			     second,
 			     cont_env(cont),
-			     CONS(handler, values));
+			     handler,
+			     values);
     return cv(first, CONS(ex, values));
 }
 

@@ -52,6 +52,7 @@
 
 DEFINE_MIXVEC_TYPE(1, 2, 1_2)
 DEFINE_MIXVEC_TYPE(1, 3, 1_3)
+DEFINE_MIXVEC_TYPE(1, 4, 1_4)
 
 
 extern obj_t make_mixvec_1_2(mem_ops_t *ops, word_t w0, obj_t p0, obj_t p1)
@@ -75,7 +76,6 @@ extern obj_t make_mixvec_1_3(mem_ops_t *ops,
     return mv;
 }
 
-#if 0
 extern obj_t make_mixvec_1_4(mem_ops_t *ops,
 			     word_t w0,
 			     obj_t p0, obj_t p1, obj_t p2, obj_t p3)
@@ -85,10 +85,9 @@ extern obj_t make_mixvec_1_4(mem_ops_t *ops,
     mixvec_1_4_set_ptr(mv, 0, p0);
     mixvec_1_4_set_ptr(mv, 1, p1);
     mixvec_1_4_set_ptr(mv, 2, p2);
-    mixvec_1_4_set_ptr(mv, 2, p3);
+    mixvec_1_4_set_ptr(mv, 3, p3);
     return mv;
 }
-#endif
 
 void mem_mixvec_create_ops(mem_ops_t  *ops,
 			   wchar_t    *name,
@@ -100,6 +99,8 @@ void mem_mixvec_create_ops(mem_ops_t  *ops,
 	super = &mixvec_1_2_ops;
     else if (nints == 1 && nptrs == 3)
 	super = &mixvec_1_3_ops;
+    else if (nints == 1 && nptrs == 4)
+	super = &mixvec_1_4_ops;
     else
 	assert(false);
     *ops = *super;

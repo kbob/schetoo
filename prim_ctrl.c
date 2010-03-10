@@ -5,8 +5,9 @@
 
 DEFINE_RAW_PROC(L"apply")(obj_t cont, obj_t values)
 {
-    obj_t expr = cont4_arg(cont);
-    EVAL_LOG("expr=%O values=%O", expr, values);
+    assert(is_cont5(cont));
+    obj_t saved_values = cont5_arg2(cont);
+    EVAL_LOG("saved_values=%O values=%O", saved_values, values);
     obj_t arg_list = CAR(values);
     obj_t p = CDR(values);
     while (!is_null(CDR(p))) {
@@ -16,10 +17,11 @@ DEFINE_RAW_PROC(L"apply")(obj_t cont, obj_t values)
     obj_t operator = CAR(p);
     EVAL_LOG("operator=%O arg_list=%O", operator, arg_list);
     
-    return cv(make_cont4(c_apply_proc,
+    return cv(make_cont5(c_apply_proc,
 			 cont_cont(cont),
 			 cont_env(cont),
-			 CONS(operator, CDR(expr))),
+			 operator,
+			 saved_values),
 	      reverse_list(arg_list));
 }
 
@@ -46,8 +48,8 @@ TEST_EVAL(L"(apply + (list 3 4))",		L"7");
 
 static cv_t escape_callcc(obj_t cont, obj_t values)
 {
-    assert(is_cont4(cont));
-    obj_t self = CAR(cont4_arg(cont));
+    assert(is_cont5(cont));
+    obj_t self = cont5_arg1(cont);
     obj_t escape_cont = CAR(procedure_env(self));
     obj_t escape_values = CDR(procedure_env(self));
     return cv(escape_cont, CONS(CAR(values), escape_values));
@@ -55,14 +57,16 @@ static cv_t escape_callcc(obj_t cont, obj_t values)
 
 DEFINE_RAW_PROC(L"call-with-current-continuation")(obj_t cont, obj_t values)
 {
-    obj_t saved_values = CDR(cont4_arg(cont));
+    assert(is_cont5(cont));
+    obj_t saved_values = cont5_arg2(cont);
     obj_t closure = CONS((obj_t)cont_cont(cont),
 			 saved_values);
     obj_t escape = make_raw_procedure(escape_callcc, UNDEFINED_OBJ, closure);
-    return cv(make_cont4(c_apply_proc,
+    return cv(make_cont5(c_apply_proc,
 			 cont_cont(cont),
 			 cont_env(cont),
-			 CONS(CAR(values), CDR(cont4_arg(cont)))),
+			 CAR(values),
+			 cont5_arg2(cont)),
 	      CONS(escape, EMPTY_LIST));
 }
 

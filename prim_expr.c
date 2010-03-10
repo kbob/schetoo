@@ -113,15 +113,14 @@ TEST_EVAL(L"(if #f #f)",		UNDEFINED_REPR);
 
 static cv_t c_continue_set(obj_t cont, obj_t values)
 {
-    assert(is_cont4(cont));
-    obj_t p  = cont4_arg(cont);
+    assert(is_cont5(cont));
     obj_t env   = cont_env(cont);
-    obj_t var   = CAR(p);
+    obj_t var   = cont5_arg1(cont);
     obj_t value = CAR(values);
     obj_t bdg   = env_lookup(env, var);
     EVAL_LOG("var=%O value=%O", var, value);
     /* N.B., allocate values list before mutating environment. */
-    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(p));
+    obj_t new_values = CONS(UNDEFINED_OBJ, cont5_arg2(cont));
     binding_set_value(bdg, value);
     return cv(cont_cont(cont), new_values);
 }
@@ -134,10 +133,11 @@ DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)
     EVAL_LOG("form=%O", form);
     CHECK(list_length(form) == 3, "set! takes 2 arguments");
     obj_t expr = CADDR(form);
-    obj_t second = make_cont4(c_continue_set,
+    obj_t second = make_cont5(c_continue_set,
 			      cont_cont(cont),
 			      env,
-			      CONS(CADR(form), CDR(values)));
+			      CADR(form),
+			      CDR(values));
     obj_t first = make_cont4(c_eval, second, env, expr);
     return cv(first, EMPTY_LIST);
 }

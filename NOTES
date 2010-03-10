@@ -982,7 +982,7 @@ after evaluating a procedure application.
  - I could link another cont_proc in to restore the environment.
    But that would destroy tail call optimization.
 
- - The environment is only used in c_eval. (Is that true?)  So it
+ - The environment is only used in c_eval. (Is that true? [update: No.])  So it
    could be an explicit arg to c_eval and live in a global variable
    the rest of the time.
 
@@ -997,10 +997,18 @@ Modified:
  - core_eval()
  - c_apply_proc() if proc is not C.
  - implicitly when eval of a procedure body finishes.
+ - the eval primitive.
 
 Used:
  - c_eval
  - define
  - set!
 
+---
 
+I think the env will have to stay in the continuation.  There are
+cases where it's impossible to know how you reached c_eval(), and
+impossible for the caller to know the current env.  So I'll leave
+the existing code alone.
+
+define and set! need a cont5_t.
