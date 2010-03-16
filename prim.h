@@ -52,7 +52,7 @@
  *
  * Here's an example.
  *
- *     DEFINE_PROCEDURE(L"foo", 2-3)(obj_t a, obj_t b, obj_t c)
+ *     DEFINE_PROC(L"foo", 2-3)(obj_t a, obj_t b, obj_t c)
  *     {
  *         if (c == MISSING_ARG)
  *             return CONS(a, b);
@@ -264,7 +264,7 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values);
 #if DEBUG_EVAL
     #include "oprintf.h"
     #define EVAL_LOG(fmt, ...) \
-	(oprintf("%-18s" fmt "\n", __func__, __VA_ARGS__))
+	(oprintf("%-18s " fmt "\n", __func__, __VA_ARGS__))
 #else
     #define EVAL_LOG(fmt, ...) ((void)0)
 #endif

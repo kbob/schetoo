@@ -20,7 +20,7 @@ ROOT_CONSTRUCTOR(readline_line)
     return make_undefined();
 }
 
-static obj_t peek_char(obj_t);
+extern obj_t peek_char(obj_t);
 
 DEFINE_PROC(L"eof-object", 0)(void)
 {
@@ -32,7 +32,7 @@ DEFINE_PROC(L"eof-object?", 1)(obj_t obj)
     return make_boolean(is_eof(obj));
 }
 
-DEFINE_PROC(L"read-char", 0-1)(obj_t textual_input_port)
+DEFINE_EXTERN_PROC(read_char, L"read-char", 0-1)(obj_t textual_input_port)
 {
     obj_t ch = peek_char(textual_input_port);
     // N.B., must not raise any exceptions.
@@ -45,7 +45,7 @@ DEFINE_PROC(L"read-char", 0-1)(obj_t textual_input_port)
     return ch;
 }
 
-DEFINE_STATIC_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
+DEFINE_EXTERN_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
 {
     if (!is_initialized) {
 	using_readline = isatty(fileno(stdin)) && isatty(fileno(stdout));

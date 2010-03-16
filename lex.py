@@ -882,6 +882,7 @@ class Formatter:
         self.cc = self._sort_C()
         self.icc = self._invert_C()
         self.accepts = self._make_accepts()
+        self.accept_count = sum(bool(z) for z in self.accepts)
         self.Q = self._sort_Q()
         self.δ  = self._sort_δ()
 
@@ -944,7 +945,7 @@ class Formatter:
         self.p('#define YY_INITIAL_STATE %d' % self.Q.index(self.dfa.q0))
         self.p('#define YY_COMMON_STATE %d' % self.Q.index(self.dq))
         self.p('#define YY_ERROR_STATE %d' % self.Q.index(es))
-        self.p('#define YY_ACCEPT_COUNT %d' % len(self.tokens))
+        self.p('#define YY_ACCEPT_COUNT %d' % self.accept_count)
         self.p()
 
     def emit_types(self):
@@ -1020,7 +1021,8 @@ class Formatter:
         def emit_δ_row(i):
             x = self.δ[i]
             if x:
-                self.p('    %s' % ' '.join('%d,' % self.Q.index(q) for q in x))
+                self.p('    /* %2d */ %s' %
+                       (i, ' '.join('%d,' % self.Q.index(q) for q in x)))
         j = 0
         for i, q in enumerate(self.Q):
             emit_δ_row(i)
@@ -1304,9 +1306,9 @@ def r6rs_lexical_syntax():
 
     return [
         ('ATMOSPHERE', atmosphere),
+        ('NUMBER', number),             # number higher priority than identifier
         ('IDENTIFIER', identifier),
         ('BOOLEAN', boolean),
-        ('NUMBER', number),
         ('CHARACTER', character),
         ('STRING', string),
         ('LPAREN', CC('(')),

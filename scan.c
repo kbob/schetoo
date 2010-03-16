@@ -1,6 +1,6 @@
 #include "scan.h"
 
-#define OLD_SCANNER 1
+#define OLD_SCANNER 0
 #if OLD_SCANNER
 
 #include <assert.h>
@@ -520,7 +520,11 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 
 #include <assert.h>
 
+#include "arith.h"
+#include "list.h"
 #include "obj_cont.h"
+#include "obj_eof.h"
+#include "prim.h"
 #include "record.h"
 #include "test.h"
 #include "types.h"
@@ -530,6 +534,7 @@ DEFINE_STATIC_RECORD_TYPE(scan_ctx, L"scan-context", NULL, 0) = {
     { FM_IMMUTABLE, L"state" },
     { FM_MUTABLE, L"buf" },
     { FM_MUTABLE, L"pos" },
+    { FM_END },
 };
 
 static inline yy_state_t scan_ctx_state(obj_t ctx)
@@ -554,7 +559,7 @@ static inline size_t scan_ctx_len(obj_t ctx)
 
 static inline obj_t make_scan_ctx(yy_state_t state, obj_t buf, size_t pos)
 {
-    return MAKE_RECORD(make_fixnum(state), buf, make_fixnum(pos));
+    return MAKE_RECORD(scan_ctx, make_fixnum(state), buf, make_fixnum(pos));
 }
 
 static inline obj_t make_new_scan_ctx(void)
@@ -562,9 +567,8 @@ static inline obj_t make_new_scan_ctx(void)
     return make_scan_ctx(YY_INITIAL_STATE, make_string_fill(16, L'\0'), 0);
 }
 
-static obj_t scan_ctx_append_char(obj_t ctx, char_t ch)
+static obj_t scan_ctx_advance(obj_t ctx, yy_state_t state, char_t ch)
 {
-    yy_state_t state = scan_ctx_state(ctx);
     obj_t      buf   = scan_ctx_buf  (ctx);
     size_t     pos   = scan_ctx_pos  (ctx);
     size_t     len   = scan_ctx_len  (ctx);
@@ -606,10 +610,11 @@ static yy_cc_t char_class(wint_t wc)
    return -1;
 }
 
-static bool is_delimiter(wint_t wc)
+static bool is_delimiter(obj_t ch)
 {
-    if (wc == WEOF)
+    if (is_eof(ch))
 	return true;
+    wchar_t wc = character_value(ch);
     if (wc < 128) {
 	switch (wc) {
 
@@ -655,45 +660,13 @@ static bool token_needs_delimiter(yy_token_t t)
     case YY_NUMBER:
     case YY_CHARACTER:
     case YY_BOOLEAN:
+	EVAL_LOG("%d -> true", t);
 	return true;
 
     default:
+	EVAL_LOG("%d -> false", t);
 	return false;
     }
-}
-
-static yy_state_t XXXscan_char(yy_state_t state, wint_t wc)
-{
-    yy_state_t next_state;
-    if (state < YY_ACCEPT_COUNT) {
-	yy_token_t tok = yy_accepts[state];
-	if (token_needs_delimiter(tok) && is_delimiter(wc)) {
-	    printf("A token %s\n", token_name(tok));
-	    state = YY_INITIAL_STATE;
-	}
-    }
-    yy_cc_t cc = char_class(wc);
-    const yy_delta_row_t *row = &yy_delta[state];
-    if (cc < row->yy_len)
-	next_state = yy_next_states[row->yy_index + cc];
-    else
-	next_state = YY_COMMON_STATE;
-    if (next_state < YY_ACCEPT_COUNT) {
-	yy_token_t tok = yy_accepts[next_state];
-	if (tok == YY_ATMOSPHERE) {
-	    printf("atmosphere\n");
-	    next_state = YY_INITIAL_STATE;
-	}
-	else if (!token_needs_delimiter(tok)) {
-	    printf("B token %s\n", token_name(tok));
-	    next_state = YY_INITIAL_STATE;
-	}
-    } else if (next_state == YY_ERROR_STATE) {
-	printf("error\n");
-	next_state = YY_INITIAL_STATE;
-    }
-    // printf("U+%04X cc %d state %d -> %d\n", wc, cc, state, next_state);
-    return next_state;
 }
 
 static int digit_value(char_t wc)
@@ -722,12 +695,34 @@ static word_t scan_hex_scalar(const char_t *str, char_t end)
 
 static obj_t scan_identifier(const char_t *str, size_t length)
 {
-    return FALSE_OBJ;
+    return make_symbol_from_chars(str, length);
+}
+
+static obj_t scan_boolean(const char_t *str, size_t length)
+{
+    assert(length == 2);
+    switch (str[1]) {
+
+    case 'T':
+    case 't':
+	return TRUE_OBJ;
+
+    case 'F':
+    case 'f':
+	return FALSE_OBJ;
+
+    default:
+	assert(false);
+    }
 }
 
 static obj_t scan_number(const char_t *str, size_t length)
 {
-    return FALSE_OBJ;
+    obj_t z = chars_to_number(str, length, 10);
+    if (z == FALSE_OBJ)
+	THROW(&implementation_restriction, "unsupported numeric literal",
+	      make_string_from_chars(str, length));
+    return z;
 }
 
 static obj_t scan_character(const char_t *str, size_t length)
@@ -776,40 +771,48 @@ static obj_t scan_character(const char_t *str, size_t length)
 
 static obj_t scan_string(const char_t *str, size_t length)
 {
+    assert(false);
     return FALSE_OBJ;
 }
 
-static obj_t make_token(yy_state_t state, obj_t buf, size_t len)
+static token_type_t make_token(yy_state_t state, obj_t ctx, obj_t *yylval)
 {
-    assert(state << YY_ACCEPT_COUNT);
+    EVAL_LOG("state=%d ctx=%O", state, ctx);
+    obj_t  buf = record_get_field(ctx, 1);
+    size_t len = fixnum_value(record_get_field(ctx, 2));
+    assert(state < YY_ACCEPT_COUNT);
     const char_t *str = string_value(buf);
-    obj_t yylval = UNDEFINED_OBJ;
     token_type_t toktype;
     switch (yy_accepts[state]) {
 
-    case YY_IDENTIFIER:
-	toktype = TOK_SIMPLE;
-	yylval = scan_identifier(str, len);
-	break;
-
     case YY_NUMBER:
 	toktype = TOK_SIMPLE;
-	yylval = scan_number(str, len);
-	if (is_fixnum(yylval)) {
-	    word_t n = fixnum_value(yylval);
+	*yylval = scan_number(str, len);
+	if (is_fixnum(*yylval)) {
+	    word_t n = fixnum_value(*yylval);
 	    if (0 <= n && n <= 255)
 		toktype = TOK_U8;
 	}
 	break;
 
+    case YY_IDENTIFIER:
+	toktype = TOK_SIMPLE;
+	*yylval = scan_identifier(str, len);
+	break;
+
+    case YY_BOOLEAN:
+	toktype = TOK_SIMPLE;
+	*yylval = scan_boolean(str, len);
+	break;
+
     case YY_CHARACTER:
 	toktype = TOK_SIMPLE;
-	yylval = scan_character(str, len);
+	*yylval = scan_character(str, len);
 	break;
 	
     case YY_STRING:
 	toktype = TOK_SIMPLE;
-	yylval = scan_string(str, len);
+	*yylval = scan_string(str, len);
 	break;
 
     case YY_LPAREN:
@@ -836,87 +839,185 @@ static obj_t make_token(yy_state_t state, obj_t buf, size_t len)
 	toktype = TOK_BEGIN_BYTEVECTOR;
 	break;
 
+    case YY_QUOTE:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"quote");
+	break;
+
+    case YY_QUASIQUOTE:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"quasiquote");
+	break;
+
+    case YY_UNQUOTE:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"unquote");
+	break;
+
+    case YY_UNQUOTE_SPLICING:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"unquote-splicing");
+	break;
+
+    case YY_PERIOD:
+	toktype = TOK_PERIOD;
+	break;
+
+    case YY_SYNTAX:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"syntax");
+	break;
+
+    case YY_QUASISYNTAX:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"quasisyntax");
+	break;
+
+    case YY_UNSYNTAX:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"unsyntax");
+	break;
+
+    case YY_UNSYNTAX_SPLICING:
+	toktype = TOK_ABBREV;
+	*yylval = make_symbol_from_C_str(L"unsyntax-splicing");
+	break;
+
+    case YY_BEGIN_DATUM_COMMENT:
+	toktype = TOK_COMMENT;
+	break;
+
     default:
 	assert(false);
     }
-    return CONS(make_fixnum(toktype), yylval);
+    EVAL_LOG(" returning toktype=%d *yylval=%O", toktype, *yylval);
+    return toktype;
 }
 
-cv_t scan_char(obj_t cont, obj_t values)
+static cv_t c_peek_char(obj_t cont, obj_t values)
 {
-    obj_t      ch    = CAR(values);
-    obj_t      ctx   = CADR(values);
-    yy_state_t state = scan_ctx_state(ctx);
-    yy_state_t next_state;
-    //obj_t      buf   = scan_ctx_buf(ctx);
-    //size_t     len   = scan_ctx_pos(ctx);
+    extern obj_t peek_char(obj_t port);
+    obj_t port = is_null(values) ? MISSING_ARG : CAR(values);
+    EVAL_LOG("port=%O", port);
+    return cv(cont_cont(cont), CONS(peek_char(port), values));
+}
 
-    obj_t first_token = make_undefined();
-    obj_t second_token = make_undefined();
+static cv_t c_read_char(obj_t cont, obj_t values)
+{
+    extern obj_t read_char(obj_t port);
+    obj_t port = is_null(values) ? MISSING_ARG : CAR(values);
+    EVAL_LOG("port=%O", port);
+    (void)read_char(port);
+    return cv(cont_cont(cont), values);
+}
 
+static cv_t c_continue_read_token(obj_t cont, obj_t values)
+{
+    obj_t      ch     = CAR(values);
+    obj_t      ctx    = cont5_arg1(cont);
+    yy_state_t state  = scan_ctx_state(ctx);
+    obj_t      yylval = EMPTY_LIST;
+
+    EVAL_LOG("state=%d ch=%O", state, ch);
     if (state < YY_ACCEPT_COUNT) {
 	yy_token_t tok = yy_accepts[state];
-	if (token_needs_delimiter(tok) && is_delimiter(character_value(ch))) {
-	    first_token = make_token(state, ctx);
-	    ctx = make_initial_scan_ctx();
-	    state = scan_ctx_state(ctx);
+	if (token_needs_delimiter(tok) && is_delimiter(ch)) {
+	    token_type_t toktype = make_token(state, ctx, &yylval);
+	    EVAL_LOG("A returning %O", MAKE_LIST(make_fixnum(toktype), yylval));
+	    return cv(cont_cont(cont), MAKE_LIST(make_fixnum(toktype), yylval));
 	}
     }
     if (is_eof(ch)) {
-	// Build
-	second_token = CONS(make_fixnum(TOK_EOF), UNDEFINED_OBJ);
-    } else {
-	const yy_delta_row_t *row = &yy_delta[state];
-	yy_cc_t cc = char_class(character_value(ch));
-	if (cc < row->yy_len)
-	    next_state = yy_next_states[row->yy_index + cc];
-	else
-	    next_state = YY_COMMON_STATE;
-	if (next_state < YY_ACCEPT_COUNT) {
-	    yytoken_t tok = yy_accepts[next_state];
-	    if (tok == YY_ATMOSPHERE) {
-		ctx = make_initial_scan_ctx();
-	    } else if (!token_needs_delimiter(tok)) {
-		second_token = make_token(next_state, ctx);
-		ctx = make_initial_scan_ctx();
-	    }
-	}
-	else if (next_state == YY_ERROR_STATE)
-	    THROW(&lexical, "lexical error");
+	EVAL_LOG("B returning %O",
+		 MAKE_LIST(make_fixnum(TOK_EOF), UNDEFINED_OBJ));
+	return cv(cont_cont(cont),
+		  MAKE_LIST(make_fixnum(TOK_EOF), UNDEFINED_OBJ));
     }
-    obj_t next = cont;
-    if (!is_undefined(first_token))
-	next = make_cont(..., next, ...);
-    if (!is_undefined(second_token))
-	next = make_cont(..., next, ...);
-    cont = ...;
-    if (something)
-	ctx_append_char(ctx, character_value(ch));
-    return cv(cont, ...);
+    const yy_delta_row_t *row = &yy_delta[state];
+    yy_cc_t cc = char_class(character_value(ch));
+    if (cc < row->yy_len)
+	state = yy_next_states[row->yy_index + cc];
+    else
+	state = YY_COMMON_STATE;
+    ctx = scan_ctx_advance(ctx, state, character_value(ch));
+    if (state < YY_ACCEPT_COUNT) {
+	yy_token_t tok = yy_accepts[state];
+	if (tok == YY_ATMOSPHERE)
+	    ctx = make_new_scan_ctx();
+	else if (!token_needs_delimiter(tok)) {
+	    // Return (toktype yylval) after reading peeked char.
+	    token_type_t toktype = make_token(state, ctx, &yylval);
+	    obj_t first = make_cont4(c_read_char,
+				     cont_cont(cont),
+				     cont_env(cont),
+				     CDR(values));
+	    EVAL_LOG("C returning %O", CONS(make_fixnum(toktype),
+					    CONS(yylval, cont5_arg2(cont))));
+	    return cv(first, CONS(make_fixnum(toktype),
+				  CONS(yylval, cont5_arg2(cont))));
+	}
+    }
+    // 3rd = c_continue_read_token
+    // 2nd = c_peek_char
+    // 1st = c_read_char
+    obj_t third  = make_cont5(c_continue_read_token,
+			      cont_cont(cont),
+			      cont_env(cont),
+			      ctx,
+			      cont5_arg2(cont));
+    obj_t second = make_cont4(c_peek_char,
+			      third,
+			      cont_env(cont),
+			      MISSING_ARG);
+    obj_t first  = make_cont4(c_read_char,
+			      second,
+			      cont_env(cont),
+			      CDR(values));
+    return cv(first, CDR(values));
 }
 
-obj_t XXXyylex()
+// toktype, yylval = read_token([port])
+static cv_t c_read_token(obj_t cont, obj_t values)
 {
-    while (is_null(token_stash)) {
-        if ((c = getchar()) == WEOF)
-	    return TOK_EMPTY;
-	state = scan_char(c, callback);
-    }
-    token = CAR(token_stash);
-    token_stash = CDR(token_stash);
-    return token;
-}	    
+    EVAL_LOG("values=%O", values);
+    obj_t second = make_cont5(c_continue_read_token,
+			      cont_cont(cont),
+			      cont_env(cont),
+			      make_new_scan_ctx(),
+			      values);
+    obj_t first = make_cont4(c_peek_char,
+			     second,
+			     cont_env(cont),
+			     MISSING_ARG);
+    return cv(first, values);
+}
 
 extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 {
-    yy_state_t state = YY_INITIAL_STATE;
-    wint_t wc;
-    while (is_null(token_stash)) {
-	if ((wc = instream_getwc(in)) == WEOF)
-	    if accepting delimiter-needing token, append token to stash;
-	    append TOK_EMPTY to stash;
-	state = scan_char(state, wc);
+    printf("\nyylex\n");
+    /* Ignore the instream. */
+    obj_t cont = make_cont4(c_read_token,
+			    EMPTY_LIST,
+			    EMPTY_LIST,
+			    UNDEFINED_OBJ);
+    obj_t values = EMPTY_LIST;
+    while (!is_null(cont)) {
+	cv_t ret = cont_proc(cont)(cont, values);
+	cont   = ret.cv_cont;
+	values = ret.cv_values;
+	COMMIT_ALLOCATIONS();
+#if DEBUG_EVAL
+	int n = 0;
+	obj_t p;
+	for (p = cont; !is_null(p); p = cont_cont(p))
+	    n++;
+	EVAL_LOG("values=%O cont depth=%d", values, n);
+#endif
     }
+    EVAL_LOG("values=%O\n", values);
+    assert(is_null(CDDR(values)));
+    *lvalp = CADR(values);
+    return fixnum_value(CAR(values));
 }
 
 #endif

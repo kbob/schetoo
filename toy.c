@@ -72,6 +72,7 @@ toy_state_t scan_char(toy_state_t state, int c)
 	if (token_needs_delimiter(tok) && is_delimiter(c)) {
 	    printf("A token %s\n", token_name(tok));
 	    state = TOY_INITIAL_STATE;
+	    return state;
 	}
     }
     toy_cc_t cc = char_class(c);

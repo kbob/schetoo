@@ -1,6 +1,7 @@
 #ifndef OBJ_FIXNUM_INCLUDED
 #define OBJ_FIXNUM_INCLUDED
 
+#include "except.h"
 #include "obj.h"
 
 static inline obj_t make_fixnum(word_t value)

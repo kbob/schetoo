@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "except.h"
 #include "mem_scalar.h"
@@ -52,6 +53,11 @@ obj_t make_string_from_chars(const char_t *value, size_t len)
     string_obj_t *sp = (string_obj_t *)obj;
     memcpy(sp->string_value, value, len * sizeof *value);
     return obj;
+}
+
+obj_t make_string_from_C_str(const char_t *value)
+{
+    return make_string_from_chars(value, wcslen(value));
 }
 
 size_t string_len(obj_t string)

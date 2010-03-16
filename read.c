@@ -1,5 +1,7 @@
 #include "read.h"
 
+#define OLD_READER 1
+
 #include <assert.h>
 #include <string.h>
 
@@ -648,6 +650,10 @@ static uint_fast8_t get_rule(char symbol, size_t term)
     return rule;
 }
 
+#if OLD_READER
+
+#include "oprintf.h"			/* XXX */
+
 /*
  * Parse the input stream and return an action stack.
  * See Wikipedia again.
@@ -662,6 +668,7 @@ static obj_t parse(instream_t *in)
     tmp = make_fixnum(sym_index(start_symbol));
     stack_push(&stack, tmp);
     int tok = yylex(&yylval, in);
+    oprintf("A yylex returned tok=%s yylval=%O\n", token_name(tok), yylval);
     while (true) {
 	int sym = fixnum_value(stack_pop(&stack));
 	assert(0 <= sym && sym < symbols_size);
@@ -687,10 +694,71 @@ static obj_t parse(instream_t *in)
 		break;
 	    yylval = EMPTY_LIST;
 	    tok = yylex(&yylval, in);
+	    oprintf("B yylex returned tok=%s yylval=%O\n",
+		    token_name(tok), yylval);
 	}
     }
     return actions;
 }
+
+#else
+
+// Take one token, push the state as far as it will go with that
+// one token.
+//
+// initialization: stack = (start), actions = (), 
+
+cv_t c_continue_parse(obj_t cont, obj_t values)
+{
+    // cont.arg1 = stack
+    // cont.arg2 = actions
+    // values    = CONS(token_type, yylval)
+
+    obj_t stack   = cont5_arg1(cont);
+    obj_t actions = cont5_arg2(cont);
+    int   tok     = fixnum_value(CAR(values));
+    while (true) {
+	int sym = fixnum_value(stack_pop(&stack));
+	assert(0 <= sym && sym < symbols_size);
+	uint_fast8_t rule = get_rule(symbols[sym], tok);
+	if (rule != NO_RULE) {
+	    const production_t *pp = &grammar[rule];
+	    int j;
+	    for (j = strlen(pp->p_rhs); --j >= 0; )
+		stack_push(&stack, make_fixnum(sym_index(pp->p_rhs[j])));
+	    if (pp->p_action)
+		stack_push(&actions, (obj_t)pp->p_action);
+	    stack_push(&stack, make_fixnum(sym_index(grammar[rule].p_rhs[j])));
+	} else {
+	    if (sym == TOK_EOF)
+		return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
+	    if (sym != tok)
+		THROW(&lexical, "datum syntax error", make_fixnum(tok), sym);
+	    if (!is_undefined(yylval))
+		stack_push(&actions, yylval);
+	    if (!stack_is_empty(&actions) &&
+		fixnum_value(stack_top(stack)) == TOK_EOF)
+		return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
+	    obj_t second 
+	    return cv(cont
+	}
+    }
+}
+
+cv_t c_parse(obj_t cont, obj_t values)
+{
+    obj_t stack = EMPTY_LIST;
+    stack_push(&stack, make_fixnum(TOK_EOF));
+    obj_t actions = EMPTY_LIST;
+    obj_t second = make_cont5(c_continue_parse,
+			      cont_cont(cont),
+			      cont_env(cont),
+			      stack,
+			      actions);
+    obj_t first = make_cont4(
+}
+
+#endif
 
 /* Build a Scheme expression from an action stack. */
 static bool build(obj_t actions, obj_t *obj_out)

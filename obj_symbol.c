@@ -56,10 +56,15 @@ obj_t make_symbol(obj_t name)
     return symbol;
 }
 
+obj_t make_symbol_from_chars(const wchar_t *C_name, size_t len)
+{
+    obj_t name = make_string_from_chars(C_name, len);
+    return make_symbol(name);
+}
+
 obj_t make_symbol_from_C_str(const wchar_t *C_name)
 {
-    obj_t name = make_string_from_chars(C_name, wcslen(C_name));
-    return make_symbol(name);
+    return make_symbol_from_chars(C_name, wcslen(C_name));
 }
 
 obj_t make_anonymous_symbol(void)

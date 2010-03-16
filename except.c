@@ -42,7 +42,7 @@ void throw(obj_t *ct, const wchar_t *msg, ...)
      */
 
     if (rtd_field_count(*ct) != 0)
-	fprintf(stderr, "NOTE: can't raise syntax errors\n");
+	assert(false && "NOTE: can't raise syntax errors");
     obj_t primary_ex = MAKE_RECORD(*ct);
     obj_t msg_str = make_string_from_chars(msg, wcslen(msg));
     obj_t msg_ex = MAKE_RECORD(message, msg_str);
