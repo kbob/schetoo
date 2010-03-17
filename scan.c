@@ -524,6 +524,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 #include "list.h"
 #include "obj_cont.h"
 #include "obj_eof.h"
+#include "oprintf.h"			/* XXX */
 #include "prim.h"
 #include "record.h"
 #include "test.h"
@@ -573,13 +574,12 @@ static obj_t scan_ctx_advance(obj_t ctx, yy_state_t state, char_t ch)
     size_t     pos   = scan_ctx_pos  (ctx);
     size_t     len   = scan_ctx_len  (ctx);
     assert(pos <= len);
-    if (pos < len)
-	string_set_char(buf, pos, ch);
-    else {
+    if (pos >= len) {
 	obj_t old = buf;
 	buf = make_string_fill(2 * pos, L'\0');
 	string_set_substring(buf, 0, pos, string_value(old));
     }
+    string_set_char(buf, pos, ch);
     return make_scan_ctx(state, buf, pos + 1);
 }
 
@@ -618,6 +618,7 @@ static bool is_delimiter(obj_t ch)
     if (wc < 128) {
 	switch (wc) {
 
+	case L' ':
 	case L'(':
 	case L')':
 	case L'[':
@@ -890,7 +891,7 @@ static token_type_t make_token(yy_state_t state, obj_t ctx, obj_t *yylval)
     default:
 	assert(false);
     }
-    EVAL_LOG(" returning toktype=%d *yylval=%O", toktype, *yylval);
+    EVAL_LOG("returning toktype=%s *yylval=%O", token_name(toktype), *yylval);
     return toktype;
 }
 
@@ -898,7 +899,7 @@ static cv_t c_peek_char(obj_t cont, obj_t values)
 {
     extern obj_t peek_char(obj_t port);
     obj_t port = is_null(values) ? MISSING_ARG : CAR(values);
-    EVAL_LOG("port=%O", port);
+    EVAL_LOG("%s", "");
     return cv(cont_cont(cont), CONS(peek_char(port), values));
 }
 
@@ -906,7 +907,7 @@ static cv_t c_read_char(obj_t cont, obj_t values)
 {
     extern obj_t read_char(obj_t port);
     obj_t port = is_null(values) ? MISSING_ARG : CAR(values);
-    EVAL_LOG("port=%O", port);
+    EVAL_LOG("%s", "");
     (void)read_char(port);
     return cv(cont_cont(cont), values);
 }
@@ -924,21 +925,27 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 	if (token_needs_delimiter(tok) && is_delimiter(ch)) {
 	    token_type_t toktype = make_token(state, ctx, &yylval);
 	    EVAL_LOG("A returning %O", MAKE_LIST(make_fixnum(toktype), yylval));
+	    //oprintf(" A peek %O, return %s = %O\n",
+	    //        ch, token_name(toktype), yylval);
 	    return cv(cont_cont(cont), MAKE_LIST(make_fixnum(toktype), yylval));
 	}
     }
     if (is_eof(ch)) {
 	EVAL_LOG("B returning %O",
 		 MAKE_LIST(make_fixnum(TOK_EOF), UNDEFINED_OBJ));
+	//oprintf(" B peek EOF/return EOF\n");
 	return cv(cont_cont(cont),
 		  MAKE_LIST(make_fixnum(TOK_EOF), UNDEFINED_OBJ));
     }
     const yy_delta_row_t *row = &yy_delta[state];
     yy_cc_t cc = char_class(character_value(ch));
+    //printf("  row = { %d, %d }\n", row->yy_len, row->yy_index);
+    //printf("  cc = %d\n", cc);
     if (cc < row->yy_len)
 	state = yy_next_states[row->yy_index + cc];
     else
 	state = YY_COMMON_STATE;
+    //printf("  %-16s state -> %d\n", "advance", state);
     ctx = scan_ctx_advance(ctx, state, character_value(ch));
     if (state < YY_ACCEPT_COUNT) {
 	yy_token_t tok = yy_accepts[state];
@@ -953,6 +960,8 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 				     CDR(values));
 	    EVAL_LOG("C returning %O", CONS(make_fixnum(toktype),
 					    CONS(yylval, cont5_arg2(cont))));
+	    //oprintf(" C consume %O, return %s = %O\n",
+	    //        ch, token_name(toktype), yylval);
 	    return cv(first, CONS(make_fixnum(toktype),
 				  CONS(yylval, cont5_arg2(cont))));
 	}
@@ -973,6 +982,7 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 			      second,
 			      cont_env(cont),
 			      CDR(values));
+    //oprintf(" D consume %O, loop\n", ch);
     return cv(first, CDR(values));
 }
 
@@ -994,7 +1004,7 @@ static cv_t c_read_token(obj_t cont, obj_t values)
 
 extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 {
-    printf("\nyylex\n");
+    //printf("\nyylex\n");
     /* Ignore the instream. */
     obj_t cont = make_cont4(c_read_token,
 			    EMPTY_LIST,
