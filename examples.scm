@@ -64,7 +64,7 @@
 (define call-negative-max
   (lambda (proc list)
     (if (null? list)
-	#f
+	'no-negatives
         ((lambda (n)
            (if (< n 0)
                (proc n))
@@ -90,7 +90,7 @@ max
 (define call-negative
   (lambda (proc list)
     (if (null? list)
-        #f
+	'no-negatives
         ((lambda (n)
            (if (< n 0)
                (proc n))
