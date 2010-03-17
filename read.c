@@ -668,7 +668,7 @@ static obj_t parse(instream_t *in)
     tmp = make_fixnum(sym_index(start_symbol));
     stack_push(&stack, tmp);
     int tok = yylex(&yylval, in);
-    oprintf("A yylex returned tok=%s yylval=%O\n", token_name(tok), yylval);
+    //oprintf("A yylex returned tok=%s yylval=%O\n", token_name(tok), yylval);
     while (true) {
 	int sym = fixnum_value(stack_pop(&stack));
 	assert(0 <= sym && sym < symbols_size);
@@ -686,7 +686,8 @@ static obj_t parse(instream_t *in)
 	    if (sym == TOK_EOF)
 		break;
 	    if (sym != tok)
-		THROW(&lexical, "datum syntax error", make_fixnum(tok), sym);
+		THROW(&lexical, "datum syntax error",
+		      make_fixnum(tok), make_fixnum(sym));
 	    if (!is_null(yylval))
 		stack_push(&actions, yylval);
 	    if (!stack_is_empty(actions) &&
@@ -694,8 +695,8 @@ static obj_t parse(instream_t *in)
 		break;
 	    yylval = EMPTY_LIST;
 	    tok = yylex(&yylval, in);
-	    oprintf("B yylex returned tok=%s yylval=%O\n",
-		    token_name(tok), yylval);
+	    //oprintf("B yylex returned tok=%s yylval=%O\n",
+	    //        token_name(tok), yylval);
 	}
     }
     return actions;
@@ -733,7 +734,8 @@ cv_t c_continue_parse(obj_t cont, obj_t values)
 	    if (sym == TOK_EOF)
 		return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
 	    if (sym != tok)
-		THROW(&lexical, "datum syntax error", make_fixnum(tok), sym);
+		THROW(&lexical, "datum syntax error",
+		      make_fixnum(tok), make_fixnum(sym));
 	    if (!is_undefined(yylval))
 		stack_push(&actions, yylval);
 	    if (!stack_is_empty(&actions) &&
