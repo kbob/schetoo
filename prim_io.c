@@ -7,6 +7,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <wchar.h>
 
@@ -37,9 +38,10 @@ DEFINE_EXTERN_PROC(read_char, L"read-char", 0-1)(obj_t textual_input_port)
     obj_t ch = peek_char(textual_input_port);
     // N.B., must not raise any exceptions.
     if (!is_eof(ch)) {
-	if (using_readline)
-	    readline_pos++;
-	else
+	if (using_readline) {
+	    if (is_string(readline_line))
+		readline_pos++;
+	} else
 	    (void)getwchar();
     }
     return ch;
@@ -53,10 +55,14 @@ DEFINE_EXTERN_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
     }
     if (using_readline) {
 	wchar_t wc;
+	if (is_string(readline_line) &&
+	    readline_pos > string_len(readline_line)) {
+	    readline_line = make_undefined();
+	}
 	if (is_undefined(readline_line)) {
-	    const char *line = readline(readline_prompt);
+	    char *line = readline(readline_prompt);
 	    if (!line)
-		return make_eof();
+		return readline_line = make_eof();
 	    if (*line)
 		add_history(line);
 	    mbstate_t mbstate;
@@ -70,15 +76,16 @@ DEFINE_EXTERN_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
 		p += n;
 		len -= n;
 	    }
+	    free(line);
 	    readline_line = charbuf_make_string(&buf);
 	    readline_pos = 0;
 	}
+	if (is_eof(readline_line))
+	    return readline_line;	/* EOF is sticky. */
 	if (readline_pos < string_len(readline_line))
 	    wc = string_value(readline_line)[readline_pos];
-	else {
-	    readline_line = make_undefined();
+	else
 	    wc = L'\n';
-	}
 	return make_character(wc);
     } else {
 	wint_t wc = ungetwc(getwchar(), stdin);
