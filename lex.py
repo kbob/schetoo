@@ -117,7 +117,7 @@ class RE:
 
     def __or__(self, other):
         other = self.canonicalize(other)
-        assert(isinstance(other, RE))
+        assert isinstance(other, RE)
         if self is empty_set:           # ∅ | r ≈ r
             return other
         if other is empty_set:          # r | ∅ ≈ r
@@ -653,7 +653,7 @@ def accepts(r):
     if isinstance(r, Sequence):
         for i, q in enumerate(r):
             if ν(q) == ε:
-                return i                # index
+                return i                # first index
     else:
         return ν(r) == ε                # Boolean
         
@@ -882,7 +882,7 @@ class Formatter:
         self.cc = self._sort_C()
         self.icc = self._invert_C()
         self.accepts = self._make_accepts()
-        self.accept_count = sum(bool(z) for z in self.accepts)
+        self.accept_count = sum(z is not None for z in self.accepts.values())
         self.Q = self._sort_Q()
         self.δ  = self._sort_δ()
 
@@ -895,8 +895,7 @@ class Formatter:
     def _sort_C(self):
         Scounts = defaultdict(int)
         for (q1, S), q2 in self.dfa.δ.items():
-            if q2 == self.dq:
-                Scounts[S] += 1
+            Scounts[S] += q2 == self.dq
         return sorted(Scounts, key=lambda S: (Scounts[S], S.any_member()))
 
     def _invert_C(self):
@@ -980,9 +979,10 @@ class Formatter:
                 return -1
             return self.cc.index(S)
         self.p('static const yy_cc_t yy_charmap[] = {')
-        for c in sorted(self.icc):
+        for i, c in enumerate(sorted(self.icc)):
             if ord(c) >= 128:
                 break
+            assert i == ord(c)
             self.p('%-40s/* %r */' % ('    %s,' % idx(c), c))
         self.p('};')
         self.p()
@@ -1108,98 +1108,6 @@ if 0:
     exit()
 
 
-def r5rs_lexical_syntax():
-
-    # delimiter
-    # whitespace
-    # comment
-    # atmosphere
-    # intertoken_space
-    peculiar_identifier = lit('+') | '-' | '...'
-    digit_ = CC('0-9')
-    letter = CC('a-z')
-    special_initial = CC('!', '$', '%', '&', '*', '/', ':', '<', '=',
-                         '>', '?', '^', '_', '~')
-    special_subsequent = CC('+', '-', '.', '@')
-    initial = letter | special_initial
-    subsequent = initial | digit_ | special_subsequent
-    identifier = initial * subsequent() | peculiar_identifier
-
-    # expression_keyword = (lit('quote') | 'lambda' | 'if'
-    #                       | 'set!' | 'begin' | 'cond' | 'and' | 'or' | 'case'
-    #                       | 'let' | 'let*' | 'letrec' | 'do' | 'delay'
-    #                       | 'quasiquote')
-    # syntactic_keyword = (expression_keyword
-    #                      | 'else' | '=>' | 'define'
-    #                      | 'unquote' | 'unquote-splicing')
-    # variable = identifier & ~syntactic_keyword
-
-    boolean = lit('#t') | '#f'
-
-    character_name = lit('space') | 'newline'
-    character = '#\\' * Σ | '#\\' * character_name
-
-    string_element = (Σ - CC('"', '\\')
-                      | r'\"' | r'\\')
-    string = '"' * string_element * '"'
-
-    def digit(R):
-        return {
-            2: CC('0-1'),
-            8: CC('0-7'),
-            10: digit_,
-            16: CC('0-9', 'a-f'),
-            }[R]
-        
-    def radix(R):
-        return {
-            2: lit('#b'),
-            8: lit('#o'),
-            10: ε | '#d',
-            16: lit('#x'),
-            }[R]
-
-    exactness = ε | '#i' | '#e'
-    sign = ε | '+' | '-'
-    exponent_marker = CC('e') | 's' | 'f' | 'd' | 'l'
-    suffix = ε | exponent_marker * sign * digit(10)(1)
-    def prefix(R):
-        return radix(R) * exactness | exactness * radix(R)
-    def uinteger(R):
-        return digit(R) * digit(R)() * lit('#')()
-    def decimal(R):
-        if R == 10:
-            return (uinteger(10) * suffix
-                    | '.' * digit(10)(1) * lit('#')() * suffix
-                    | digit(10)(1) * '.' * digit(10)() * lit('#')() * suffix
-                    | digit(10)(1) * lit('#')(1) * '.' * lit('#')() * suffix)
-        else:
-            return empty_set
-    def ureal(R):
-        return (uinteger(R)
-                | uinteger(R) * '/' * uinteger(R)
-                | decimal(R))
-    def real(R):
-        return sign * ureal(R)
-    def complex(R):
-        return (real(R) | real(R) * '@' * real(R)
-                | real(R) * '+' * ureal(R)*'i' | real(R) * '-' * ureal(R)*'i'
-                | real(R) * '+i' | real(R) * '-i'
-                | '+' * ureal(R) * 'i' | '-' * ureal(R) * 'i' | '+i' | '-i')
-    def num(R):
-        return prefix(R) * complex(R)
-    number = num(2) | num(8) | num(10) | num(16)
-    return [identifier, boolean, number, character, string,
-            CC('('), CC(')'), lit('#('), CC('\''), CC('`'),
-            CC(','), lit(',@'), CC('.')
-            ]
-
-# for p in r5rs_lexical_syntax():
-#     print(p)
-
-# dfa = make_DFA(r5rs_lexical_syntax())
-# exit()
-
 def r6rs_lexical_syntax():
 
     # This grammar is a straight transcription of the lexical grammar in
@@ -1307,7 +1215,6 @@ def r6rs_lexical_syntax():
     return [
         ('ATMOSPHERE', atmosphere),
         ('NUMBER', number),             # number higher priority than identifier
-        ('IDENTIFIER', identifier),
         ('BOOLEAN', boolean),
         ('CHARACTER', character),
         ('STRING', string),
@@ -1317,7 +1224,7 @@ def r6rs_lexical_syntax():
         ('RBRACKET', CC(']')),
         ('BEGIN_VECTOR', lit('#(')),
         ('BEGIN_BYTEVECTOR', lit('#vu8(')),
-        ('QUOTE', CC('\'')),
+        ('QUOTE', CC('\'')),       # quote et al higher priority than identifier
         ('QUASIQUOTE', CC('`')),
         ('UNQUOTE', CC(',')),
         ('UNQUOTE_SPLICING', lit(',@')),
@@ -1328,6 +1235,7 @@ def r6rs_lexical_syntax():
         ('UNSYNTAX_SPLICING', lit('#,@')),
         ('BEGIN_DATUM_COMMENT', lit('#;')),
         ('BEGIN_NESTED_COMMENT', lit('#|')),
+        ('IDENTIFIER', identifier),
         ]
 
 if 1:
