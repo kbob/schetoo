@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>Adventures in Scheme</title>
+<!-- metadata -->
+<meta name="generator" content="S5" />
+<meta name="version" content="S5 1.1" />
+<meta name="presdate" content="20050728" />
+<meta name="author" content="Eric A. Meyer" />
+<meta name="company" content="Complex Spiral Consulting" />
+<!-- configuration parameters -->
+<meta name="defaultView" content="slideshow" />
+<meta name="controlVis" content="hidden" />
+<!-- style sheet links -->
+<link rel="stylesheet" href="ui/default/slides.css" type="text/css" media="projection" id="slideProj" />
+<link rel="stylesheet" href="ui/default/outline.css" type="text/css" media="screen" id="outlineStyle" />
+<link rel="stylesheet" href="ui/default/print.css" type="text/css" media="print" id="slidePrint" />
+<link rel="stylesheet" href="ui/default/opera.css" type="text/css" media="projection" id="operaFix" />
+<!-- S5 JS -->
+<script src="ui/default/slides.js" type="text/javascript"></script>
+</head>
+<body>
+
+<div class="layout">
+<div id="controls"><!-- DO NOT EDIT --></div>
+<div id="currentSlide"><!-- DO NOT EDIT --></div>
+<div id="header"></div>
+<div id="footer">
+<h1>Eugene Modern Web Developers, 3/18/2010</h1>
+<h2>Adventures in Scheme</h2>
+</div>
+
+</div>
+
+
+<div class="presentation">
+
+<div class="slide">
+<h1>Adventures in Scheme</h1>
+<h2>Implementing a dynamic language</h2>
+<h3>Bob Miller</h3>
+<h4>local hacker</h4>
+</div>
+
+
+<div class="slide">
+<h1>What is Scheme</h1>
+<ul>
+<li>a Lisp dialect</li>
+<li>simple</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>What is Scheme</h1>
+<ul>
+<li>forms/data</li>
+<li>managed memory (GC)</li>
+<li>lexical binding</li>
+<li>tail call optimized</li>
+<li>continuations</li>
+<li>macros, hygiene</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>What is Scheme</h1>
+<ul>
+<li>R6RS</li>
+<ul>
+<li>Revised^6 Report on the Algorithmic Language Scheme</li>
+<li>the current standard (2007)</li>
+</ul>
+<li>R5RS</li>
+<ul>
+<li>what everyone uses (1998)</li>
+</ul>
+<li>SRFIs</li>
+<ul>
+<li>experiments</li>
+</ul>
+<li>R7RS</li>
+<ul>
+<li>just starting (2011?)</li>
+</ul>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Why Implement Scheme</h1>
+<ul>
+<li>interest in GC</li>
+<li>simple language</li>
+<li>brush up on Scheme/Lisp</li>
+<li>brush up on C</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Easy Ways to Implement Scheme</h1>
+<ul>
+<li>SICP</li>
+<ul>
+<li>Structure and Interpretation of Computer Programs</li>
+<li>http://mitpress.mit.edu/sicp/</li>
+</ul>
+<li>Bootstrap Scheme</li>
+<ul>
+<li>http://peter.michaux.ca/</li>
+</ul>
+<li>An Incremental Approach to Compiler Construction</li>
+<ul>
+<li>http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf</li>
+</ul>
+<li>other tutorials and examples</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Hard Way to Implement Scheme</h1>
+<ul>
+<li>in C</li>
+<li>with GC</li>
+<li>from R6RS</li>
+<li>without bootstrapping</li>
+<li>without recursion</li>
+<li>without knowing what I'm doing</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Not Hard Enough?</h1>
+<ul>
+<li>parser generator</li>
+<li>scanner generator</li>
+<ul>
+<li>Regular expression derivatives are cool!</li>
+</ul>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Garbage Collection</h1>
+Strategies
+<ul>
+<li>ref count</li>
+<li>mark/sweep</li>
+<li>stop/copy (Cheney)</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Garbage Collection</h1>
+Variations
+<ul>
+<li>real-time (Baker 1978)</li>
+<li>generational</li>
+<li>conservative</li>
+<li>hybrids</li>
+<li>Cheney on the MTA (Baker)</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>My GC</h1>
+<ul>
+<li>stop/copy</li>
+<li>immediate values</li>
+<li>pseudo-OO</li>
+<li>mostly inline</li>
+<li>clever bits deferred</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Evaluation</h1>
+<ul>
+<li>interpret AST</li>
+<li>bytecode</li>
+<li>compile</li>
+<li>sky's the limit</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>My Eval</h1>
+<ul>
+<li>interpret AST</li>
+<li>cactus stack</li>
+<li>trampolines</li>
+<li>transactions/retry</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>setjmp and longjmp</h1>
+<ul>
+<pre><tt>
+    #include &lt;setjmp.h&gt;
+
+    jmp_buf my_buf;
+
+    void f()
+    {
+	longjmp(my_buf, 42);
+    }
+
+    void main()
+    {
+	if (setjmp(my_buf) == 0)
+	    f();
+	else
+	    printf("f jumped\n");
+    }
+</tt></pre>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>My Eval</h1>
+<ul>
+<li>use setjmp/longjmp for GC</li>
+<li>use for exceptions too</li>
+<li>no root tracing</li>
+<li>like transactions</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>My Eval</h1>
+Two Registers
+<ul>
+<li>cont</li>
+<li>values</li>
+</ul>
+<br/>
+(see diagrams)
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>More Info</h1>
+<ul>
+<li>http://github.com/kbob/kbscheme/</li>
+<li>http://github.com/kbob/schetoo/</li>
+<li>.../blob/master/NOTES</li>
+<li>http://kernelbob.wordpress.com/tags/scheme/</li>
+</ul>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+<div class="slide">
+<h1>Thank you</h1>
+<div class="handout">
+[any material that should appear in print but not on the slide]
+</div>
+</div>
+
+
+</div>
+
+</body>
+</html>
