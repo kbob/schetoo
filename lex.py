@@ -1130,8 +1130,10 @@ def r6rs_lexical_syntax():
     atmosphere = whitespace | comment
 
     letter = CC('a-z', 'A-Z', name='<letter>')
-    constituent = CC(letter, Lu, Ll, Lt, Lm, Lo, Mn,
-                     Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co)
+    constituent = CC(letter) | CC(Lu, Ll, Lt, Lm, Lo, Mn,
+                     Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co) - CC(1 << 128 - 1)
+    # N.B., '#;' are in Po but do not start an identifier.
+    # constituent -= CC(';#')
     special_initial = CC('!', '$', '%', '&', '*', '/', ':', '<', '=',
                          '>', '?', '^', '_', '~', name='<special initial>')
     digit_ = CC('0-9', name='<digit>')
@@ -1196,7 +1198,6 @@ def r6rs_lexical_syntax():
     def num(R):
         return prefix(R) * complex(R)
     number = num(2) | num(8) | num(10) | num(16)
-#    number = num(10)                    # XXX
 
     character_name = CC('a-z', name='<a-z>')()
     character = ('#\\' * Σ
