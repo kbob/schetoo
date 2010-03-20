@@ -13,3 +13,4 @@ a.out
 core
 scheme
 ucd_data.h
+dfa_data.h
