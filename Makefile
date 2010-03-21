@@ -15,7 +15,7 @@
 
 scheme_cfiles := main.c arith.c charbuf.c conditions.c cont.c env.c	\
 		 eval.c except.c heap.c io.c list.c low_ex.c oprintf.c	\
-		 print.c read.c record.c roots.c scan.c test.c		\
+		 print.c read.c record.c repl.c roots.c scan.c test.c	\
 		 unicode.c						\
 									\
 		 prim.c $(prim_groups:%=prim_%.c)			\

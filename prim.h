@@ -7,7 +7,9 @@
 #include "obj_proc.h"
 #include "uniq.h"
 
-#define DEBUG_EVAL 0
+#ifndef DEBUG_EVAL
+    #define DEBUG_EVAL 0
+#endif
 
 /*
  * Primitives.

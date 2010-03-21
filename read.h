@@ -8,6 +8,6 @@
 /* Returns true if expression read, false at EOF. */
 extern bool read_stream(instream_t *in, obj_t *obj_out);
 
-extern cv_t c_parse(obj_t cont, obj_t values);
+extern cv_t c_read(obj_t cont, obj_t values);
 
 #endif /* !READ_INCLUDED */

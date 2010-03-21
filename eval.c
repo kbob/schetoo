@@ -366,6 +366,11 @@ static cv_t push_exception(obj_t cont, obj_t values)
 extern obj_t core_eval(obj_t expr, obj_t env)
 {
     obj_t cont   = make_cont4(c_eval, EMPTY_LIST, env, expr);
+    return core_eval_cont(cont);
+}
+
+extern obj_t core_eval_cont(obj_t cont)
+{
     obj_t values = EMPTY_LIST;
     eval_dyn_env = MAKE_RECORD(dyn_env, EMPTY_LIST, dhproc);
 

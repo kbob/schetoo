@@ -99,5 +99,5 @@ DEFINE_EXTERN_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
 
 DEFINE_RAW_PROC(L"read")(obj_t cont, obj_t values)
 {
-    return c_parse(cont, values);
+    return c_read(cont, values);
 }

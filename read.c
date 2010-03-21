@@ -776,7 +776,7 @@ cv_t c_continue_parse(obj_t cont, obj_t values)
     }
 }
 
-cv_t c_parse(obj_t cont, obj_t values)
+cv_t c_read(obj_t cont, obj_t values)
 {
     obj_t stack = EMPTY_LIST;
     stack_push(&stack, make_fixnum(TOK_EOF));
