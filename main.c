@@ -1,18 +1,12 @@
-#include <stdio.h>
 #include <string.h>
 
-#include "env.h"
-#include "eval.h"
 #include "except.h"
 #include "heap.h"
-#include "io.h"
-#include "print.h"
 #include "prim.h"
-#include "read.h"
 #include "repl.h"
 #include "record.h"
+#include "roots.h"
 #include "test.h"
-#include "types.h"
 
 int main(int argc, char *argv[])
 {
