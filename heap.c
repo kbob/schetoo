@@ -343,6 +343,8 @@ const wchar_t *obj_type_name(const obj_t obj)
 	return L"undefined";
     if (is_eof(obj))
 	return L"eof-object";
+    if (is_read_action(obj))
+	return L"read-action";
     if (is_special(obj))
 	return L"special";
     return obj_mem_ops(obj)->mo_name;
