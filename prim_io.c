@@ -1,6 +1,7 @@
 #include "charbuf.h"
 #include "prim.h"
 #include "obj_eof.h"
+#include "read.h"
 #include "roots.h"
 #include "types.h"
 
@@ -94,4 +95,9 @@ DEFINE_EXTERN_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
 	else
 	    return make_character(wc);
     }
+}
+
+DEFINE_RAW_PROC(L"read")(obj_t cont, obj_t values)
+{
+    return c_parse(cont, values);
 }

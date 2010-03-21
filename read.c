@@ -1,6 +1,6 @@
 #include "read.h"
 
-#define OLD_READER 1
+#define OLD_READER 0
 
 #include <assert.h>
 #include <string.h>
@@ -8,6 +8,11 @@
 #include "scan.h"
 #include "test.h"
 #include "types.h"
+#if !OLD_READER
+    #include "obj_eof.h"
+    #include "oprintf.h"		/* XXX */
+    #include "prim.h"
+#endif
 
 /*
  * This module is the Scheme reader (parser).  It recognizes all of
@@ -620,7 +625,7 @@ static void init_parsing_table(void)
 	for (j = 0; j < terminals_size; j++) {
 	    uint_fast8_t e = parsing_table_entry(i, j);
 	    if (e == NO_RULE)
-		printf(" - ");
+		printf("  -");
 	    else
 		printf("%3d", e);
 	}
@@ -650,10 +655,6 @@ static uint_fast8_t get_rule(char symbol, size_t term)
     return rule;
 }
 
-#if OLD_READER
-
-#include "oprintf.h"			/* XXX */
-
 /*
  * Parse the input stream and return an action stack.
  * See Wikipedia again.
@@ -668,11 +669,11 @@ static obj_t parse(instream_t *in)
     tmp = make_fixnum(sym_index(start_symbol));
     stack_push(&stack, tmp);
     int tok = yylex(&yylval, in);
-    //oprintf("A yylex returned tok=%s yylval=%O\n", token_name(tok), yylval);
     while (true) {
 	int sym = fixnum_value(stack_pop(&stack));
 	assert(0 <= sym && sym < symbols_size);
 	uint_fast8_t rule = get_rule(symbols[sym], tok);
+	//oprintf("loop sym=%d tok=%s rule=%d\n", sym, token_name(tok), rule);
 	if (rule != NO_RULE) {
 	    const production_t *pp = &grammar[rule];
 	    int j;
@@ -695,14 +696,14 @@ static obj_t parse(instream_t *in)
 		break;
 	    yylval = EMPTY_LIST;
 	    tok = yylex(&yylval, in);
-	    //oprintf("B yylex returned tok=%s yylval=%O\n",
-	    //        token_name(tok), yylval);
 	}
     }
     return actions;
 }
 
-#else
+#if ! OLD_READER
+
+static bool build(obj_t actions, obj_t *obj_out);
 
 // Take one token, push the state as far as it will go with that
 // one token.
@@ -715,34 +716,62 @@ cv_t c_continue_parse(obj_t cont, obj_t values)
     // cont.arg2 = actions
     // values    = CONS(token_type, yylval)
 
-    obj_t stack   = cont5_arg1(cont);
-    obj_t actions = cont5_arg2(cont);
+    obj_t stack   = cont6_arg1(cont);
+    obj_t actions = cont6_arg2(cont);
     int   tok     = fixnum_value(CAR(values));
     while (true) {
 	int sym = fixnum_value(stack_pop(&stack));
 	assert(0 <= sym && sym < symbols_size);
 	uint_fast8_t rule = get_rule(symbols[sym], tok);
+	//oprintf("loop sym=%d tok=%s rule=%d\n", sym, token_name(tok), rule);
 	if (rule != NO_RULE) {
 	    const production_t *pp = &grammar[rule];
 	    int j;
 	    for (j = strlen(pp->p_rhs); --j >= 0; )
 		stack_push(&stack, make_fixnum(sym_index(pp->p_rhs[j])));
-	    if (pp->p_action)
+	    if (pp->p_action) {
+		//oprintf("push actions <= %p\n", (obj_t)pp->p_action);
 		stack_push(&actions, (obj_t)pp->p_action);
-	    stack_push(&stack, make_fixnum(sym_index(grammar[rule].p_rhs[j])));
+	    }
 	} else {
-	    if (sym == TOK_EOF)
-		return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
+	    if (sym == TOK_EOF) {
+		obj_t result;
+		//oprintf("read A actions = %O\n", actions);
+		if (!build(actions, &result))
+		    result = make_eof();
+		//oprintf("read A values=%O result=%O\n", values, result);
+		return cv(cont_cont(cont), CONS(result, CDDR(values)));
+		//return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
+	    }
 	    if (sym != tok)
 		THROW(&lexical, "datum syntax error",
 		      make_fixnum(tok), make_fixnum(sym));
-	    if (!is_undefined(yylval))
+	    obj_t yylval = CADR(values);
+	    //oprintf("yylval=%O\n", yylval);
+	    if (!is_null(yylval)) {
+		
 		stack_push(&actions, yylval);
-	    if (!stack_is_empty(&actions) &&
-		fixnum_value(stack_top(stack)) == TOK_EOF)
-		return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
-	    obj_t second 
-	    return cv(cont
+	    }
+	    if (!stack_is_empty(actions) &&
+		fixnum_value(stack_top(stack)) == TOK_EOF) {
+		obj_t result;
+		if (!build(actions, &result))
+		    result = make_eof();
+		//oprintf("read B values=%O result=%O\n", values, result);
+		return cv(cont_cont(cont), CONS(result, CDDR(values)));
+		//return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
+	    }
+	    obj_t second = make_cont6(c_continue_parse,
+				      cont_cont(cont),
+				      cont_env(cont),
+				      stack,
+				      actions,
+				      cont6_arg3(cont));
+	    obj_t first = make_cont4(c_read_token,
+				     second,
+				     cont_env(cont),
+				     cont);
+	    return cv(first, CDDR(values));
 	}
     }
 }
@@ -751,13 +780,19 @@ cv_t c_parse(obj_t cont, obj_t values)
 {
     obj_t stack = EMPTY_LIST;
     stack_push(&stack, make_fixnum(TOK_EOF));
+    stack_push(&stack, make_fixnum(sym_index(start_symbol)));
     obj_t actions = EMPTY_LIST;
-    obj_t second = make_cont5(c_continue_parse,
+    obj_t second = make_cont6(c_continue_parse,
 			      cont_cont(cont),
 			      cont_env(cont),
 			      stack,
-			      actions);
-    obj_t first = make_cont4(
+			      actions,
+			      values);
+    obj_t first = make_cont4(c_read_token,
+			     second,
+			     cont_env(cont),
+			     values);
+    return cv(first, values);
 }
 
 #endif
@@ -767,6 +802,7 @@ static bool build(obj_t actions, obj_t *obj_out)
 {
     obj_t vstack = EMPTY_LIST;
     obj_t reg = EMPTY_LIST;
+    //oprintf("build(actions=%O)\n", actions);
     while (!stack_is_empty(actions)) {
 	obj_t op = stack_pop(&actions);
 	switch ((word_t)op) {
