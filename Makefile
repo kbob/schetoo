@@ -40,4 +40,10 @@ ucd_data.h: gen_ucd_data.py unicode.h UnicodeData.txt
 	python gen_ucd_data.py > $@
 JUNK += ucd_data.h
 
+scan.o .scan.d: dfa_data.h
+
+dfa_data.h: lex.py
+	python3 lex.py -c > $@
+JUNK += dfa_data.h
+
 include makefiles/project-root.make
