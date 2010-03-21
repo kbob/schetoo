@@ -367,13 +367,13 @@ static cv_t push_exception(obj_t cont, obj_t values)
 extern obj_t core_eval(obj_t expr, obj_t env)
 {
     obj_t cont   = make_cont4(c_eval, EMPTY_LIST, env, expr);
-    return core_eval_cont(cont);
+    return core_eval_cont(cont, dhproc);
 }
 
-extern obj_t core_eval_cont(obj_t cont)
+extern obj_t core_eval_cont(obj_t cont, obj_t handler)
 {
     obj_t values = EMPTY_LIST;
-    eval_dyn_env = MAKE_RECORD(dyn_env, EMPTY_LIST, dhproc);
+    eval_dyn_env = MAKE_RECORD(dyn_env, EMPTY_LIST, handler);
 
     if (sigsetjmp(eval_sigrestart, 1)) {
 	/* On Linux, siglongjmp is 30X slower than longjmp. */

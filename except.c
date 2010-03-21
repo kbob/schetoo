@@ -8,6 +8,7 @@
 
 #include "list.h"
 #include "low_ex.h"
+#include "obj_null.h"
 #include "obj_pair.h"
 #include "obj_record.h"
 #include "obj_rtd.h"
@@ -54,7 +55,7 @@ void throw(obj_t *ct, const wchar_t *msg, ...)
     while ((irritant = va_arg(ap, obj_t)) != END_OF_ARGS)
 	irr_list = CONS(irritant, irr_list);
     va_end(ap);
-    if (irr_list != EMPTY_LIST) {
+    if (!is_null(irr_list)) {
 	irr_list = reverse_list(irr_list);
 	obj_t irr_ex = MAKE_RECORD(irritants, irr_list);
 	ex = MAKE_COMPOUND_CONDITION(primary_ex, msg_ex, irr_ex);
