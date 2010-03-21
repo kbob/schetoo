@@ -350,12 +350,19 @@ const wchar_t *obj_type_name(const obj_t obj)
     return obj_mem_ops(obj)->mo_name;
 }
 
-#if DEBUG_HEAP
+#ifndef NDEBUG
 
-void commit_allocations(void)
-{
-    committed = next_alloc;
-}
+    void commit_allocations(void)
+    {
+	committed = next_alloc;
+    }
+
+    bool is_committed(obj_t obj)
+    {
+	assert(tospace <= committed && committed <= next_alloc);
+	assert(is_heap(obj));
+	return (void *)obj < committed || (void *)obj > next_alloc;
+    }
 
 #endif
 

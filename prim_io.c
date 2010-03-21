@@ -50,6 +50,7 @@ DEFINE_EXTERN_PROC(read_char, L"read-char", 0-1)(obj_t textual_input_port)
 
 DEFINE_EXTERN_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
 {
+    EVAL_LOG("peek-char port=%O", textual_input_port);
     if (!is_initialized) {
 	using_readline = isatty(fileno(stdin)) && isatty(fileno(stdout));
 	is_initialized = true;

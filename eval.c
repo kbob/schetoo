@@ -17,6 +17,7 @@
 #include "record.h"
 #include "roots.h"
 #include "test.h"
+#include "transaction.h"
 #include "types.h"
 
 /*
@@ -408,7 +409,7 @@ extern obj_t core_eval_cont(obj_t cont)
 	cv_t ret = cont_proc(cont)(cont, values);
 	cont   = ret.cv_cont;
 	values = ret.cv_values;
-	COMMIT_ALLOCATIONS();
+	COMMIT();
 #if DEBUG_EVAL
 	int n = 0;
 	obj_t p;

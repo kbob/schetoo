@@ -528,6 +528,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 #include "prim.h"
 #include "record.h"
 #include "test.h"
+#include "transaction.h"
 #include "types.h"
 #include "unicode.h"
 
@@ -1014,7 +1015,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 	cv_t ret = cont_proc(cont)(cont, values);
 	cont   = ret.cv_cont;
 	values = ret.cv_values;
-	COMMIT_ALLOCATIONS();
+	COMMIT();
 #if DEBUG_EVAL
 	int n = 0;
 	obj_t p;
@@ -1241,21 +1242,24 @@ TEST_STRING("\"A\nbc\"",			"\"A\nbc\"");
 TEST_NUMBER(0,       0);
 TEST_NUMBER(+12,    12);
 TEST_NUMBER(-23,   -23);
-//TEST_NUMBER(#i0,   0);
-//TEST_NUMBER(#I0,   0);
-//TEST_NUMBER(#e0,   0);
-//TEST_NUMBER(#E0,   0);
-//TEST_NUMBER(#b101, 5);
-//TEST_NUMBER(#i0,   0);
-//TEST_NUMBER(#i0,   0);
-//TEST_NUMBER(#i0,   0);
-//TEST_NUMBER(#i0,   0);
-//TEST_READ(L"#i0",                       L"0");
-//TEST_READ(L"#I0",                       L"0");
-//TEST_READ(L"#e0",                       L"0");
-//TEST_READ(L"#E0",                       L"0");
-//TEST_READ(L"#b101",                     L"5");
-//TEST_READ(L"#o77",                      L"63");
-//TEST_READ(L"#e#b101",                   L"5");
-//TEST_READ(L"0.1",                       L"0.1");
-//TEST_READ(L"#e0.1",                     L"1/10");
+
+#if ! OLD_SCANNER
+TEST_NUMBER(#i0,   0);
+TEST_NUMBER(#I0,   0);
+TEST_NUMBER(#e0,   0);
+TEST_NUMBER(#E0,   0);
+TEST_NUMBER(#b101, 5);
+TEST_NUMBER(#i0,   0);
+TEST_NUMBER(#i0,   0);
+TEST_NUMBER(#i0,   0);
+TEST_NUMBER(#i0,   0);
+TEST_READ(L"#i0",                               L"0");
+TEST_READ(L"#I0",                               L"0");
+TEST_READ(L"#e0",                               L"0");
+TEST_READ(L"#E0",                               L"0");
+TEST_READ(L"#b101",                             L"5");
+TEST_READ(L"#o77",                              L"63");
+TEST_READ(L"#e#b101",                           L"5");
+TEST_READ(L"0.1",                               L"0.1");
+TEST_READ(L"#e0.1",                             L"1/10");
+#endif

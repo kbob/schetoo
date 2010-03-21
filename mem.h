@@ -223,25 +223,6 @@ static inline bool is_record_instance(heap_object_t *hobj)
 
 extern heap_object_t *mem_alloc_obj(mem_ops_t *, size_t size_bytes);
 
-#if DEBUG_HEAP
-    /*
-     * When debugging, we can check that no allocations occur
-     * between the time the heap is mutated and the next commit.
-     *
-     * If an allocation did occur, it could trigger a GC which would
-     * cause the whole operation to be retried.
-     */
-    // XXX not fully implemented yet
-
-    #define COMMIT_ALLOCATIONS() (commit_allocations())
-    #define MUTATE(obj) (mutate(obj))
-    extern void commit_allocations(void);
-    extern void mutate(obj_t);
-#else
-    #define COMMIT_ALLOCATIONS() ((void)0)
-    #define MUTATE(obj) (mutate(obj))
-#endif
-
 #ifdef NDEBUG
     #define CHECK_OBJ(obj) ((void)0)
 #else

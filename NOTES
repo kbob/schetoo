@@ -1012,3 +1012,70 @@ impossible for the caller to know the current env.  So I'll leave
 the existing code alone.
 
 define and set! need a cont5_t.
+
+----------------------------------
+2010.03.20
+
+Since the last update here, the parser and scanner have been converted
+into continuation procs, and a simple REPL has been written in
+continuation procs as well.  So now the whole scheme environment runs
+through a single invocation of core_eval_cont().
+
+I've realized that I have a kind of transactions going on here.  Each
+time a continuation proc returns, it *commits* its action.  When the
+cont and values variables in core_eval_cont() are updated, the
+operation becomes immune to being retried.  Until that time, the
+operation can bail in a zillion ways.  Any memory allocation can fail,
+or any call to CHECK() can raise an exception.  In either case,
+longjmp() will restore cont and values as they were before the
+operation started.
+
+So there are transaction semantics.  They are kind of simple.  Any
+memory allocated within the current operation is unprotected.  It may
+be modified without restriction at any time during the operation.  But
+side effects outside of that -- mutations to memory allocated prior to
+the current operation or interactions with the outside world
+(especially I/O) must be done only AFTER every possible failure point
+has been passed.
+
+I believe it is possible to add runtime checks that those restrictions
+are met.  It goes like this.
+
+  - Just after each operation finishes, COMMIT() is called.  It copies
+    the next_alloc pointer to the committed pointer and sets the
+    global flag retry_allowed to true.
+
+  - On each memory object mutation, MUTATE(obj) is called.  It checks
+    whether obj is in committed memory.  If so, it calls
+    SIDE_EFFECT().  Uncommitted memory is the region between the
+    committed and next_alloc pointers.
+
+  - On each non-heap-mutation side-effect, SIDE_EFFECT() is called.
+    SIDE_EFFECT sets the global flag retry_allowed to false.
+
+  - CHECK() and mem_alloc_obj() both call COULD_RETRY().  If
+    COULD_RETRY is called when retry_allowed is false, then the
+    operation has violated the restriction and the program aborts with
+    an assertion failuer.
+
+  - Each call to THROW (CHECK always raises &assertion, so THROW is
+    used for other assertion types) needs to call COULD_RETRY() too.
+    Probably should refactor "if (some_test) THROW(...)" into a single
+    macro; then just that macro definition needs COULD_RETRY().
+
+Each of those macros, COMMIT, MUTATE, SIDE_EFFECT, and COULD_RETRY,
+expands to nothing in an optimized build.  In a debug build, they
+just add a handful of memory references to each operation.
+
+If an operation is abandoned and retried, the memory allocated will
+just be left half-initialized for the GC to sweep up.  Since the GC
+only looks at committed memory, it will just skip over the objects
+created during the aborted operation.
+
+I wonder how much this will break.  I'm already aware of a potential
+problem allocating symbols in the reader.
+
+----------------------------------
+2010.03.21
+
+Back to I/O ports.
