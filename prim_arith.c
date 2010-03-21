@@ -2,6 +2,7 @@
 
 #include <assert.h>
 
+#include "arith.h"
 #include "prim.h"
 #include "types.h"
 
@@ -199,56 +200,12 @@ static inline int digit_value(wchar_t digit, int radix)
 
 DEFINE_PROC(L"string->number", 1-2)(obj_t string, obj_t radix)
 {
-    const char_t *str = string_value(string);
-    int r;
-    if (radix == MISSING_ARG)
-	r = 10;
-    else {
-	if (!is_fixnum(radix))
-	    return FALSE_OBJ;
+    int r = 10;
+
+    if (radix != MISSING_ARG) {
 	r = fixnum_value(radix);
-	if (r != 2 && r != 010 && r != 10 && r != 0x10)
-	    return FALSE_OBJ;
+	CHECK(r == 2 || r == 010 || r == 10 || r == 0x10,
+	      "radix must be 2, 8, 10, or 16");
     }
-    size_t i = 0, len = string_len(string);
-    int xc = 0, rc = 0;
-    while (i < len - 1 && str[i] == L'#') {
-	wchar_t wc = str[i + 1];
-	i += 2;
-	if (wc == 'E' || wc == 'e')
-	    xc++;
-	else if (wc == 'B' || wc == 'b') {
-	    r = 2;
-	    rc++;
-	}
-	else if (wc == 'O' || wc == 'o') {
-	    r = 010;
-	    rc++;
-	}
-	else if (wc == 'D' || wc == 'd') {
-	    r = 10;
-	    rc++;
-	}
-	else if (wc == 'X' || wc == 'x') {
-	    r = 0x10;
-	    rc++;
-	}
-	else
-	    return FALSE_OBJ;
-    }
-    if (xc > 1 || rc > 1)
-	return FALSE_OBJ;
-    int sign = +1;
-    if (str[i] == L'-') {
-	i++;
-	sign = -1;
-    }
-    word_t n = 0;
-    while (i < len) {
-	word_t k = digit_value(str[i++], r);
-	if (k < 0)
-	    return FALSE_OBJ;
-	n = r * n + k;
-    }
-    return make_fixnum(sign * n);
+    return chars_to_number(string_value(string), string_len(string), r);
 }

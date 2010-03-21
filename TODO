@@ -24,10 +24,10 @@ DONE	read.c should use &lexical, not &syntax.
 DONE	Move apply_proc() from prim.c to eval.c.
 DONE	Most exceptions shouldn't supply irritants.
 drop	Move env from cont to dyn_env.
-	Split cont4 into cont3 and cont4. (cont4 and cont5?)
+DONE	Split cont4 into cont3 and cont4. (cont4 and cont5?)
 DONE	Define cont_proc_t in obj_proc.h and adjust function prototypes.
 	There should be some field accessors in conditions.h.
-	Rewrite string->number in terms of char_to_number().
+DONE	Rewrite string->number in terms of char_to_number().
 
 Heap
 DONE	Implement records.
