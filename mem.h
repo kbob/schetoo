@@ -101,6 +101,11 @@ static inline bool is_immediate(const obj_t o)
     return (obj_bits(o) & SHORT_TAG_MASK) == IMMEDIATE_TAG;
 }
 
+static inline bool is_read_action(const obj_t o)
+{
+    return (obj_bits(o) & LONG_TAG_MASK) == READ_ACTION_TAG;
+}
+
 static inline bool is_special(const obj_t o)
 {
     return (obj_bits(o) & LONG_TAG_MASK) == SPECIAL_TAG;
