@@ -16,12 +16,15 @@ static inline int digit_value(wchar_t digit, int radix)
 	return -1;
 }
 
+// three failure cases: malformed number, bad radix, 
+
 obj_t chars_to_number(const char_t *str, size_t len, int radix)
 {
     if (radix != 2 && radix != 010 && radix != 10 && radix != 0x10) {
 	assert(0);
 	return FALSE_OBJ;
     }
+    bool exact = true;
     size_t i = 0;
     int xc = 0, rc = 0;
     while (i < len - 1 && str[i] == L'#') {
@@ -29,6 +32,10 @@ obj_t chars_to_number(const char_t *str, size_t len, int radix)
 	i += 2;
 	if (wc == 'E' || wc == 'e')
 	    xc++;
+	else if (wc == 'I' || wc == 'i') {
+	    exact = false;
+	    xc++;
+	}
 	else if (wc == 'B' || wc == 'b') {
 	    radix = 2;
 	    rc++;
@@ -46,7 +53,6 @@ obj_t chars_to_number(const char_t *str, size_t len, int radix)
 	    rc++;
 	}
 	else {
-	    assert(0);
 	    return FALSE_OBJ;
 	}
     }
