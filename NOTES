@@ -1079,3 +1079,90 @@ problem allocating symbols in the reader.
 2010.03.21
 
 Back to I/O ports.
+
+R6RS has a bunch of kinds of ports.
+
+    port
+    input-port
+    output-port
+    input/output-port
+    binary-port
+    textual-port
+    binary-input-port
+    textual-input-port
+    binary-output-port
+    textual-output-port
+    binary-input/output-port
+    textual-input/output-port
+
+I think I can implement those with a set of flags: INPUT, OUTPUT,
+TEXTUAL.
+
+A port operates on one of four backing stores: file, string,
+bytevector, or procedures.
+
+How do you close a file if it isn't explicitly closed?
+Use mark-and-sweep on the file descriptors.
+
+Custom binary input ports have the following operations.
+    read!
+    get-position 
+    set-position!
+    close
+
+Custom textual input ports have the following operations. 
+    read!
+    get-position
+    set-position!
+    close
+
+Custom binary output ports have the following operations.
+    write!
+    get-position
+    set-position!
+    close
+
+Custom textual output ports have the following operations.
+    write!
+    get-position
+    set-position!
+    close
+
+Custom binary and textual input/output ports have the following operations.
+    read!
+    write!
+    get-position
+    set-position!
+    close
+
+To implement this whole mess, start w/ the binary file read! and write! ops
+and textual string read! and write! ops.  Ignore seek.  Then can I write
+a generic buffering layer?
+
+But I don't want to implement the whole mess.  I just want to be able
+to read from a string.
+
+First step: port is a new datatype.  It should look something like this.
+
+    typedef struct port {
+	heap_object_t port_header;
+    	word_t        port_flags;
+	word_t        port_fd;
+	off_t         port_read_offset;
+	size_t        port_read_pos;
+	off_t         port_write_offset;
+	size_t        port_write_pos;
+	obj_t         port_read_proc;
+	obj_t         port_write_proc;
+	obj_t         port_seek_proc;
+	obj_t         port_close_proc;
+	obj_t	      port_read_buffer;
+	obj_t	      port_write_buffer;
+   } port_t;
+
+All the active ports with close procs will be linked onto a list.
+Closing a port will remove it from that list.  GC will find each port
+that is only accessible via the list and call its close proc.
+
+I'm thinking that weak pointers would make this easier.
+

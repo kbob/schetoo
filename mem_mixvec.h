@@ -65,12 +65,16 @@ DECLARE_MIXVEC(1, 2)
 DECLARE_MIXVEC(1, 3)
 DECLARE_MIXVEC(1, 4)
 DECLARE_MIXVEC(1, 5)
+DECLARE_MIXVEC(5, 6)
 
 extern obj_t make_mixvec_1_2(mem_ops_t *, word_t, obj_t, obj_t);
 extern obj_t make_mixvec_1_3(mem_ops_t *, word_t, obj_t, obj_t, obj_t);
 extern obj_t make_mixvec_1_4(mem_ops_t *, word_t, obj_t, obj_t, obj_t, obj_t);
 extern obj_t make_mixvec_1_5(mem_ops_t *,
 			     word_t, obj_t, obj_t, obj_t, obj_t, obj_t);
+extern obj_t make_mixvec_5_6(mem_ops_t *,
+			     word_t, word_t, word_t, word_t, word_t,
+			     obj_t, obj_t, obj_t, obj_t, obj_t, obj_t);
 
 /* Declare more as needed. */
 

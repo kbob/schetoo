@@ -8,7 +8,7 @@
   prim_groups := arith boolean char ctrl defn env eq eval expr io list	\
 		 proc string sym
 
-    obj_types := binding bytevector boolean cont fixnum pair proc	\
+    obj_types := binding bytevector boolean cont fixnum pair port proc	\
 		 record rtd string symbol vector
 
     mem_types := fixvec mixvec scalar
