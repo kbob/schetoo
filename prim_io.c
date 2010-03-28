@@ -15,7 +15,7 @@
 static bool     is_initialized = false;
 static bool     using_readline;
 static size_t   readline_pos;
-static char    *readline_prompt = "] ";
+static char    *readline_prompt = "> ";
 
 ROOT_CONSTRUCTOR(readline_line)
 {
@@ -63,8 +63,11 @@ DEFINE_EXTERN_PROC(peek_char, L"peek-char", 0-1)(obj_t textual_input_port)
 	}
 	if (is_undefined(readline_line)) {
 	    char *line = readline(readline_prompt);
-	    if (!line)
+	    if (!line) {
+		putchar('\n');
+		fflush(stdout);
 		return readline_line = make_eof();
+	    }
 	    if (*line)
 		add_history(line);
 	    mbstate_t mbstate;
