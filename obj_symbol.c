@@ -15,7 +15,10 @@
 mem_ops_t symbol_ops;
 static int gen_name_counter;
 
-ROOT(all_symbols_list);
+ROOT_CONSTRUCTOR(all_symbols_list)
+{
+    return make_null();
+}
 
 static inline obj_t alloc_symbol(obj_t name)
 {
