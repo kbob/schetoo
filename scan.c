@@ -522,6 +522,7 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 #include <assert.h>
 
 #include "arith.h"
+#include "charbuf.h"
 #include "list.h"
 #include "obj_cont.h"
 #include "obj_eof.h"
@@ -773,8 +774,70 @@ static obj_t scan_character(const char_t *str, size_t length)
 
 static obj_t scan_string(const char_t *str, size_t length)
 {
-    assert(false);
-    return FALSE_OBJ;
+    char_t ch;
+    charbuf_t buf;
+    init_charbuf(&buf, L"");
+    assert(str[0] == L'"');
+    assert(str[length - 1] == L'"');
+    size_t i;
+    for (i = 1; i < length - 1; ) {
+	if (str[i] != L'\\')
+	    ch = str[i++];
+	else {
+	    switch (str[++i]) {
+
+	    case 'a':
+		ch = L'\a';
+		break;
+
+	    case 'b':
+		ch = L'\b';
+		break;
+
+	    case 't':
+		ch = L'\t';
+		break;
+
+	    case 'n':
+		ch = L'\n';
+		break;
+
+	    case 'v':
+		ch = L'\v';
+		break;
+
+	    case 'f':
+		ch = L'\f';
+		break;
+
+	    case 'r':
+		ch = L'\r';
+		break;
+
+	    case '"':
+		ch = L'"';
+		break;
+
+	    case '\\':
+		ch = L'\\';
+		break;
+
+	    case 'x':
+	    case 'X':
+		ch = scan_hex_scalar(str + i + 1, L';');
+		while (str[i] != ';')
+		    i++;
+		break;
+
+	    default:
+		ch = str[i];
+		break;
+	    }
+	    i++;
+	}
+	charbuf_append_char(&buf, ch);
+    }
+    return charbuf_make_string(&buf);
 }
 
 static token_type_t make_token(yy_state_t state, obj_t ctx, obj_t *yylval)
