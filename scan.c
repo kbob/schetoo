@@ -672,6 +672,11 @@ static bool token_needs_delimiter(yy_token_t t)
     }
 }
 
+bool is_intraline_whitespace(char_t ch)
+{
+    return ch == L'\t' || unicode_general_category(ch) == UGC_SEPARATOR_SPACE;
+}
+
 static int digit_value(char_t wc)
 {
     if (L'0' <= wc && wc <= L'9')
@@ -831,7 +836,22 @@ static obj_t scan_string(const char_t *str, size_t length)
 
 	    default:
 		ch = str[i];
-		break;
+		while (is_intraline_whitespace(ch))
+		    ch = str[++i];
+		bool line_end = false;
+		if (ch == L'\r') {
+		    ch = str[++i];
+		    line_end = true;
+		}
+		// line_ending = \r \n \r\n \x85; \r\x85; \u2028;
+		if (ch == L'\n' || ch == L'\x85' || ch == L'\x2028') {
+		    ch = str[++i];
+		    line_end = true;
+		}
+		assert(line_end);
+		while (is_intraline_whitespace(ch))
+		    ch = str[++i];
+		continue;
 	    }
 	    i++;
 	}
