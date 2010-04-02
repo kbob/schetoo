@@ -1,6 +1,8 @@
 #ifndef EXCEPT_INCLUDED
 #define EXCEPT_INCLUDED
 
+#define OLD_PORTS 0			// XXX
+
 #include "conditions.h"
 
 // CHECK(expr, message, irritants...)
@@ -12,7 +14,7 @@
 // THROW(condition, message, irritants...)
 // Note that message may be either a wide or 8-bit string.
 // An 8-bit string will be widened by the macro.
-#define THROW(condition, ...)					\
+#define THROW(condition, ...)						\
     (throw((condition), L""  __VA_ARGS__, END_OF_ARGS))
 
 __attribute__ ((noreturn))

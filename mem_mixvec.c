@@ -107,7 +107,8 @@ obj_t make_mixvec_1_5(mem_ops_t *ops,
 
 obj_t make_mixvec_5_6(mem_ops_t *ops,
 		      word_t w0, word_t w1, word_t w2, word_t w3, word_t w4,
-		      obj_t p0, obj_t p1, obj_t p2, obj_t p3, obj_t p4, obj_t p5)
+		      obj_t p0, obj_t p1, obj_t p2,
+		      obj_t p3, obj_t p4, obj_t p5)
 {
     obj_t mv = alloc_mixvec_5_6(ops);
     mixvec_5_6_set_int(mv, 0, w0);

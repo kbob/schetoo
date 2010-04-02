@@ -17,10 +17,10 @@ typedef enum port_flags {
 
 typedef enum port_scalars {
     PS_FLFD,
-    PS_RPOS,
-    PS_WPOS,
-    PS_ROFF,
-    PS_WOFF,
+    PS_TPOS,
+    PS_BPOS,
+    PS_BLEN,
+    PS_BOFF,
 } port_scalars_t;
 #define PORT_SCALAR_COUNT 5
 
@@ -29,8 +29,8 @@ typedef enum port_objects {
     PO_WRITE,
     PO_SEEK,
     PO_CLOSE,
-    PO_RBUF,
-    PO_WBUF,
+    PO_TBUF,
+    PO_BBUF
 } port_objects_t;
 #define PORT_OBJ_COUNT 6
 
@@ -46,41 +46,47 @@ typedef PORT_MV_T port_mixvec_t;
 
 extern mem_ops_t port_ops;
 
-extern obj_t  make_port               (port_flags_t flags,
-                                       int          fd,
-                                       obj_t        read_proc,
-                                       obj_t        write_proc,
-                                       obj_t        seek_proc,
-                                       obj_t        close_proc,
-                                       obj_t        read_buffer,
-                                       obj_t        write_buffer);
+extern obj_t  make_port                    (port_flags_t flags,
+					    int          fd,
+					    obj_t        read_proc,
+					    obj_t        write_proc,
+					    obj_t        seek_proc,
+					    obj_t        close_proc,
+					    obj_t        text_buffer,
+					    obj_t        binary_buffer);
 
-static inline bool   port_is_textual  (obj_t port);
-static inline bool   port_is_binary   (obj_t port);
-static inline bool   port_is_input    (obj_t port);
-static inline bool   port_is_output   (obj_t port);
-static inline bool   port_is_inout    (obj_t port);
-static inline bool   port_is_seekable (obj_t port);
+static inline bool   port_is_textual       (obj_t port);
+static inline bool   port_is_binary        (obj_t port);
+static inline bool   port_is_input         (obj_t port);
+static inline bool   port_is_output        (obj_t port);
+static inline bool   port_is_inout         (obj_t port);
+static inline bool   port_is_seekable      (obj_t port);
 
-static inline bool   is_port          (obj_t obj);
-static inline bool   is_textual_port  (obj_t port);
-static inline bool   is_binary_port   (obj_t port);
-static inline bool   is_input_port    (obj_t port);
-static inline bool   is_output_port   (obj_t port);
-static inline bool   is_inout_port    (obj_t port);
-static inline bool   is_seekable_port (obj_t port);
+static inline bool   is_port               (obj_t obj);
+static inline bool   is_textual_port       (obj_t port);
+static inline bool   is_binary_port        (obj_t port);
+static inline bool   is_input_port         (obj_t port);
+static inline bool   is_output_port        (obj_t port);
+static inline bool   is_inout_port         (obj_t port);
+static inline bool   is_seekable_port      (obj_t port);
 
-static inline int    port_fd          (obj_t port);
-static inline size_t port_read_pos    (obj_t port);
-static inline size_t port_write_pos   (obj_t port);
-static inline off_t  port_read_offset (obj_t port);
-static inline off_t  port_write_offset(obj_t port);
-static inline obj_t  port_read_proc   (obj_t port);
-static inline obj_t  port_write_proc  (obj_t port);
-static inline obj_t  port_seek_proc   (obj_t port);
-static inline obj_t  port_close_proc  (obj_t port);
-static inline obj_t  port_read_buffer (obj_t port);
-static inline obj_t  port_write_buffer(obj_t port);
+static inline int    port_fd               (obj_t port);
+static inline size_t port_text_pos         (obj_t port);
+static inline size_t port_binary_pos       (obj_t port);
+static inline size_t port_binary_len       (obj_t port);
+static inline off_t  port_buffer_offset    (obj_t port);
+static inline obj_t  port_read_proc        (obj_t port);
+static inline obj_t  port_write_proc       (obj_t port);
+static inline obj_t  port_seek_proc        (obj_t port);
+static inline obj_t  port_close_proc       (obj_t port);
+static inline obj_t  port_text_buffer      (obj_t port);
+static inline obj_t  port_binary_buffer    (obj_t port);
+
+extern        void   port_set_text_pos     (obj_t port, size_t pos);
+extern        void   port_set_binary_pos   (obj_t port, size_t pos);
+extern        void   port_set_binary_len   (obj_t port, size_t len);
+extern        void   port_set_buffer_offset(obj_t port, off_t  offset);
+extern        void   port_set_text_buffer  (obj_t port, obj_t  buffer);
 
 OBJ_TYPE_PREDICATE(port);
 
@@ -149,24 +155,24 @@ static inline int port_fd(obj_t port)
     return PORT_MV_GET_INT(port, PS_FLFD) >> PORT_FD_SHIFT;
 }
 
-static inline size_t port_read_pos(obj_t port)
+static inline size_t port_text_pos(obj_t port)
 {
-    return PORT_MV_GET_INT(port, PS_RPOS);
+    return PORT_MV_GET_INT(port, PS_TPOS);
 }
 
-static inline size_t port_write_pos(obj_t port)
+static inline size_t port_binary_pos(obj_t port)
 {
-    return PORT_MV_GET_INT(port, PS_WPOS);
+    return PORT_MV_GET_INT(port, PS_BPOS);
 }
 
-static inline off_t port_read_offset(obj_t port)
+static inline size_t port_binary_len(obj_t port)
 {
-    return PORT_MV_GET_INT(port, PS_ROFF);
+    return PORT_MV_GET_INT(port, PS_BLEN);
 }
 
-static inline off_t port_write_offset(obj_t port)
+static inline off_t port_buffer_offset(obj_t port)
 {
-    return PORT_MV_GET_INT(port, PS_WOFF);
+    return PORT_MV_GET_INT(port, PS_BOFF);
 }
 
 static inline obj_t port_read_proc(obj_t port)
@@ -189,14 +195,14 @@ static inline obj_t port_close_proc(obj_t port)
     return PORT_MV_GET_PTR(port, PO_CLOSE);
 }
 
-static inline obj_t port_read_buffer(obj_t port)
+static inline obj_t port_text_buffer(obj_t port)
 {
-    return PORT_MV_GET_PTR(port, PO_RBUF);
+    return PORT_MV_GET_PTR(port, PO_TBUF);
 }
 
-static inline obj_t port_write_buffer(obj_t port)
+static inline obj_t port_binary_buffer(obj_t port)
 {
-    return PORT_MV_GET_PTR(port, PO_WBUF);
+    return PORT_MV_GET_PTR(port, PO_BBUF);
 }
 
 #endif /* !OBJ_PORT_INCLUDED */

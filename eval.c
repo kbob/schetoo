@@ -302,12 +302,6 @@ static cv_t default_handler(obj_t cont, obj_t values)
     return cv(EMPTY_LIST, CONS(UNDEFINED_OBJ, EMPTY_LIST));
 }
 
-ROOT_CONSTRUCTOR(dhproc)
-{
-    obj_t proc_name = make_symbol_from_C_str(L"default-exception-handler");
-    return make_raw_procedure(default_handler, proc_name, root_environment());
-}
-
 static cv_t c_exception_returned(obj_t cont, obj_t values)
 {
     assert(is_cont4(cont));
@@ -366,7 +360,10 @@ static cv_t push_exception(obj_t cont, obj_t values)
 
 extern obj_t core_eval(obj_t expr, obj_t env)
 {
-    obj_t cont   = make_cont4(c_eval, EMPTY_LIST, env, expr);
+    obj_t proc_name = make_symbol_from_C_str(L"default-exception-handler");
+    obj_t dhproc =
+	make_raw_procedure(default_handler, proc_name, root_environment());
+    obj_t cont = make_cont4(c_eval, EMPTY_LIST, env, expr);
     return core_eval_cont(cont, dhproc);
 }
 
@@ -395,6 +392,8 @@ extern obj_t core_eval_cont(obj_t cont, obj_t handler)
 	    collect_garbage();
 	    cont        = cont_root;
 	    values      = values_root;
+	    cont_root   = UNDEFINED_OBJ;
+	    values_root = UNDEFINED_OBJ;
 	    break;
 
 	case LT_NO_EXCEPTION:
@@ -419,6 +418,7 @@ extern obj_t core_eval_cont(obj_t cont, obj_t handler)
 #endif
     }
     deregister_lowex_handler(handle_lowex);
+    eval_dyn_env = make_undefined();
     EVAL_LOG("END values=%O", values);
     assert(is_null(CDR(values)));
     return CAR(values);

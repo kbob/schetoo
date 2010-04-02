@@ -72,6 +72,7 @@ extern obj_t make_mixvec_1_3(mem_ops_t *, word_t, obj_t, obj_t, obj_t);
 extern obj_t make_mixvec_1_4(mem_ops_t *, word_t, obj_t, obj_t, obj_t, obj_t);
 extern obj_t make_mixvec_1_5(mem_ops_t *,
 			     word_t, obj_t, obj_t, obj_t, obj_t, obj_t);
+
 extern obj_t make_mixvec_5_6(mem_ops_t *,
 			     word_t, word_t, word_t, word_t, word_t,
 			     obj_t, obj_t, obj_t, obj_t, obj_t, obj_t);

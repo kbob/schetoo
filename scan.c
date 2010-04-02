@@ -1,5 +1,6 @@
 #include "scan.h"
 
+#include "oprintf.h"			/* XXX */
 #define OLD_SCANNER 0
 #if OLD_SCANNER
 
@@ -524,7 +525,6 @@ extern token_type_t yylex(obj_t *lvalp, instream_t *in)
 #include "list.h"
 #include "obj_cont.h"
 #include "obj_eof.h"
-#include "oprintf.h"			/* XXX */
 #include "prim.h"
 #include "record.h"
 #include "test.h"
@@ -896,10 +896,12 @@ static token_type_t make_token(yy_state_t state, obj_t ctx, obj_t *yylval)
     return toktype;
 }
 
+#if OLD_PORTS
+
 static cv_t c_peek_char(obj_t cont, obj_t values)
 {
     assert(is_cont3(cont));
-    extern obj_t peek_char(obj_t port);
+    extern obj_t peek_char(obj_t textual_input_port);
     obj_t port = is_null(values) ? MISSING_ARG : CAR(values);
     EVAL_LOG("%s", "");
     return cv(cont_cont(cont), CONS(peek_char(port), values));
@@ -909,9 +911,22 @@ static cv_t c_read_char(obj_t cont, obj_t values)
 {
     extern obj_t read_char(obj_t port);
     obj_t port = is_null(values) ? MISSING_ARG : CAR(values);
-    EVAL_LOG("%s", "");
+    EVAL_LOG("");
     (void)read_char(port);
     return cv(cont_cont(cont), values);
+}
+
+#else
+
+extern cv_t c_peek_char(obj_t cont, obj_t values);
+extern cv_t c_read_char(obj_t cont, obj_t values);
+
+#endif
+
+static cv_t c_discard(obj_t cont, obj_t values)
+{
+    EVAL_LOG("values=%O", values);
+    return cv(cont_cont(cont), CDR(values));
 }
 
 static cv_t c_continue_read_token(obj_t cont, obj_t values)
@@ -956,6 +971,7 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 	else if (!token_needs_delimiter(tok)) {
 	    // Return (toktype yylval) after reading peeked char.
 	    token_type_t toktype = make_token(state, ctx, &yylval);
+#if OLD_PORTS
 	    obj_t first = make_cont4(c_read_char,
 				     cont_cont(cont),
 				     cont_env(cont),
@@ -966,6 +982,20 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 	    //        ch, token_name(toktype), yylval);
 	    return cv(first, CONS(make_fixnum(toktype),
 				  CONS(yylval, cont5_arg2(cont))));
+#else
+	    obj_t second = make_cont3(c_discard,
+				      cont_cont(cont),
+				      cont_env(cont));
+	    obj_t first = make_cont5(c_read_char,
+				     second,
+				     cont_env(cont),
+				     MISSING_ARG,
+				     CONS(make_fixnum(toktype),
+					  CONS(yylval, cont5_arg2(cont))));
+	    EVAL_LOG("C returning %O", CONS(make_fixnum(toktype),
+					    CONS(yylval, cont5_arg2(cont))));
+	    return cv(first, EMPTY_LIST);
+#endif
 	}
     }
     // 3rd = c_continue_read_token
@@ -976,6 +1006,7 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 			      cont_env(cont),
 			      ctx,
 			      cont5_arg2(cont));
+#if OLD_PORTS
     obj_t second = make_cont3(c_peek_char,
 			      third,
 			      cont_env(cont));
@@ -983,6 +1014,21 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 			      second,
 			      cont_env(cont),
 			      CDR(values));
+#else
+    obj_t second = make_cont5(c_peek_char,
+			      third,
+			      cont_env(cont),
+			      MISSING_ARG,
+			      EMPTY_LIST);
+    second = make_cont3(c_discard,
+			second,
+			cont_env(cont));
+    obj_t first  = make_cont5(c_read_char,
+			      second,
+			      cont_env(cont),
+			      MISSING_ARG,
+			      CDR(values));
+#endif
     //oprintf(" D consume %O, loop\n", ch);
     return cv(first, CDR(values));
 }
@@ -996,9 +1042,17 @@ cv_t c_read_token(obj_t cont, obj_t values)
 			      cont_env(cont),
 			      make_new_scan_ctx(),
 			      values);
+#if OLD_PORTS
     obj_t first = make_cont3(c_peek_char,
 			     second,
 			     cont_env(cont));
+#else
+    obj_t first = make_cont5(c_peek_char,
+			     second,
+			     cont_env(cont),
+			     MISSING_ARG,
+			     values);
+#endif
     return cv(first, values);
 }
 
