@@ -135,6 +135,8 @@ class RE:
                 return CC(self, other.r) | other.s
             if isinstance(other.s, CC):
                 return CC(self, other.s) | other.r
+        if isinstance(self, cat) and isinstance(self.r, kc) and self.s == other:
+            return self
         if isinstance(self, alt) and isinstance(other, CC):
             if isinstance(self.r, CC):
                 return self.s | CC(self.r, other)
@@ -1204,7 +1206,7 @@ def r6rs_lexical_syntax():
                  | '#\\' * character_name
                  | '#\\x' * hex_scalar_value)
 
-    intraline_whitespace = '\t' | Zs
+    intraline_whitespace = ('\t' | Zs)()
     string_element = (Σ - CC('"', '\\')
                       | r'\a' | r'\b' | r'\t' | r'\n' | r'\v' | r'\f' | r'\r'
                       | r'\"' | r'\\'
