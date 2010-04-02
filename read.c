@@ -710,12 +710,13 @@ static bool build(obj_t actions, obj_t *obj_out);
 //
 // initialization: stack = (start), actions = (), 
 
-cv_t c_continue_parse(obj_t cont, obj_t values)
+cv_t c_continue_read(obj_t cont, obj_t values)
 {
     // cont.arg1 = stack
     // cont.arg2 = actions
     // values    = CONS(token_type, yylval)
 
+    EVAL_LOG("values=%O", values);
     obj_t stack   = cont6_arg1(cont);
     obj_t actions = cont6_arg2(cont);
     int   tok     = fixnum_value(CAR(values));
@@ -761,7 +762,7 @@ cv_t c_continue_parse(obj_t cont, obj_t values)
 		return cv(cont_cont(cont), CONS(result, CDDR(values)));
 		//return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
 	    }
-	    obj_t second = make_cont6(c_continue_parse,
+	    obj_t second = make_cont6(c_continue_read,
 				      cont_cont(cont),
 				      cont_env(cont),
 				      stack,
@@ -771,18 +772,19 @@ cv_t c_continue_parse(obj_t cont, obj_t values)
 				     second,
 				     cont_env(cont),
 				     cont);
-	    return cv(first, CDDR(values));
+	    return cv(first, cont6_arg3(cont));
 	}
     }
 }
 
 cv_t c_read(obj_t cont, obj_t values)
 {
+    EVAL_LOG("values=%O", values);
     obj_t stack = EMPTY_LIST;
     stack_push(&stack, make_fixnum(TOK_EOF));
     stack_push(&stack, make_fixnum(sym_index(start_symbol)));
     obj_t actions = EMPTY_LIST;
-    obj_t second = make_cont6(c_continue_parse,
+    obj_t second = make_cont6(c_continue_read,
 			      cont_cont(cont),
 			      cont_env(cont),
 			      stack,

@@ -993,8 +993,6 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 				     cont_env(cont),
 				     MISSING_ARG,
 				     UNDEFINED_OBJ);
-	    EVAL_LOG("C returning %O", CONS(make_fixnum(toktype),
-					    CONS(yylval, cont5_arg2(cont))));
 	    return cv(first, cont5_arg2(cont));
 #endif
 	}
