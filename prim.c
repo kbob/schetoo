@@ -49,7 +49,7 @@ extern void register_prim(prim_descriptor_t *desc)
 #ifndef NDEBUG
     prim_descriptor_t *p = prim_descs;
     while (p) {
-	if (!wcscmp(p->pd_name, desc->pd_name)) {
+	if (p->pd_name && desc->pd_name && !wcscmp(p->pd_name, desc->pd_name)) {
 	    fprintf(stderr, "duplicate prim name \"%ls\"\n", p->pd_name);
 	    abort();
 	}
@@ -74,10 +74,12 @@ extern void register_primitives(void)
 	const prim_descriptor_t *desc;
 
 	for (desc = prim_descs; desc; desc = desc->pd_next) {
-	    obj_t symbol = make_symbol_from_C_str(desc->pd_name);
-	    obj_t value = (*desc->pd_creator)(desc);
-	    env_bind(root_env, symbol, BT_LEXICAL, M_MUTABLE, value);
-	    prim_descs = desc->pd_next;
+	    if (desc->pd_name) {
+		obj_t symbol = make_symbol_from_C_str(desc->pd_name);
+		obj_t value = (*desc->pd_creator)(desc);
+		env_bind(root_env, symbol, BT_LEXICAL, M_MUTABLE, value);
+		prim_descs = desc->pd_next;
+	    }
 	}
     }
     {
