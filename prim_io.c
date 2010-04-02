@@ -204,6 +204,7 @@ DEFINE_PROC(L"eof-object?", 1)(obj_t obj)
 
 DEFINE_STATIC_PROC(string_read, NULL, 1)(obj_t port)
 {
+    EVAL_LOG("port=%O", port);
     port_set_buffer_offset(port, string_len(port_text_buffer(port)));
     port_set_text_pos(port, 0);
     port_set_text_buffer(port, make_eof());
@@ -320,6 +321,7 @@ DEFINE_EXTERN_RAW_PROC(c_read_char, L"read-char")(obj_t cont, obj_t values)
     assert(is_cont5(cont));
     CHECK(is_null(values) || is_null(CDR(values)), "too many arguments");
     obj_t port = is_null(values) ? current_stdin() : CAR(values);
+    EVAL_LOG("values=%O port=%O", values, port);
     obj_t second = make_cont5(c_continue_read_char,
 			      cont_cont(cont),
 			      cont_env(cont),
@@ -339,7 +341,7 @@ DEFINE_EXTERN_RAW_PROC(c_peek_char, L"peek-char")(obj_t cont, obj_t values)
     CHECK(is_null(values) || is_null(CDR(values)), "too many arguments");
     obj_t saved_values = cont5_arg2(cont);
     obj_t port = is_null(values) ? current_stdin() : CAR(values);
-    EVAL_LOG("port=%O", port);
+    EVAL_LOG("values=%O port=%O", values, port);
     CHECK(is_port(port), "must be port");
     obj_t rbuf = port_text_buffer(port);
     if (!is_undefined(rbuf)) {

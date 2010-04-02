@@ -925,8 +925,8 @@ extern cv_t c_read_char(obj_t cont, obj_t values);
 
 static cv_t c_discard(obj_t cont, obj_t values)
 {
-    EVAL_LOG("values=%O", values);
-    return cv(cont_cont(cont), CDR(values));
+    EVAL_LOG("values=%O cont4_arg=%O", values, cont4_arg(cont));
+    return cv(cont_cont(cont), cont4_arg(cont));
 }
 
 static cv_t c_continue_read_token(obj_t cont, obj_t values)
@@ -983,18 +983,19 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 	    return cv(first, CONS(make_fixnum(toktype),
 				  CONS(yylval, cont5_arg2(cont))));
 #else
-	    obj_t second = make_cont3(c_discard,
+	    obj_t second = make_cont4(c_discard,
 				      cont_cont(cont),
-				      cont_env(cont));
+				      cont_env(cont),
+				      CONS(make_fixnum(toktype),
+					   CONS(yylval, EMPTY_LIST)));
 	    obj_t first = make_cont5(c_read_char,
 				     second,
 				     cont_env(cont),
 				     MISSING_ARG,
-				     CONS(make_fixnum(toktype),
-					  CONS(yylval, cont5_arg2(cont))));
+				     UNDEFINED_OBJ);
 	    EVAL_LOG("C returning %O", CONS(make_fixnum(toktype),
 					    CONS(yylval, cont5_arg2(cont))));
-	    return cv(first, EMPTY_LIST);
+	    return cv(first, cont5_arg2(cont));
 #endif
 	}
     }
@@ -1020,9 +1021,10 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 			      cont_env(cont),
 			      MISSING_ARG,
 			      EMPTY_LIST);
-    second = make_cont3(c_discard,
+    second = make_cont4(c_discard,
 			second,
-			cont_env(cont));
+			cont_env(cont),
+			cont5_arg2(cont));
     obj_t first  = make_cont5(c_read_char,
 			      second,
 			      cont_env(cont),
@@ -1030,7 +1032,8 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 			      CDR(values));
 #endif
     //oprintf(" D consume %O, loop\n", ch);
-    return cv(first, CDR(values));
+    EVAL_LOG("calling c_read_char w/ values=%O", cont5_arg2(cont));
+    return cv(first, cont5_arg2(cont));
 }
 
 // toktype, yylval = read_token([port])
