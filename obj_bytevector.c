@@ -94,3 +94,10 @@ void bytevector_set(obj_t obj, size_t index, byte_t elem)
     CHECK(index < vec->v_size, "index out of range", obj, make_fixnum(index));
     *elem_addr(vec, index) = elem;
 }
+
+byte_t *bytevector_addr(obj_t obj)
+{
+    CHECK_OBJ(obj);
+    bytevector_obj_t *vec = (bytevector_obj_t *)obj;
+    return elem_addr(vec, 0);
+}
