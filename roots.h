@@ -14,7 +14,7 @@
 #define STATIC_ROOT_CONSTRUCTOR(name) GENERAL_ROOT_CONSTRUCTOR_(static, name)
 
 #define THREAD_ROOT        THREAD_STATIC_ROOT
-#define THREAD_EXTERN_ROOT EXTERN_ROOT
+#define THREAD_EXTERN_ROOT EXTERN_ROOT	// XXX thread roots unimplemented
 #define THREAD_STATIC_ROOT STATIC_ROOT
 
 #define GENERAL_ROOT_CONSTRUCTOR_(storage_class, name)			\
@@ -26,7 +26,7 @@
     static obj_t init_root_##name(void)
 
 #define GENERAL_ROOT_(storage_class, name, init) 			\
-    storage_class obj_t name = EMPTY_LIST;				\
+    storage_class obj_t name = UNDEFINED_OBJ;				\
     __attribute__((constructor)) 					\
     static void mem_record_root_ ## name(void) 				\
     { 									\
