@@ -7,7 +7,7 @@ void self_test()
 
 #else
 
-#define TEST_TRACE 0
+#define TEST_TRACE 1
 
 #include <assert.h>
 #include <string.h>
@@ -18,10 +18,14 @@ void self_test()
 #include "except.h"
 #include "heap.h"
 #include "io.h"
+#include "list.h"
 #include "low_ex.h"
 #include "obj_record.h"
 #include "obj_rtd.h"
+#include "obj_string.h"
+#include "obj_symbol.h"
 #include "obj_vector.h"
+#include "oprintf.h"
 #include "print.h"
 #include "read.h"
 
@@ -65,6 +69,7 @@ static int read_driver(const test_case_descriptor_t *tc)
 #if TEST_TRACE
     printf("%s:%d read %ls\n", tc->tcd_file, tc->tcd_lineno, tc->tcd_input);
 #endif
+#if 0
     instream_t *in = NULL;
     obj_t obj;
     bool ok;
@@ -92,6 +97,13 @@ static int read_driver(const test_case_descriptor_t *tc)
     }
     deregister_lowex_handler(handle_lowex);
     delete_instream(in);
+#else
+    obj_t input = make_string_from_C_str(tc->tcd_input);
+    obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
+    obj_t read_sym = make_symbol_from_C_str(L"read");
+    obj_t expr = MAKE_LIST(read_sym, MAKE_LIST(osip_sym, input));
+    obj_t obj = core_eval(expr, root_environment());
+#endif
     const size_t out_size = 100;
     wchar_t actual[out_size + 1];
     outstream_t *out = make_string_outstream(actual, out_size);
