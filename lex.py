@@ -1131,7 +1131,7 @@ def r6rs_lexical_syntax():
 
     letter = CC('a-z', 'A-Z', name='<letter>')
     constituent = CC(letter) | CC(Lu, Ll, Lt, Lm, Lo, Mn,
-                     Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co) - CC(1 << 128 - 1)
+                  Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co) - CC((1 << 128) - 1)
     # N.B., '#;' are in Po but do not start an identifier.
     # constituent -= CC(';#')
     special_initial = CC('!', '$', '%', '&', '*', '/', ':', '<', '=',
