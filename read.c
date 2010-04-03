@@ -650,136 +650,6 @@ static uint_fast8_t get_rule(char symbol, size_t term)
     return rule;
 }
 
-/*
- * Parse the input stream and return an action stack.
- * See Wikipedia again.
- */
-static obj_t parse(instream_t *in)
-{
-    obj_t actions = EMPTY_LIST;
-    obj_t yylval = EMPTY_LIST;
-    obj_t tmp = make_fixnum(TOK_EOF);
-    obj_t stack = EMPTY_LIST;
-    stack_push(&stack, tmp);
-    tmp = make_fixnum(sym_index(start_symbol));
-    stack_push(&stack, tmp);
-    int tok = yylex(&yylval, in);
-    while (true) {
-	int sym = fixnum_value(stack_pop(&stack));
-	assert(0 <= sym && sym < symbols_size);
-	uint_fast8_t rule = get_rule(symbols[sym], tok);
-	if (rule != NO_RULE) {
-	    const production_t *pp = &grammar[rule];
-	    int j;
-	    for (j = strlen(pp->p_rhs); --j >= 0; ) {
-		tmp = make_fixnum(sym_index(pp->p_rhs[j]));
-		stack_push(&stack, tmp);
-	    }
-	    if (pp->p_action)
-		stack_push(&actions, (obj_t)pp->p_action);
-	} else {
-	    if (sym == TOK_EOF)
-		break;
-	    if (sym != tok)
-		THROW(&lexical, "datum syntax error",
-		      make_fixnum(tok), make_fixnum(sym));
-	    if (!is_null(yylval))
-		stack_push(&actions, yylval);
-	    if (!stack_is_empty(actions) &&
-		fixnum_value(stack_top(stack)) == TOK_EOF)
-		break;
-	    yylval = EMPTY_LIST;
-	    tok = yylex(&yylval, in);
-	}
-    }
-    return actions;
-}
-
-static bool build(obj_t actions, obj_t *obj_out);
-
-/*
- * Take one token, push the state as far as it will go with that
- * one token.
- *
- * initialization: stack = (start), actions = (), 
- */
-
-cv_t c_continue_read(obj_t cont, obj_t values)
-{
-    // cont.arg1 = stack
-    // cont.arg2 = actions
-    // values    = CONS(token_type, yylval)
-
-    EVAL_LOG("values=%O", values);
-    obj_t stack   = cont6_arg1(cont);
-    obj_t actions = cont6_arg2(cont);
-    int   tok     = fixnum_value(CAR(values));
-    while (true) {
-	int sym = fixnum_value(stack_pop(&stack));
-	assert(0 <= sym && sym < symbols_size);
-	uint_fast8_t rule = get_rule(symbols[sym], tok);
-	if (rule != NO_RULE) {
-	    const production_t *pp = &grammar[rule];
-	    int j;
-	    for (j = strlen(pp->p_rhs); --j >= 0; )
-		stack_push(&stack, make_fixnum(sym_index(pp->p_rhs[j])));
-	    if (pp->p_action)
-		stack_push(&actions, (obj_t)pp->p_action);
-	} else {
-	    if (sym == TOK_EOF) {
-		obj_t result;
-		if (!build(actions, &result))
-		    result = make_eof();
-		return cv(cont_cont(cont), CONS(result, CDDR(values)));
-	    }
-	    if (sym != tok)
-		THROW(&lexical, "datum syntax error",
-		      make_fixnum(tok), make_fixnum(sym));
-	    obj_t yylval = CADR(values);
-	    if (!is_null(yylval))
-		stack_push(&actions, yylval);
-	    if (!stack_is_empty(actions) &&
-		fixnum_value(stack_top(stack)) == TOK_EOF) {
-		obj_t result;
-		if (!build(actions, &result))
-		    result = make_eof();
-		return cv(cont_cont(cont), CONS(result, CDDR(values)));
-	    }
-	    obj_t second = make_cont6(c_continue_read,
-				      cont_cont(cont),
-				      cont_env(cont),
-				      stack,
-				      actions,
-				      cont6_arg3(cont));
-	    obj_t first = make_cont4(c_read_token,
-				     second,
-				     cont_env(cont),
-				     cont);
-	    return cv(first, cont6_arg3(cont));
-	}
-    }
-}
-
-cv_t c_read(obj_t cont, obj_t values)
-{
-    EVAL_LOG("values=%O", values);
-    obj_t stack = EMPTY_LIST;
-    stack_push(&stack, make_fixnum(TOK_EOF));
-    stack_push(&stack, make_fixnum(sym_index(start_symbol)));
-    obj_t actions = EMPTY_LIST;
-    obj_t second = make_cont6(c_continue_read,
-			      cont_cont(cont),
-			      cont_env(cont),
-			      stack,
-			      actions,
-			      values);
-    obj_t first = make_cont4(c_read_token,
-			     second,
-			     cont_env(cont),
-			     values);
-    return cv(first, values);
-}
-
 /* Build a Scheme expression from an action stack. */
 static bool build(obj_t actions, obj_t *obj_out)
 {
@@ -837,9 +707,92 @@ static bool build(obj_t actions, obj_t *obj_out)
     return success;
 }
 
-bool read_stream(instream_t *in, obj_t *obj_out)
+/*
+ * Take one token, push the state as far as it will go with that
+ * one token.
+ *
+ * initialization: stack = (start), actions = (), 
+ */
+
+static cv_t c_continue_read(obj_t cont, obj_t values)
 {
-    return build(parse(in), obj_out);
+    // cont.arg1 = stack
+    // cont.arg2 = actions
+    // values    = CONS(token_type, yylval)
+
+    EVAL_LOG("values=%O", values);
+    obj_t stack   = cont6_arg1(cont);
+    obj_t actions = cont6_arg2(cont);
+    int   tok     = fixnum_value(CAR(values));
+    while (true) {
+	int sym = fixnum_value(stack_pop(&stack));
+	assert(0 <= sym && sym < symbols_size);
+	uint_fast8_t rule = get_rule(symbols[sym], tok);
+	if (rule != NO_RULE) {
+	    const production_t *pp = &grammar[rule];
+	    int j;
+	    for (j = strlen(pp->p_rhs); --j >= 0; )
+		stack_push(&stack, make_fixnum(sym_index(pp->p_rhs[j])));
+	    if (pp->p_action)
+		stack_push(&actions, (obj_t)pp->p_action);
+	} else {
+	    if (sym == TOK_EOF) {
+		obj_t result;
+		if (!build(actions, &result))
+		    result = make_eof();
+		return cv(cont_cont(cont), CONS(result, CDDR(values)));
+	    }
+	    if (sym != tok)
+		THROW(&lexical, "datum syntax error",
+		      make_fixnum(tok), make_fixnum(sym));
+	    obj_t yylval = CADR(values);
+	    if (!is_null(yylval))
+		stack_push(&actions, yylval);
+	    if (!stack_is_empty(actions) &&
+		fixnum_value(stack_top(stack)) == TOK_EOF) {
+		obj_t result;
+		if (!build(actions, &result))
+		    result = make_eof();
+		return cv(cont_cont(cont), CONS(result, CDDR(values)));
+	    }
+	    obj_t second = make_cont6(c_continue_read,
+				      cont_cont(cont),
+				      cont_env(cont),
+				      stack,
+				      actions,
+				      cont6_arg3(cont));
+	    obj_t first = make_cont4(c_read_token,
+				     second,
+				     cont_env(cont),
+				     cont);
+	    return cv(first, cont6_arg3(cont));
+	}
+    }
+}
+
+/*
+ * Parse the input stream and return an action stack.
+ * See Wikipedia again.
+ */
+
+cv_t c_read(obj_t cont, obj_t values)
+{
+    EVAL_LOG("values=%O", values);
+    obj_t stack = EMPTY_LIST;
+    stack_push(&stack, make_fixnum(TOK_EOF));
+    stack_push(&stack, make_fixnum(sym_index(start_symbol)));
+    obj_t actions = EMPTY_LIST;
+    obj_t second = make_cont6(c_continue_read,
+			      cont_cont(cont),
+			      cont_env(cont),
+			      stack,
+			      actions,
+			      values);
+    obj_t first = make_cont4(c_read_token,
+			     second,
+			     cont_env(cont),
+			     values);
+    return cv(first, values);
 }
 
 /* lists */

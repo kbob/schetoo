@@ -9,6 +9,8 @@
  * list of evaluated expressions.  Since C doesn't have multivalued
  * functions, continuation procs are defined as returning a cv_t
  * (continuation + values type).
+ *
+ * By convention, continuation procs' names start with "c_".
  */
 
 typedef struct cv {

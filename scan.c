@@ -139,7 +139,7 @@ static inline bool is_delimiter(obj_t ch)
     }
 }
 
-static bool token_needs_delimiter(yy_token_t t)
+static inline bool token_needs_delimiter(yy_token_t t)
 {
     switch (t) {
 
@@ -155,12 +155,12 @@ static bool token_needs_delimiter(yy_token_t t)
     }
 }
 
-bool is_intraline_whitespace(char_t ch)
+static inline bool is_intraline_whitespace(char_t ch)
 {
     return ch == L'\t' || unicode_general_category(ch) == UGC_SEPARATOR_SPACE;
 }
 
-static int digit_value(char_t wc)
+static inline int digit_value(char_t wc)
 {
     if (L'0' <= wc && wc <= L'9')
 	return wc - L'0';
@@ -728,34 +728,6 @@ cv_t c_read_token(obj_t cont, obj_t values)
 			     MISSING_ARG,
 			     values);
     return cv(first, values);
-}
-
-extern token_type_t yylex(obj_t *lvalp, instream_t *in)
-{
-    //printf("\nyylex\n");
-    /* Ignore the instream. */
-    obj_t cont = make_cont4(c_read_token,
-			    EMPTY_LIST,
-			    EMPTY_LIST,
-			    UNDEFINED_OBJ);
-    obj_t values = EMPTY_LIST;
-    while (!is_null(cont)) {
-	cv_t ret = cont_proc(cont)(cont, values);
-	cont   = ret.cv_cont;
-	values = ret.cv_values;
-	COMMIT();
-#if DEBUG_EVAL
-	int n = 0;
-	obj_t p;
-	for (p = cont; !is_null(p); p = cont_cont(p))
-	    n++;
-	EVAL_LOG("values=%O cont depth=%d", values, n);
-#endif
-    }
-    EVAL_LOG("values=%O\n", values);
-    assert(is_null(CDDR(values)));
-    *lvalp = CADR(values);
-    return fixnum_value(CAR(values));
 }
 
 const char *token_name(token_type_t tok)
