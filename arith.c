@@ -10,7 +10,7 @@ static inline int digit_value(wchar_t digit, int radix)
 {
     static wchar_t digits[] = L"0123456789abcdef";
     const wchar_t *p = wcschr(digits, towlower(digit));
-    if (p)
+    if (p && p - digits < radix)
 	return p - digits;
     else
 	return -1;
@@ -72,10 +72,8 @@ obj_t chars_to_number(const char_t *str, size_t len, int radix)
     word_t n = 0;
     while (i < len) {
 	word_t k = digit_value(str[i++], radix);
-	if (k < 0) {
-	    assert(0);
+	if (k < 0)
 	    return FALSE_OBJ;
-	}
 	n = radix * n + k;
     }
     return make_fixnum(sign * n);

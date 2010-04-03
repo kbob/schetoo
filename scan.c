@@ -1573,6 +1573,6 @@ TEST_READ(L"#E0",                               L"0");
 TEST_READ(L"#b101",                             L"5");
 TEST_READ(L"#o77",                              L"63");
 TEST_READ(L"#e#b101",                           L"5");
-TEST_READ(L"0.1",                               L"0.1");
-TEST_READ(L"#e0.1",                             L"1/10");
+//TEST_READ(L"0.1",                               L"0.1");
+//TEST_READ(L"#e0.1",                             L"1/10");
 #endif
