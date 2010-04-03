@@ -698,6 +698,9 @@ static word_t scan_hex_scalar(const char_t *str, char_t end)
     }
     if (empty || *str != end)
 	THROW(&lexical, "malformed hex value", make_string_from_C_str(str));
+    if (xval > 0x10ffff || (xval >= 0xd800 && xval <= 0xdfff))
+	THROW(&lexical, "hex character literal out of range",
+	      make_string_from_C_str(str));
     return xval;
 }
 
