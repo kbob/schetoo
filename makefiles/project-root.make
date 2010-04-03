@@ -70,7 +70,7 @@ tests:	$(TESTS)
 
 Makefiles: $(patsubst ./%, %, $(DIRS:%=%/Makefile))
 
-junk := *~ *.o *.so *.a .*.d a.out core TAGS $(JUNK)
+junk := *~ *.o *.so *.a .*.d *.pyc a.out core TAGS $(JUNK)
 clean:
 	rm -f $(patsubst ./%,%,$(PROGRAMS))
 	rm -f $(patsubst ./%,%,$(LIBS))
