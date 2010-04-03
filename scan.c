@@ -1001,8 +1001,9 @@ static cv_t c_read_char(obj_t cont, obj_t values)
 
 #else
 
-extern cv_t c_peek_char(obj_t cont, obj_t values);
-extern cv_t c_read_char(obj_t cont, obj_t values);
+extern cv_t c_peek_char          (obj_t cont, obj_t values);
+extern cv_t c_read_char          (obj_t cont, obj_t values);
+static cv_t c_continue_read_token(obj_t cont, obj_t value);
 
 #endif
 
@@ -1062,6 +1063,68 @@ static inline bool accept_late(yy_state_t state, obj_t ch)
     return ns == YY_ERROR_STATE;
 }
 
+static cv_t c_eat_nested_comment(obj_t cont, obj_t values)
+{
+    // args: char, state, depth.
+    obj_t ch    = CAR(values);
+    int   state = fixnum_value(CADR(values));
+    int   depth = fixnum_value(CADDR(values));
+    assert(is_null(CDDDR(values)));
+
+    if (is_eof(ch))
+	THROW(&lexical, "EOF in nested comment");
+    char_t c = character_value(ch);
+    if (c == L'|' && state == 0)
+	state = 1;
+    else if (c == L'|' && state == 1) {
+	/* no change */
+    } else if (c == L'|' && state == 2) {
+	state = 0;
+	depth++;
+    } else if (c == L'#' && state == 0)
+	state = 2;
+    else if (c == L'#' && state == 1) {
+	state = 0;
+	--depth;
+    } else
+	state = 0;
+    cont_proc_t next_proc;
+    obj_t       args_4th;
+    if (depth) {
+	// Loop on next char.
+	next_proc = c_eat_nested_comment;
+	args_4th  = MAKE_LIST(make_fixnum(state), make_fixnum(depth));
+    } else {
+	// Return to read_token.
+	next_proc = c_continue_read_token;
+	args_4th  = EMPTY_LIST;
+    }
+    // 4th c_eat_nested_comment/c_continue_read_token
+    // 3rd c_peek_char
+    // 2nd c_discard
+    // 1st c_read_char
+    obj_t fourth = make_cont5(next_proc,
+			      cont_cont(cont),
+			      cont_env(cont),
+			      cont5_arg1(cont),
+			      cont5_arg2(cont));
+    obj_t third  = make_cont5(c_peek_char,
+			      fourth,
+			      cont_env(cont),
+			      MISSING_ARG,
+			      args_4th);
+    obj_t second = make_cont4(c_discard,
+			      third,
+			      cont_env(cont),
+			      cont5_arg2(cont));
+    obj_t first  = make_cont5(c_read_char,
+			      second,
+			      cont_env(cont),
+			      MISSING_ARG,
+			      CDR(values));
+    return cv(first, cont5_arg2(cont));
+}
+
 static cv_t c_continue_read_token(obj_t cont, obj_t values)
 {
     obj_t      ch     = CAR(values);
@@ -1096,7 +1159,35 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 	yy_token_t tok = yy_accepts[state];
 	if (tok == YY_ATMOSPHERE)
 	    ctx = make_new_scan_ctx();
-	else if (accept_early(state)) {
+	else if (tok == YY_BEGIN_NESTED_COMMENT) {
+	    // Eat nested comment.
+	    // 4th = c_eat_nested_comment
+	    // 3rd = c_peek_char
+	    // 2nd = c_discard
+	    // 1st = c_read_char
+	    ctx = make_new_scan_ctx();
+	    obj_t fourth = make_cont5(c_eat_nested_comment,
+				      cont_cont(cont),
+				      cont_env(cont),
+				      ctx,
+				      cont5_arg2(cont));
+	    obj_t third  = make_cont5(c_peek_char,
+				      fourth,
+				      cont_env(cont),
+				      MISSING_ARG,
+				      MAKE_LIST(make_fixnum(0),
+						make_fixnum(1)));
+	    obj_t second = make_cont4(c_discard,
+				      third,
+				      cont_env(cont),
+				      cont5_arg2(cont));
+	    obj_t first  = make_cont5(c_read_char,
+				      second,
+				      cont_env(cont),
+				      MISSING_ARG,
+				      CDR(values));
+	    return cv(first, cont5_arg2(cont));
+	} else if (accept_early(state)) {
 	    // Return (toktype yylval) after reading peeked char.
 	    token_type_t toktype = make_token(state, ctx, &yylval);
 #if OLD_PORTS
@@ -1125,6 +1216,7 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 #endif
 	}
     }
+#if OLD_PORTS
     // 3rd = c_continue_read_token
     // 2nd = c_peek_char
     // 1st = c_read_char
@@ -1133,7 +1225,6 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 			      cont_env(cont),
 			      ctx,
 			      cont5_arg2(cont));
-#if OLD_PORTS
     obj_t second = make_cont3(c_peek_char,
 			      third,
 			      cont_env(cont));
@@ -1142,15 +1233,24 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 			      cont_env(cont),
 			      CDR(values));
 #else
-    obj_t second = make_cont5(c_peek_char,
-			      third,
+    // 4th = c_continue_read_token
+    // 3rd = c_peek_char
+    // 2nd = c_discard
+    // 1st = c_read_char
+    obj_t fourth = make_cont5(c_continue_read_token,
+			      cont_cont(cont),
+			      cont_env(cont),
+			      ctx,
+			      cont5_arg2(cont));
+    obj_t third  = make_cont5(c_peek_char,
+			      fourth,
 			      cont_env(cont),
 			      MISSING_ARG,
 			      EMPTY_LIST);
-    second = make_cont4(c_discard,
-			second,
-			cont_env(cont),
-			cont5_arg2(cont));
+    obj_t second = make_cont4(c_discard,
+			      third,
+			      cont_env(cont),
+			      cont5_arg2(cont));
     obj_t first  = make_cont5(c_read_char,
 			      second,
 			      cont_env(cont),
