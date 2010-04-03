@@ -1176,6 +1176,9 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
     else
 	state = YY_COMMON_STATE;
     //printf("  %-16s state -> %d\n", "advance", state);
+    if (state == YY_ERROR_STATE) {
+	THROW(&lexical, "lexical error");
+    }
     ctx = scan_ctx_advance(ctx, state, character_value(ch));
     if (state < YY_ACCEPT_COUNT) {
 	yy_token_t tok = yy_accepts[state];
@@ -1473,7 +1476,8 @@ TEST_READ(L"\\x3BB;",			L"\x3bb");
 #define TEST_CHAR(input, expected)					\
     TEST_READ(L"#\\" input, expected);					\
     TEST_EVAL(L"(char? '#\\" input L")", L"#t");
-#define TEST_CHAR_LEXICAL_EXCEPTION(input) TEST_READ(L"#\\" input, L"&lexical")
+#define TEST_CHAR_LEXICAL_EXCEPTION(input)				\
+    TEST_READ(L"#\\" input, L"#<&lexical>")
 
 /* from r6rs section 4.2.6 */
 TEST_CHAR(L"a",				L"#\\a");
@@ -1518,7 +1522,8 @@ TEST_CHAR_LEXICAL_EXCEPTION(L"xD800");
 #define TEST_STRING(input, expected)					\
     TEST_READ(L ## input, L ## expected);				\
     TEST_EVAL(L"(string? " L ## input L")", L"#t");
-#define TEST_STRING_LEXICAL_EXCEPTION(input) TEST_READ(L ## input, L"&lexical")
+#define TEST_STRING_LEXICAL_EXCEPTION(input)				\
+    TEST_READ(L ## input, L"#<&lexical>")
 
 TEST_STRING("\"foo\"", "\"foo\"");
 TEST_STRING("\"\"", "\"\"");

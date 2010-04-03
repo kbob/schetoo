@@ -20,19 +20,23 @@ void self_test()
 #include "io.h"
 #include "list.h"
 #include "low_ex.h"
+#include "obj_cont.h"
 #include "obj_record.h"
 #include "obj_rtd.h"
 #include "obj_string.h"
 #include "obj_symbol.h"
 #include "obj_vector.h"
 #include "oprintf.h"
+#include "prim.h"
 #include "print.h"
 #include "read.h"
 
 typedef int (*test_driver_t)(const test_case_descriptor_t *);
 
+#if 0
 static obj_t test_ex;
 static jmp_buf test_restart;
+#endif
 static test_case_descriptor_t *test_case_descriptors;
 
 static char *phase_name(test_phase_t phase)
@@ -44,6 +48,8 @@ static char *phase_name(test_phase_t phase)
 		  return NULL;
     }
 }
+
+#if 0
 
 NORETURN static void handle_lowex(lowex_type_t type, obj_t ex) 
 {
@@ -62,6 +68,16 @@ NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
 	assert(false);
     }
 }
+
+#else
+
+static cv_t c_test_handler(obj_t cont, obj_t values)
+{
+    obj_t ex = vector_ref(record_get_field(CAR(values), 0), 0);
+    return cv(EMPTY_LIST, MAKE_LIST(ex));
+}
+
+#endif
 
 static int read_driver(const test_case_descriptor_t *tc)
 {
@@ -97,12 +113,22 @@ static int read_driver(const test_case_descriptor_t *tc)
     }
     deregister_lowex_handler(handle_lowex);
     delete_instream(in);
-#else
+#elif 0
     obj_t input = make_string_from_C_str(tc->tcd_input);
     obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
     obj_t read_sym = make_symbol_from_C_str(L"read");
     obj_t expr = MAKE_LIST(read_sym, MAKE_LIST(osip_sym, input));
     obj_t obj = core_eval(expr, root_environment());
+#else
+    obj_t input    = make_string_from_C_str(tc->tcd_input);
+    obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
+    obj_t read_sym = make_symbol_from_C_str(L"read");
+    obj_t expr     = MAKE_LIST(read_sym, MAKE_LIST(osip_sym, input));
+    obj_t env      = root_environment();
+    obj_t cont     = make_cont4(c_eval, EMPTY_LIST, env, expr);
+    obj_t hname    = make_symbol_from_C_str(L"test-handler");
+    obj_t handler  = make_raw_procedure(c_test_handler, hname, env);
+    obj_t obj      = core_eval_cont(cont, handler);
 #endif
     const size_t out_size = 100;
     wchar_t actual[out_size + 1];
