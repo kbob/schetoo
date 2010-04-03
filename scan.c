@@ -703,6 +703,28 @@ static word_t scan_hex_scalar(const char_t *str, char_t end)
 
 static obj_t scan_identifier(const char_t *str, size_t length)
 {
+    int i, j;
+    for (i = 0; i < length; i++)
+	if (str[i] == L'\\') {
+	    charbuf_t cbuf;
+	    init_charbuf(&cbuf, L"");
+	    for (j = 0; j < length; ) {
+		char_t ch = str[j];
+		if (ch != L'\\') {
+		    charbuf_append_char(&cbuf, ch);
+		    j++;
+		} else {
+		    assert(j < length - 3);
+		    assert(str[j + 1] == L'x');
+		    charbuf_append_char(&cbuf,
+					scan_hex_scalar(str + j + 2, L';'));
+		    while (str[j++] != L';')
+			assert(j < length);
+		}		
+	    }		
+	    return make_symbol(charbuf_make_string(&cbuf));
+	}
+    // No hex escapes, just make the symbol.
     return make_symbol_from_chars(str, length);
 }
 
@@ -1431,8 +1453,8 @@ TEST_IDENT(->);
 TEST_IDENT(->abc);
 TEST_READ(L"(->)",			L"(->)");
 TEST_READ(L"\\x61;",			L"a");
-TEST_READ(L"\\X61;\\X3BB;",		L"a\x3bb");
-TEST_READ(L"\\X61;\\X00;\\X3BB;",	L"a\0\x3bb");
+TEST_READ(L"\\x61;\\x3BB;",		L"a\x3bb");
+TEST_READ(L"\\x61;\\x00;\\x3BB;",	L"a\0\x3bb");
 
 /* from r6rs section 4.2.4 */
 TEST_IDENT(lambda);
