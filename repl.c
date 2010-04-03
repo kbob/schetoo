@@ -116,7 +116,7 @@ void core_repl(void)
     obj_t handler  = make_raw_procedure(c_handler, hname, root_env);
     obj_t second   = make_cont3(c_test_eof, EMPTY_LIST, root_env);
     obj_t first    = make_cont3(c_read, second, root_env);
-    core_eval_cont(first, handler);
+    core_eval_cont(first, EMPTY_LIST, handler);
 }
 
 #if 0

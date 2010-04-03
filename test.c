@@ -128,7 +128,7 @@ static int read_driver(const test_case_descriptor_t *tc)
     obj_t cont     = make_cont4(c_eval, EMPTY_LIST, env, expr);
     obj_t hname    = make_symbol_from_C_str(L"test-handler");
     obj_t handler  = make_raw_procedure(c_test_handler, hname, env);
-    obj_t obj      = core_eval_cont(cont, handler);
+    obj_t obj      = core_eval_cont(cont, EMPTY_LIST, handler);
 #endif
     const size_t out_size = 100;
     wchar_t actual[out_size + 1];
@@ -165,6 +165,9 @@ static int read_driver(const test_case_descriptor_t *tc)
  *			     last
  *			   (read-all (eval form env)))))))
  *     (read-all #f)))
+ *
+ *  ((lambda (str env)
+ *
  */
 			  
 
@@ -174,7 +177,7 @@ static int eval_driver(const test_case_descriptor_t *tc)
 #if TEST_TRACE
     printf("%s:%d eval %ls\n", tc->tcd_file, tc->tcd_lineno, tc->tcd_input);
 #endif
-#if 1
+#if 0
     instream_t *in =
 	make_string_instream(tc->tcd_input, wcslen(tc->tcd_input));
     obj_t expr = UNDEFINED_OBJ;
@@ -183,6 +186,42 @@ static int eval_driver(const test_case_descriptor_t *tc)
     while (read_stream(in, &expr))
 	value = core_eval(expr, env);
 #else
+    static const char_t test_source[] =
+	L"(lambda (port loop env)					\n"
+	L"   (set! loop (lambda (form last)				\n"
+        L"                (if (eof-object? form)			\n"
+        L"                    last					\n"
+        L"                   (loop (read port) (eval form env)))))	\n"
+	L"   (loop (read port) #f))";
+#define P(x) (oprintf(#x "=%O\n", (x)))
+    obj_t root_env  = root_environment();
+    obj_t tsrc_str  = make_string_from_C_str(test_source);
+    obj_t eval_sym  = make_symbol_from_C_str(L"eval");
+    obj_t read_sym  = make_symbol_from_C_str(L"read");
+    obj_t osip_sym  = make_symbol_from_C_str(L"open-string-input-port");
+    obj_t renv_sym  = make_symbol_from_C_str(L"root-environment");
+    /*
+     * (eval (read (open-string-input-port "..."))
+     *       (root-environment))
+     */
+    obj_t form1     = MAKE_LIST(eval_sym,
+				MAKE_LIST(read_sym,
+					  MAKE_LIST(osip_sym, tsrc_str)),
+				MAKE_LIST(renv_sym));
+    obj_t test_proc = core_eval(form1, root_env);
+    obj_t input_str = make_string_from_C_str(tc->tcd_input);
+    obj_t port      = core_eval(MAKE_LIST(osip_sym, input_str), root_env);
+    obj_t test_env  = make_env(root_env);
+    obj_t test_args = MAKE_LIST(test_env, FALSE_OBJ, port);
+    obj_t cont      = make_cont5(c_apply_proc,
+				 EMPTY_LIST,
+				 root_env,
+				 test_proc,
+				 EMPTY_LIST);
+    obj_t hname     = make_symbol_from_C_str(L"test-handler");
+    obj_t handler   = make_raw_procedure(c_test_handler, hname, root_env);
+    obj_t value     = core_eval_cont(cont, test_args, handler);
+    P(value);
 #endif
     /* Compare the value of the last expression. */
     const size_t out_size = 100;

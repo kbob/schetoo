@@ -228,7 +228,6 @@ extern cv_t c_eval(obj_t cont, obj_t values)
 	return cv(first, values);
     }
     SYNTAX_ERROR(expr, expr, "must be expression");
-    //THROW(&syntax, "must be expression");
 }
 
 NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
@@ -358,18 +357,8 @@ static cv_t push_exception(obj_t cont, obj_t values)
     return cv(first, CONS(ex, values));
 }
 
-extern obj_t core_eval(obj_t expr, obj_t env)
+extern obj_t core_eval_cont(obj_t cont, obj_t values, obj_t handler)
 {
-    obj_t proc_name = make_symbol_from_C_str(L"default-exception-handler");
-    obj_t dhproc =
-	make_raw_procedure(default_handler, proc_name, root_environment());
-    obj_t cont = make_cont4(c_eval, EMPTY_LIST, env, expr);
-    return core_eval_cont(cont, dhproc);
-}
-
-extern obj_t core_eval_cont(obj_t cont, obj_t handler)
-{
-    obj_t values = EMPTY_LIST;
     eval_dyn_env = MAKE_RECORD(dyn_env, EMPTY_LIST, handler);
 
     if (sigsetjmp(eval_sigrestart, 1)) {
@@ -422,6 +411,15 @@ extern obj_t core_eval_cont(obj_t cont, obj_t handler)
     EVAL_LOG("END values=%O", values);
     assert(is_null(CDR(values)));
     return CAR(values);
+}
+
+extern obj_t core_eval(obj_t expr, obj_t env)
+{
+    obj_t proc_name = make_symbol_from_C_str(L"default-exception-handler");
+    obj_t dhproc =
+	make_raw_procedure(default_handler, proc_name, root_environment());
+    obj_t cont = make_cont4(c_eval, EMPTY_LIST, env, expr);
+    return core_eval_cont(cont, EMPTY_LIST, dhproc);
 }
 
 TEST_EVAL(L"#t",				L"#t");

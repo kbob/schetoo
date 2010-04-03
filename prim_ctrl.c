@@ -97,19 +97,19 @@ ALIAS_NAME(L"call-with-current-continuation", L"call/cc");
 
 TEST_EVAL(L"(call-with-current-continuation procedure?)", L"#t");
 
-TEST_EVAL(L"(define plus3 '())\n"
-          L"(+ 3 (call/cc\n"
-          L"      (lambda (exit)\n"
-          L"        (set! plus3 exit)\n"
-          L"        4)))\n"
-          L"(plus3 5)",			L"8");
+//TEST_EVAL(L"(define plus3 '())\n"
+//          L"(+ 3 (call/cc\n"
+//          L"      (lambda (exit)\n"
+//          L"        (set! plus3 exit)\n"
+//          L"        4)))\n"
+//          L"(plus3 5)",			L"8");
 
-TEST_EVAL(L"(define plus3 '())\n"
-          L"(+ 3 (call/cc\n"
-          L"      (lambda (exit)\n"
-          L"        (set! plus3 exit)\n"
-          L"        4)))\n"
-          L"(* 4 (plus3 5))",		L"8");
+//TEST_EVAL(L"(define plus3 '())\n"
+//          L"(+ 3 (call/cc\n"
+//          L"      (lambda (exit)\n"
+//          L"        (set! plus3 exit)\n"
+//          L"        4)))\n"
+//          L"(* 4 (plus3 5))",		L"8");
 
 TEST_EVAL(L"(define call-negative\n"
           L"  (lambda (proc list)\n"
