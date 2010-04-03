@@ -33,10 +33,6 @@ void self_test()
 
 typedef int (*test_driver_t)(const test_case_descriptor_t *);
 
-#if 0
-static obj_t test_ex;
-static jmp_buf test_restart;
-#endif
 static test_case_descriptor_t *test_case_descriptors;
 
 static char *phase_name(test_phase_t phase)
@@ -49,35 +45,11 @@ static char *phase_name(test_phase_t phase)
     }
 }
 
-#if 0
-
-NORETURN static void handle_lowex(lowex_type_t type, obj_t ex) 
-{
-    switch (type) {
-
-    case LT_THROWN:
-	test_ex = ex;
-	/* fall through */
-    case LT_HEAP_FULL:
-	longjmp(test_restart, type);
-
-    case LT_SIGNALLED:
-	assert(false);
-
-    default:
-	assert(false);
-    }
-}
-
-#else
-
 static cv_t c_test_handler(obj_t cont, obj_t values)
 {
     obj_t ex = vector_ref(record_get_field(CAR(values), 0), 0);
     return cv(EMPTY_LIST, MAKE_LIST(ex));
 }
-
-#endif
 
 static int read_driver(const test_case_descriptor_t *tc)
 {
@@ -85,41 +57,6 @@ static int read_driver(const test_case_descriptor_t *tc)
 #if TEST_TRACE
     printf("%s:%d read %ls\n", tc->tcd_file, tc->tcd_lineno, tc->tcd_input);
 #endif
-#if 0
-    instream_t *in = NULL;
-    obj_t obj;
-    bool ok;
-    register_lowex_handler(handle_lowex);
-    switch (setjmp(test_restart)) {
-
-    case LT_HEAP_FULL:
-	delete_instream(in);
-	collect_garbage();
-	/* fall through */
-
-    case LT_NO_EXCEPTION:
-	in = make_string_instream(tc->tcd_input, wcslen(tc->tcd_input));
-	ok = read_stream(in, &obj);
-	ok = ok;
-	assert(ok);
-	break;
-
-    case LT_THROWN:
-	obj = rtd_name(record_rtd(vector_ref(record_get_field(test_ex, 0), 0)));
-	break;
-
-    default:
-	assert(false);
-    }
-    deregister_lowex_handler(handle_lowex);
-    delete_instream(in);
-#elif 0
-    obj_t input = make_string_from_C_str(tc->tcd_input);
-    obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
-    obj_t read_sym = make_symbol_from_C_str(L"read");
-    obj_t expr = MAKE_LIST(read_sym, MAKE_LIST(osip_sym, input));
-    obj_t obj = core_eval(expr, root_environment());
-#else
     obj_t input    = make_string_from_C_str(tc->tcd_input);
     obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
     obj_t read_sym = make_symbol_from_C_str(L"read");
@@ -129,7 +66,7 @@ static int read_driver(const test_case_descriptor_t *tc)
     obj_t hname    = make_symbol_from_C_str(L"test-handler");
     obj_t handler  = make_raw_procedure(c_test_handler, hname, env);
     obj_t obj      = core_eval_cont(cont, EMPTY_LIST, handler);
-#endif
+
     const size_t out_size = 100;
     wchar_t actual[out_size + 1];
     outstream_t *out = make_string_outstream(actual, out_size);
@@ -155,37 +92,12 @@ static int read_driver(const test_case_descriptor_t *tc)
     return err_count;
 }
 
-/*
- * (define (run-test str)
- *   (let ((port (open-input-string-port str))
- *	   (env (copy-environment (root-environment)))
- *	   (read-all (lambda (last)
- *		       (let ((form (read port)))
- *			 (if (eof-object? form)
- *			     last
- *			   (read-all (eval form env)))))))
- *     (read-all #f)))
- *
- *  ((lambda (str env)
- *
- */
-			  
-
 static int eval_driver(const test_case_descriptor_t *tc)
 {
     int err_count = 0;
 #if TEST_TRACE
     printf("%s:%d eval %ls\n", tc->tcd_file, tc->tcd_lineno, tc->tcd_input);
 #endif
-#if 0
-    instream_t *in =
-	make_string_instream(tc->tcd_input, wcslen(tc->tcd_input));
-    obj_t expr = UNDEFINED_OBJ;
-    obj_t value = EMPTY_LIST;
-    obj_t env = make_env(root_environment());
-    while (read_stream(in, &expr))
-	value = core_eval(expr, env);
-#else
     static const char_t test_source[] =
 	L"(lambda (port loop env)					\n"
 	L"   (set! loop (lambda (form last)				\n"
@@ -220,7 +132,7 @@ static int eval_driver(const test_case_descriptor_t *tc)
     obj_t hname     = make_symbol_from_C_str(L"test-handler");
     obj_t handler   = make_raw_procedure(c_test_handler, hname, root_env);
     obj_t value     = core_eval_cont(cont, test_args, handler);
-#endif
+
     /* Compare the value of the last expression. */
     const size_t out_size = 100;
     wchar_t actual[out_size + 1];

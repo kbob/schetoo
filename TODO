@@ -28,13 +28,20 @@ DONE	Split cont4 into cont3 and cont4. (cont4 and cont5?)
 DONE	Define cont_proc_t in obj_proc.h and adjust function prototypes.
 	There should be some field accessors in conditions.h.
 DONE	Rewrite string->number in terms of char_to_number().
+DONE	Remove #ifdef'd code in test.c
+	Remove #ifdef'd code in repl.c
+	Remove "#if OLD_PORTS" all over.
+	Remove "#if OLD_READER" in read.c.
+	Remove "#if OLD_SCANNER" in scan.c.
+	Remove read_stream() and yylex().
+	Remove core_eval?
 	Remove default-exception-handler in eval.c.
 
 Heap
 DONE	Implement records.
 	Write comments about record layout.
 DONE	Hook GC into setjmp (after eval).
-	Reintroduce debug GC on every allocation.
+drop	Reintroduce debug GC on every allocation.
 	Automatically grow heap when out of memory.
 	Implement transactional checks.
 	Speed up environments.
