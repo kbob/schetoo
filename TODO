@@ -31,7 +31,7 @@ DONE	Rewrite string->number in terms of char_to_number().
 DONE	Remove #ifdef'd code in test.c
 DONE	Remove #ifdef'd code in repl.c
 DONE	Remove "#if OLD_PORTS" all over.
-	Remove "#if OLD_READER" in read.c.
+DONE	Remove "#if OLD_READER" in read.c.
 	Remove "#if OLD_SCANNER" in scan.c.
 	Remove read_stream() and yylex().
 	Remove core_eval?

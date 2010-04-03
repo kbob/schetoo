@@ -1,18 +1,13 @@
 #include "read.h"
 
-#define OLD_READER 0
-
 #include <assert.h>
 #include <string.h>
 
+#include "obj_eof.h"
+#include "prim.h"
 #include "scan.h"
 #include "test.h"
 #include "types.h"
-#if !OLD_READER
-    #include "obj_eof.h"
-    #include "oprintf.h"		/* XXX */
-    #include "prim.h"
-#endif
 
 /*
  * This module is the Scheme reader (parser).  It recognizes all of
@@ -673,7 +668,6 @@ static obj_t parse(instream_t *in)
 	int sym = fixnum_value(stack_pop(&stack));
 	assert(0 <= sym && sym < symbols_size);
 	uint_fast8_t rule = get_rule(symbols[sym], tok);
-	//oprintf("loop sym=%d tok=%s rule=%d\n", sym, token_name(tok), rule);
 	if (rule != NO_RULE) {
 	    const production_t *pp = &grammar[rule];
 	    int j;
@@ -701,14 +695,14 @@ static obj_t parse(instream_t *in)
     return actions;
 }
 
-#if ! OLD_READER
-
 static bool build(obj_t actions, obj_t *obj_out);
 
-// Take one token, push the state as far as it will go with that
-// one token.
-//
-// initialization: stack = (start), actions = (), 
+/*
+ * Take one token, push the state as far as it will go with that
+ * one token.
+ *
+ * initialization: stack = (start), actions = (), 
+ */
 
 cv_t c_continue_read(obj_t cont, obj_t values)
 {
@@ -724,43 +718,32 @@ cv_t c_continue_read(obj_t cont, obj_t values)
 	int sym = fixnum_value(stack_pop(&stack));
 	assert(0 <= sym && sym < symbols_size);
 	uint_fast8_t rule = get_rule(symbols[sym], tok);
-	//oprintf("loop sym=%d tok=%s rule=%d\n", sym, token_name(tok), rule);
 	if (rule != NO_RULE) {
 	    const production_t *pp = &grammar[rule];
 	    int j;
 	    for (j = strlen(pp->p_rhs); --j >= 0; )
 		stack_push(&stack, make_fixnum(sym_index(pp->p_rhs[j])));
-	    if (pp->p_action) {
-		//oprintf("push actions <= %p\n", (obj_t)pp->p_action);
+	    if (pp->p_action)
 		stack_push(&actions, (obj_t)pp->p_action);
-	    }
 	} else {
 	    if (sym == TOK_EOF) {
 		obj_t result;
-		//oprintf("read A actions = %O\n", actions);
 		if (!build(actions, &result))
 		    result = make_eof();
-		//oprintf("read A values=%O result=%O\n", values, result);
 		return cv(cont_cont(cont), CONS(result, CDDR(values)));
-		//return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
 	    }
 	    if (sym != tok)
 		THROW(&lexical, "datum syntax error",
 		      make_fixnum(tok), make_fixnum(sym));
 	    obj_t yylval = CADR(values);
-	    //oprintf("yylval=%O\n", yylval);
-	    if (!is_null(yylval)) {
-		
+	    if (!is_null(yylval))
 		stack_push(&actions, yylval);
-	    }
 	    if (!stack_is_empty(actions) &&
 		fixnum_value(stack_top(stack)) == TOK_EOF) {
 		obj_t result;
 		if (!build(actions, &result))
 		    result = make_eof();
-		//oprintf("read B values=%O result=%O\n", values, result);
 		return cv(cont_cont(cont), CONS(result, CDDR(values)));
-		//return cv(cont_cont(cont), CONS(actions, EMPTY_LIST));
 	    }
 	    obj_t second = make_cont6(c_continue_read,
 				      cont_cont(cont),
@@ -797,14 +780,11 @@ cv_t c_read(obj_t cont, obj_t values)
     return cv(first, values);
 }
 
-#endif
-
 /* Build a Scheme expression from an action stack. */
 static bool build(obj_t actions, obj_t *obj_out)
 {
     obj_t vstack = EMPTY_LIST;
     obj_t reg = EMPTY_LIST;
-    //oprintf("build(actions=%O)\n", actions);
     while (!stack_is_empty(actions)) {
 	obj_t op = stack_pop(&actions);
 	switch ((word_t)op) {
