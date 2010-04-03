@@ -912,8 +912,8 @@ class Formatter:
         def key(q):
             a = self.accepts[q]
             if a is None:
-                return max
-            return a
+                return (max, repr(q))
+            return (a, repr(q))
         return sorted(self.dfa.Q, key=key)
 
     def _sort_δ(self):
@@ -969,8 +969,8 @@ class Formatter:
 
     def emit_tokens(self):
         self.p('typedef enum yy_token_name {')
-        for action in self.tokens:
-            self.p('    YY_%s,' % action)
+        for i, action in enumerate(self.tokens):
+            self.p('    %-35s /* %d */' % ('YY_%s,' % action, i))
         self.p('} yy_token_name_t;')
         self.p()
 
