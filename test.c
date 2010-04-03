@@ -7,7 +7,7 @@ void self_test()
 
 #else
 
-#define TEST_TRACE 1
+#define TEST_TRACE 0
 
 #include <assert.h>
 #include <string.h>
@@ -193,7 +193,6 @@ static int eval_driver(const test_case_descriptor_t *tc)
         L"                    last					\n"
         L"                   (loop (read port) (eval form env)))))	\n"
 	L"   (loop (read port) #f))";
-#define P(x) (oprintf(#x "=%O\n", (x)))
     obj_t root_env  = root_environment();
     obj_t tsrc_str  = make_string_from_C_str(test_source);
     obj_t eval_sym  = make_symbol_from_C_str(L"eval");
@@ -221,7 +220,6 @@ static int eval_driver(const test_case_descriptor_t *tc)
     obj_t hname     = make_symbol_from_C_str(L"test-handler");
     obj_t handler   = make_raw_procedure(c_test_handler, hname, root_env);
     obj_t value     = core_eval_cont(cont, test_args, handler);
-    P(value);
 #endif
     /* Compare the value of the last expression. */
     const size_t out_size = 100;
