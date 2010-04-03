@@ -673,10 +673,11 @@ empty_set = CC()
 
 unicode_categories = []
 special_unicode_chars = []
-def define_unicode_char(codepoint, name):
+def define_unicode_char(codepoint, name, category):
     cc = CC.unicode_cat(name)
     cc.codepoint = codepoint
     special_unicode_chars.append(cc)
+    category.charmap |= cc.charmap
     return cc
 
 def define_unicode_category(long_name, sn):
@@ -694,9 +695,9 @@ with open('unicode.h') as f:
             define_unicode_category(m.group(1), m.group(2))
 
 
-next_line = define_unicode_char('\u0085', 'next_line')
-line_separator = define_unicode_char('\u2028', 'line_separator')
-paragraph_separator = define_unicode_char('\u2029', 'paragraph_separator')
+next_line           = define_unicode_char('\u0085', 'next_line', Cc)
+line_separator      = define_unicode_char('\u2028', 'line_separator', Zl)
+paragraph_separator = define_unicode_char('\u2029', 'paragraph_separator', Zp)
 Σ = CC.universal()
 
 
@@ -1128,7 +1129,8 @@ def r6rs_lexical_syntax():
                    | carriage_return * linefeed | next_line
                    | carriage_return * next_line | line_separator)
     comment = (';' * (Σ - linefeed - next_line)()
-               * (line_ending | paragraph_separator))
+               * (line_ending | paragraph_separator)
+               | '#!r6rs')
     atmosphere = whitespace | comment
 
     letter = CC('a-z', 'A-Z', name='<letter>')
