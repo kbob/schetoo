@@ -178,9 +178,8 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
     obj_t appl = cont4_arg(cont);
     obj_t operator = CAR(values);
     EVAL_LOG("appl=%O operator=%O", appl, operator);
-    if (!is_procedure(operator)) {
-	THROW(&syntax, "must be procedure", operator);
-    }
+    if (!is_procedure(operator))
+	SYNTAX_ERROR(operator, operator, "must be procedure");
     if (!procedure_args_evaluated(operator)) {
 	assert(procedure_is_C(operator) && "implement Scheme special forms");
 	if (procedure_is_raw(operator)) {
@@ -228,7 +227,8 @@ extern cv_t c_eval(obj_t cont, obj_t values)
 	obj_t first = make_cont4(c_eval, second, env, operator);
 	return cv(first, values);
     }
-    THROW(&syntax, "must be expression");
+    SYNTAX_ERROR(expr, expr, "must be expression");
+    //THROW(&syntax, "must be expression");
 }
 
 NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)

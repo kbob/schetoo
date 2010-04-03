@@ -14,7 +14,8 @@ typedef struct record_obj {
     obj_t rec_rtd;
 } record_obj_t;
 
-extern        obj_t  make_record_        (obj_t rtd, ...);
+extern        obj_t  make_record_       (obj_t rtd, ...);
+extern        obj_t  make_record_va     (obj_t rtd, va_list fields);
 
 static inline bool   is_record          (obj_t obj);
 static inline bool   is_nonopaque_record(obj_t obj);

@@ -70,6 +70,23 @@ mem_ops_t record_ops = {
     rec_set_ptr_op,
 };
 
+obj_t make_record_va(obj_t rtd, va_list ap)
+{
+    CHECK(is_rtd(rtd), "must be rtd", rtd);
+    size_t i, size = rtd_field_count(rtd);
+    heap_object_t *hobj = mem_alloc_obj((mem_ops_t *)rtd, len_to_bytes(size));
+    record_obj_t *rec = (record_obj_t *)hobj;
+    for (i = 0; i < size; i++) {
+	obj_t field = va_arg(ap, obj_t);
+	CHECK_OBJ(field);
+	assert(field != END_OF_ARGS);
+	*elem_addr(rec, i) = field;
+    }
+    obj_t end_marker = va_arg(ap, obj_t);
+    assert(end_marker == END_OF_ARGS);
+    return (obj_t)hobj;
+}
+
 obj_t make_record_(obj_t rtd, ...)
 {
     CHECK(is_rtd(rtd), "must be rtd", rtd);
