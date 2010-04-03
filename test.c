@@ -129,12 +129,26 @@ static int read_driver(const test_case_descriptor_t *tc)
     return err_count;
 }
 
+/*
+ * (define (run-test str)
+ *   (let ((port (open-input-string-port str))
+ *	   (env (copy-environment (root-environment)))
+ *	   (read-all (lambda (last)
+ *		       (let ((form (read port)))
+ *			 (if (eof-object? form)
+ *			     last
+ *			   (read-all (eval form env)))))))
+ *     (read-all #f)))
+ */
+			  
+
 static int eval_driver(const test_case_descriptor_t *tc)
 {
     int err_count = 0;
 #if TEST_TRACE
     printf("%s:%d eval %ls\n", tc->tcd_file, tc->tcd_lineno, tc->tcd_input);
 #endif
+#if 1
     instream_t *in =
 	make_string_instream(tc->tcd_input, wcslen(tc->tcd_input));
     obj_t expr = UNDEFINED_OBJ;
@@ -142,6 +156,8 @@ static int eval_driver(const test_case_descriptor_t *tc)
     obj_t env = make_env(root_environment());
     while (read_stream(in, &expr))
 	value = core_eval(expr, env);
+#else
+#endif
     /* Compare the value of the last expression. */
     const size_t out_size = 100;
     wchar_t actual[out_size + 1];
