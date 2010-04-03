@@ -1,8 +1,6 @@
 #ifndef EXCEPT_INCLUDED
 #define EXCEPT_INCLUDED
 
-#define OLD_PORTS 0			// XXX
-
 #include "conditions.h"
 #include "noreturn.h"
 
