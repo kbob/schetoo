@@ -15,21 +15,17 @@ void self_test()
 
 #include "env.h"
 #include "eval.h"
-#include "except.h"
-#include "heap.h"
 #include "io.h"
 #include "list.h"
-#include "low_ex.h"
+#include "obj.h"
 #include "obj_cont.h"
+#include "obj_proc.h"
 #include "obj_record.h"
-#include "obj_rtd.h"
 #include "obj_string.h"
 #include "obj_symbol.h"
 #include "obj_vector.h"
-#include "oprintf.h"
 #include "prim.h"
 #include "print.h"
-#include "read.h"
 
 typedef int (*test_driver_t)(const test_case_descriptor_t *);
 
