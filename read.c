@@ -915,4 +915,3 @@ TEST_READ(L"(a #;(b #;(c d) e) f)",	L"(a f)");
 TEST_READ(L"(a#!r6rs b)",		L"(a b)");
 TEST_READ(L"#!r6rs(a b)",		L"(a b)");
 TEST_READ(L"(#!r6rs a b)",		L"(a b)");
-TEST_READ(L"(#!r6\x33s a b)",		L"(a b)");
