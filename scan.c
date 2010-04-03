@@ -597,7 +597,7 @@ static inline bool is_xdigit(wchar_t wc)
     return (L'a' <= wc && wc <= L'f') || (L'A' <= wc && wc <= L'F');
 }
 
-static yy_cc_t char_class(wint_t wc)
+static inline yy_cc_t char_class(wint_t wc)
 {
     if (wc < 128)
 	return yy_charmap[wc];
@@ -612,7 +612,7 @@ static yy_cc_t char_class(wint_t wc)
    return -1;
 }
 
-static bool is_delimiter(obj_t ch)
+static inline bool is_delimiter(obj_t ch)
 {
     if (is_eof(ch))
 	return true;
@@ -1012,6 +1012,56 @@ static cv_t c_discard(obj_t cont, obj_t values)
     return cv(cont_cont(cont), cont4_arg(cont));
 }
 
+/*
+ * Some tokens can only be accepted after the following character has
+ * been seen.  The R6RS spec calls out some specific tokens with that
+ * property, and token_needs_delimiter() identifies those.
+ *
+ * But we also need to check whether the DFA has any non-error transitions
+ * away from the accepting state.  If that is the case, then we need to
+ * see the next character and check whether it makes a good transition.
+ */
+
+static inline bool accept_early(yy_state_t state)
+{
+    // Non-accepting states do not accept early.
+    if (state >= YY_ACCEPT_COUNT)
+	return false;
+
+    // Delimiter-requiring tokens do not accept early.
+    yy_token_t tok = yy_accepts[state];
+    if (token_needs_delimiter(tok))
+	return false;
+
+    // If this state has non-error transitions, do not accept early.
+    const yy_delta_row_t *row = &yy_delta[state];
+    assert(YY_COMMON_STATE == YY_ERROR_STATE);
+    return row->yy_len == 0;
+    // (if COMMON_STATE != ERROR_STATE, need a more expensive check.)
+
+    // Okay, accept early.
+    return true;
+}
+
+static inline bool accept_late(yy_state_t state, obj_t ch)
+{
+    // Non-accepting states do not accept late.
+    if (state >= YY_ACCEPT_COUNT)
+	return false;
+
+    // Delimiter-requiring tokens accept when the delimiter is seen.
+    yy_token_t tok = yy_accepts[state];
+    if (token_needs_delimiter(tok))
+	return is_delimiter(ch);
+
+    // Accept late if this char transits to an error.
+    yy_cc_t cc = char_class(character_value(ch));
+    const yy_delta_row_t *row = &yy_delta[state];
+    yy_state_t ns = cc < row->yy_len ? yy_next_states[row->yy_index + cc]
+                                     : YY_COMMON_STATE;
+    return ns == YY_ERROR_STATE;
+}
+
 static cv_t c_continue_read_token(obj_t cont, obj_t values)
 {
     obj_t      ch     = CAR(values);
@@ -1020,15 +1070,10 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
     obj_t      yylval = EMPTY_LIST;
 
     EVAL_LOG("state=%d ch=%O", state, ch);
-    if (state < YY_ACCEPT_COUNT) {
-	yy_token_t tok = yy_accepts[state];
-	if (token_needs_delimiter(tok) && is_delimiter(ch)) {
-	    token_type_t toktype = make_token(state, ctx, &yylval);
-	    EVAL_LOG("A returning %O", MAKE_LIST(make_fixnum(toktype), yylval));
-	    //oprintf(" A peek %O, return %s = %O\n",
-	    //        ch, token_name(toktype), yylval);
-	    return cv(cont_cont(cont), MAKE_LIST(make_fixnum(toktype), yylval));
-	}
+    if (accept_late(state, ch)) {
+	token_type_t toktype = make_token(state, ctx, &yylval);
+	EVAL_LOG("A returning %O", MAKE_LIST(make_fixnum(toktype), yylval));
+	return cv(cont_cont(cont), MAKE_LIST(make_fixnum(toktype), yylval));
     }
     if (is_eof(ch)) {
 	EVAL_LOG("B returning %O",
@@ -1051,7 +1096,7 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 	yy_token_t tok = yy_accepts[state];
 	if (tok == YY_ATMOSPHERE)
 	    ctx = make_new_scan_ctx();
-	else if (!token_needs_delimiter(tok)) {
+	else if (accept_early(state)) {
 	    // Return (toktype yylval) after reading peeked char.
 	    token_type_t toktype = make_token(state, ctx, &yylval);
 #if OLD_PORTS
