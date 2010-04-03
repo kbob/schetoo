@@ -1142,7 +1142,7 @@ def r6rs_lexical_syntax():
                          '>', '?', '^', '_', '~', name='<special initial>')
     digit_ = CC('0-9', name='<digit>')
     hex_digit = CC(digit_, 'a-f', 'A-F', name='<hex digit>')
-    hex_scalar_value = hex_digit * hex_digit()
+    hex_scalar_value = hex_digit(1)
     inline_hex_escape = r'\x' * hex_scalar_value * ';'
     initial = constituent | special_initial | inline_hex_escape
     special_subsequent = CC('+', '-', '.', '@')
@@ -1203,8 +1203,8 @@ def r6rs_lexical_syntax():
         return prefix(R) * complex(R)
     number = num(2) | num(8) | num(10) | num(16)
 
-    character_name = CC('a-z', name='<a-z>')()
-    character = ('#\\' * Σ
+    character_name = CC('a-z', name='<a-z>')(1)
+    character = ('#\\' * (Σ - CC('\\'))
                  | '#\\' * character_name
                  | '#\\x' * hex_scalar_value)
 

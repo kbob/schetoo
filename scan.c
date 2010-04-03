@@ -794,7 +794,7 @@ static obj_t scan_character(const char_t *str, size_t length)
     }
     const char_name_map_t *p;
     for (p = char_names; p < char_names + char_name_count; p++)
-	if (!wcscmp(str, p->cn_name))
+	if (!wcscmp(str + 2, p->cn_name))
 	    return make_character(p->cn_char);
     THROW(&lexical, "unknown character name", make_string_from_C_str(str));
 }
