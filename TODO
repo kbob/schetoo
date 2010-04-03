@@ -32,7 +32,7 @@ DONE	Remove #ifdef'd code in test.c
 DONE	Remove #ifdef'd code in repl.c
 DONE	Remove "#if OLD_PORTS" all over.
 DONE	Remove "#if OLD_READER" in read.c.
-	Remove "#if OLD_SCANNER" in scan.c.
+DONE	Remove "#if OLD_SCANNER" in scan.c.
 	Remove read_stream() and yylex().
 	Remove core_eval?
 	Remove default-exception-handler in eval.c.
