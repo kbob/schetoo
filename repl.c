@@ -1,12 +1,13 @@
 #include "repl.h"
 
-#include <stdio.h>			/* XXX */
 #include <string.h>
 
 #include "env.h"
 #include "eval.h"
 #include "io.h"				/* XXX */
+#include "obj.h"
 #include "obj_eof.h"
+#include "obj_proc.h"
 #include "obj_record.h"
 #include "obj_string.h"
 #include "obj_symbol.h"
@@ -118,25 +119,3 @@ void core_repl(void)
     obj_t first    = make_cont3(c_read, second, root_env);
     core_eval_cont(first, EMPTY_LIST, handler);
 }
-
-#if 0
-
-#include "list.h"
-
-void core_repl(void)
-{
-    obj_t env = root_environment();
-    oprintf("%s:%d env=%p\n", __FILE__, __LINE__, env);
-    obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
-    obj_t read_sym = make_symbol_from_C_str(L"read");
-
-    //obj_t str = make_string_from_C_str(L"asdf");
-    //obj_t str = make_string_from_C_str(L"()");
-    obj_t str = make_string_from_C_str(L"(+ 3 4)");
-    obj_t form = MAKE_LIST(read_sym, MAKE_LIST(osip_sym, str));
-    oprintf("form=%O\n", form);
-    obj_t result = core_eval(form, env);
-    oprintf("%s:%d result=%O\n", __FILE__, __LINE__, result);
-}
-
-#endif
