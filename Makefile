@@ -3,7 +3,7 @@
      FEATURES := -DSCHEME_FEATURE_UNICODE=1
 
      programs := scheme
- test_scripts := selftest.sh
+ test_scripts := selftest.sh simpletests.sh
 
   prim_groups := arith boolean char ctrl defn env eq eval expr io list	\
 		 proc string sym
