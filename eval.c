@@ -211,6 +211,7 @@ extern cv_t c_eval(obj_t cont, obj_t values)
     assert(is_cont4(cont));
     obj_t expr = cont4_arg(cont);
     EVAL_LOG("expr=%O", expr);
+    COULD_RETRY();
     if (is_self_evaluating(expr))
 	return cv(cont_cont(cont), CONS(expr, values));
     else if (is_symbol(expr)) {
@@ -237,6 +238,7 @@ NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
 
     case LT_THROWN:
 	eval_exception = ex;
+	/* FALLTHROUGH */
     case LT_HEAP_FULL:
 	longjmp(eval_restart, type);
 
@@ -307,7 +309,9 @@ static cv_t c_exception_returned(obj_t cont, obj_t values)
     assert(is_cont4(cont));
     obj_t handler = cont4_arg(cont);
     EVAL_LOG("handler=%O", handler);
-    THROW(&non_continuable, "exception handler returned", handler);
+    CHECK_CONDITION(false,
+		    &non_continuable, "exception handler returned",
+		    handler);
 }
 
 static obj_t add_who_irritants(obj_t cont, obj_t values, obj_t ex)

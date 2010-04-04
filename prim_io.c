@@ -105,13 +105,13 @@ static size_t decode(charbuf_t *cbufp, const byte_t *bytes, size_t len)
 static obj_t text_file_read(obj_t port)
 {
     obj_t  bbuf  = port_binary_buffer(port);
+    size_t blen  = port_binary_len(port);
     size_t bsize = bytevector_len(bbuf);
     charbuf_t cbuf;
     init_charbuf_size(&cbuf, bsize);
     while (1) {
 	byte_t *bytes = bytevector_addr(bbuf);
 	size_t bpos   = port_binary_pos(port);
-	size_t blen   = port_binary_len(port);
 	size_t nbytes = decode(&cbuf, bytes + bpos, blen - bpos);
 	if (nbytes) {
 	    // N.B., must not fail.
@@ -132,7 +132,7 @@ static obj_t text_file_read(obj_t port)
 	    port_set_text_buffer(port, make_eof());
 	    return port;
 	}
-	port_set_binary_len(port, blen + nb);
+	blen += nb;
     }
 }
 

@@ -742,9 +742,9 @@ static cv_t c_continue_read(obj_t cont, obj_t values)
 		    result = make_eof();
 		return cv(cont_cont(cont), CONS(result, CDDR(values)));
 	    }
-	    if (sym != tok)
-		THROW(&lexical, "datum syntax error",
-		      make_fixnum(tok), make_fixnum(sym));
+	    CHECK_CONDITION(sym == tok,
+			    &lexical, "datum syntax error",
+			    make_fixnum(tok), make_fixnum(sym));
 	    obj_t yylval = CADR(values);
 	    if (!is_null(yylval))
 		stack_push(&actions, yylval);

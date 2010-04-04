@@ -8,9 +8,14 @@
 // CHECK(expr, message, irritants...)
 // message may be either a wide or 8-bit string.
 #define CHECK(expr, ...)						\
+    (CHECK_CONDITION(expr, &assertion, __VA_ARGS__))
+
+// CHECK_CONDITION(expr, condition, message, irritants...)
+// message may be either a wide or 8-bit string.
+#define CHECK_CONDITION(expr, condition, ...)				\
     (COULD_RETRY(),							\
      (expr) ? (void)0						       	\
-            : THROW(&assertion, __VA_ARGS__))
+            : THROW((condition), __VA_ARGS__))
 
 // SYNTAX_ERROR(form, subform, message, irritants...)
 // message may be either a wide or 8-bit string.

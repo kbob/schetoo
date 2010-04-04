@@ -100,11 +100,12 @@ obj_t make_rtd(rtd_flags_t flags,
     CHECK(parent == FALSE_OBJ || is_rtd(parent), "must be rtd or #f", parent);
     CHECK(parent == FALSE_OBJ || !rtd_is_sealed(parent), "parent is sealed",
 	  parent);
-    if (protocol != FALSE_OBJ)
-	THROW(&implementation_restriction, "record protocols not implemented");
-    if ((flags & RF_NONGENERATIVE) || uid != FALSE_OBJ)
-	THROW(&implementation_restriction,
-	      "nongenerative records not implemented");
+    CHECK_CONDITION(protocol == FALSE_OBJ,
+		    &implementation_restriction,
+		    "record protocols not implemented");
+    CHECK_CONDITION(!(flags & RF_NONGENERATIVE) && uid == FALSE_OBJ,
+		    &implementation_restriction,
+		    "nongenerative records not implemented");
     CHECK(is_vector(fields), "must be vector", fields);
     // XXX walk through the fields and ensure they have the right format.
     // ... or wait until the first instantiation...

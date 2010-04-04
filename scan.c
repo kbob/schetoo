@@ -179,11 +179,12 @@ static word_t scan_hex_scalar(const char_t *str, char_t end)
 	empty = false;
 	str++;
     }
-    if (empty || *str != end)
-	THROW(&lexical, "malformed hex value", make_string_from_C_str(str));
-    if (xval > 0x10ffff || (xval >= 0xd800 && xval <= 0xdfff))
-	THROW(&lexical, "hex character literal out of range",
-	      make_string_from_C_str(str));
+    CHECK_CONDITION(!empty && *str == end,
+		    &lexical, "malformed hex value",
+		    make_string_from_C_str(str));
+    CHECK_CONDITION(xval <= 0x10ffff && (xval < 0xd800 || xval > 0xdfff),
+		    &lexical, "illegal character",
+		    make_string_from_C_str(str));
     return xval;
 }
 
@@ -236,9 +237,9 @@ static obj_t scan_boolean(const char_t *str, size_t length)
 static obj_t scan_number(const char_t *str, size_t length)
 {
     obj_t z = chars_to_number(str, length, 10);
-    if (z == FALSE_OBJ)
-	THROW(&implementation_restriction, "unsupported numeric literal",
-	      make_string_from_chars(str, length));
+    CHECK_CONDITION(z != FALSE_OBJ,
+		    &implementation_restriction, "unsupported numeric literal",
+		    make_string_from_chars(str, length));
     return z;
 }
 
@@ -274,16 +275,18 @@ static obj_t scan_character(const char_t *str, size_t length)
     assert(length > 3);
     if (str[2] == L'x') {
 	word_t xval = scan_hex_scalar(str + 3, L'\0');
-	if (xval > 0x10ffff || (xval >= 0xd800 && xval <= 0xdfff))
-	    THROW(&lexical, "character out of range",
-		  make_string_from_C_str(str));
+	CHECK_CONDITION(xval <= 0x10ffff && (xval < 0xd800 || xval > 0xdfff),
+			&lexical, "illegal character",
+			make_string_from_C_str(str));
 	return make_character(xval);
     }
     const char_name_map_t *p;
+    COULD_RETRY();
     for (p = char_names; p < char_names + char_name_count; p++)
 	if (!wcscmp(str + 2, p->cn_name))
 	    return make_character(p->cn_char);
-    THROW(&lexical, "unknown character name", make_string_from_C_str(str));
+    THROW(&lexical, "unknown character name",
+	  make_string_from_C_str(str));
 }
 
 static obj_t scan_string(const char_t *str, size_t length)
@@ -550,8 +553,8 @@ static cv_t c_eat_nested_comment(obj_t cont, obj_t values)
     int   depth = fixnum_value(CADDR(values));
     assert(is_null(CDDDR(values)));
 
-    if (is_eof(ch))
-	THROW(&lexical, "EOF in nested comment");
+    CHECK_CONDITION(!is_eof(ch),
+		    &lexical, "EOF in nested comment");
     char_t c = character_value(ch);
     if (c == L'|' && state == 0)
 	state = 1;
@@ -627,9 +630,8 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 	state = yy_next_states[row->yy_index + cc];
     else
 	state = YY_COMMON_STATE;
-    if (state == YY_ERROR_STATE) {
-	THROW(&lexical, "lexical error");
-    }
+    CHECK_CONDITION(state != YY_ERROR_STATE,
+		    &lexical, "lexical error");
     ctx = scan_ctx_advance(ctx, state, character_value(ch));
     if (state < YY_ACCEPT_COUNT) {
 	yy_token_t tok = yy_accepts[state];

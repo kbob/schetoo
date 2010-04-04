@@ -1048,7 +1048,8 @@ are met.  It goes like this.
   - On each memory object mutation, MUTATE(obj) is called.  It checks
     whether obj is in committed memory.  If so, it calls
     SIDE_EFFECT().  Uncommitted memory is the region between the
-    committed and next_alloc pointers.
+    committed and next_alloc pointers.  I.e., memory that has
+    been allocated since the last commit.
 
   - On each non-heap-mutation side-effect, SIDE_EFFECT() is called.
     SIDE_EFFECT sets the global flag retry_allowed to false.
