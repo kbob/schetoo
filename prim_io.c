@@ -34,32 +34,37 @@ static char *readline_prompt = "> ";
 
 static obj_t readline_read(obj_t port)
 {
+    static char *line;
     assert(is_port(port));
-    char *line = readline(readline_prompt);
-    if (!line) {
-	port_set_text_buffer(port, make_eof());
-	putchar('\n');
-	fflush(stdout);
-    } else {
+    if (line == NULL) {
+	line = readline(readline_prompt);
+	if (line == NULL) {
+	    port_set_text_buffer(port, make_eof());
+	    putchar('\n');
+	    fflush(stdout);
+	    return port;
+	}
 	if (*line)
 	    add_history(line);
-	mbstate_t mbstate;
-	memset(&mbstate, '\0', sizeof mbstate);
-	size_t n, len = strlen(line);
-	const char *p = line;
-	charbuf_t buf;
-	wchar_t wc;
-	init_charbuf(&buf);
-	while ((n = mbrtowc(&wc, p, len, &mbstate)) > 0) {
-	    charbuf_append_char(&buf, wc);
-	    p += n;
-	    len -= n;
-	}
-	charbuf_append_char(&buf, L'\n');
-	free(line);
-	port_set_text_buffer(port, charbuf_make_string(&buf)); // XXX unsafe
-	port_set_text_pos(port, 0);
     }
+    mbstate_t mbstate;
+    memset(&mbstate, '\0', sizeof mbstate);
+    size_t n, len = strlen(line);
+    const char *p = line;
+    charbuf_t buf;
+    wchar_t wc;
+    init_charbuf(&buf);
+    while ((n = mbrtowc(&wc, p, len, &mbstate)) > 0) {
+	charbuf_append_char(&buf, wc);
+	p += n;
+	len -= n;
+    }
+    charbuf_append_char(&buf, L'\n');
+    port_set_text_buffer(port, charbuf_make_string(&buf));
+    port_set_text_pos(port, 0);
+    free(line);
+    line = NULL;
+    SIDE_EFFECT();
     return port;
 }
 
