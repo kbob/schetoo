@@ -262,6 +262,8 @@ extern obj_t create_cooked_special_form(const prim_descriptor_t *);
 
 extern cv_t  c_eval                    (obj_t cont, obj_t values);
 extern cv_t  c_apply_proc              (obj_t cont, obj_t values);
+extern cv_t  c_peek_char               (obj_t cont, obj_t values);
+extern cv_t  c_read_char               (obj_t cont, obj_t values);
 
 #if DEBUG_EVAL
     #include "oprintf.h"

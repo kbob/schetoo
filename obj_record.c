@@ -18,13 +18,13 @@ static inline obj_t *elem_addr(record_obj_t *rec, size_t index)
 static size_t rec_size_op(const heap_object_t *hobj)
 {
     record_obj_t *rec = (record_obj_t *)hobj;
-    return len_to_bytes(rtd_field_count_unchecked(rec->rec_rtd));
+    return len_to_bytes(rtd_field_count_nc(rec->rec_rtd));
 }
 
 static size_t rec_ptr_count_op(const heap_object_t *hobj)
 {
     record_obj_t *rec = (record_obj_t *)hobj;
-    return 1 + rtd_field_count_unchecked(rec->rec_rtd);
+    return 1 + rtd_field_count_nc(rec->rec_rtd);
 }
 
 static void rec_move_op(const heap_object_t *src, heap_object_t *dst)
@@ -32,7 +32,7 @@ static void rec_move_op(const heap_object_t *src, heap_object_t *dst)
     record_obj_t *rsrc = (record_obj_t *)src;
     record_obj_t *rdst = (record_obj_t *)dst;
     *rdst = *rsrc;
-    size_t i, size = rtd_field_count_unchecked(rsrc->rec_rtd);
+    size_t i, size = rtd_field_count_nc(rsrc->rec_rtd);
     for (i = 0; i < size; i++)
 	*elem_addr(rdst, i) = *elem_addr(rsrc, i);
 }
@@ -42,7 +42,7 @@ static obj_t rec_get_ptr_op(const heap_object_t *hobj, size_t index)
     record_obj_t *rec = (record_obj_t *)hobj;
     if (index == 0)
 	return rec->rec_rtd;
-    else if (index <= rtd_field_count_unchecked(rec->rec_rtd))
+    else if (index <= rtd_field_count_nc(rec->rec_rtd))
 	return *elem_addr(rec, index - 1);
     else
 	assert(false && "index out of range");
@@ -53,7 +53,7 @@ static void rec_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
     record_obj_t *rec = (record_obj_t *)hobj;
     if (index == 0)
 	rec->rec_rtd = ptr;
-    else if (index <= rtd_field_count_unchecked(rec->rec_rtd))
+    else if (index <= rtd_field_count_nc(rec->rec_rtd))
 	*elem_addr(rec, index - 1) = ptr;
     else
 	assert(false && "index out of range");
@@ -123,5 +123,6 @@ void record_set_field(obj_t obj, size_t index, obj_t value)
     CHECK(index < rtd_field_count(rec->rec_rtd), "index out of range",
 	  obj, make_fixnum(index));
     CHECK_OBJ(value);
+    MUTATE(obj);
     *elem_addr(rec, index) = value;
 }

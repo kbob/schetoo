@@ -57,16 +57,16 @@ static inline obj_t make_new_scan_ctx(void)
 
 static obj_t scan_ctx_advance(obj_t ctx, yy_state_t state, char_t ch)
 {
-    obj_t      buf   = scan_ctx_buf  (ctx);
-    size_t     pos   = scan_ctx_pos  (ctx);
-    size_t     len   = scan_ctx_len  (ctx);
+    obj_t  buf = scan_ctx_buf(ctx);
+    size_t pos = scan_ctx_pos(ctx);
+    size_t len = scan_ctx_len(ctx);
     assert(pos <= len);
     if (pos >= len) {
 	obj_t old = buf;
 	buf = make_string_fill(2 * pos, L'\0');
 	string_set_substring(buf, 0, pos, string_value(old));
     }
-    string_set_char(buf, pos, ch);
+    string_set_char_nm(buf, pos, ch);
     return make_scan_ctx(state, buf, pos + 1);
 }
 
@@ -484,8 +484,6 @@ static token_type_t make_token(yy_state_t state, obj_t ctx, obj_t *yylval)
     return toktype;
 }
 
-extern cv_t c_peek_char          (obj_t cont, obj_t values);
-extern cv_t c_read_char          (obj_t cont, obj_t values);
 static cv_t c_continue_read_token(obj_t cont, obj_t value);
 
 static cv_t c_discard(obj_t cont, obj_t values)

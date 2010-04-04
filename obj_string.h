@@ -17,6 +17,7 @@ extern size_t        string_len          (obj_t);
 extern const char_t *string_value        (obj_t);
 extern const char_t *string_value_nc     (obj_t);
 extern void          string_set_char     (obj_t, size_t index, char_t wc);
+extern void          string_set_char_nm  (obj_t, size_t index, char_t wc);
 extern void          string_set_char_nc  (obj_t, size_t index, char_t wc);
 extern void          string_set_substring(obj_t         string,
 					  size_t        pos,

@@ -42,6 +42,7 @@ static inline obj_t  rtd_name            (obj_t       rtd);
 static inline obj_t  rtd_parent          (obj_t       rtd);
 static inline obj_t  rtd_protocol        (obj_t       rtd);
 static inline size_t rtd_field_count     (obj_t       rtd);
+static inline size_t rtd_field_count_nc  (obj_t       rtd);
 static inline obj_t  rtd_fields          (obj_t       rtd);
 
 static inline bool rtd_is_sealed(obj_t rtd)
@@ -80,7 +81,7 @@ static inline obj_t rtd_protocol(obj_t rtd)
     return ((rtd_obj_t *)rtd)->rtd_protocol;
 }
 
-static inline size_t rtd_field_count_unchecked(obj_t rtd)
+static inline size_t rtd_field_count_nc(obj_t rtd)
 {
     return ((rtd_obj_t *)rtd)->rtd_flags >> RF_SHIFT;
 }
@@ -88,7 +89,7 @@ static inline size_t rtd_field_count_unchecked(obj_t rtd)
 static inline size_t rtd_field_count(obj_t rtd)
 {
     CHECK(is_rtd(rtd), "must be rtd", rtd);
-    return rtd_field_count_unchecked(rtd);
+    return rtd_field_count_nc(rtd);
 }
 
 static inline obj_t rtd_fields(obj_t rtd)

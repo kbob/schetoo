@@ -84,8 +84,26 @@ void string_set_char_nc(obj_t string, size_t index, char_t c)
 {
     CHECK_OBJ(string);
     string_obj_t *sp = (string_obj_t *)string;
+    MUTATE(string);
     sp->string_value[index] = c;
     assert(sp->string_value[sp->string_len] == L'\0');
+}
+
+void string_set_char_nm(obj_t string, size_t index, char_t c)
+{
+    /*
+     * Non-mutating version  -- caller is responsible for
+     * ensuring transaction semantics are met.
+     */
+
+    CHECK_OBJ(string);
+    CHECK(is_string(string), "must be string", string);
+    string_obj_t *sp = (string_obj_t *)string;
+    //XXX CHECK(is_mutable(string), "must be mutable", string);
+    CHECK(index < sp->string_len, "index out of range",
+	  string, make_fixnum(index));
+    sp->string_value[index] = c;
+    assert(sp->string_value[sp->string_len] == '\0');
 }
 
 void string_set_char(obj_t string, size_t index, char_t c)
@@ -96,6 +114,7 @@ void string_set_char(obj_t string, size_t index, char_t c)
     //XXX CHECK(is_mutable(string), "must be mutable", string);
     CHECK(index < sp->string_len, "index out of range",
 	  string, make_fixnum(index));
+    MUTATE(string);
     sp->string_value[index] = c;
     assert(sp->string_value[sp->string_len] == '\0');
 }
@@ -112,6 +131,7 @@ void string_set_substring(obj_t         string,
 	  string, make_fixnum(pos), make_fixnum(len));
     size_t i;
     char_t *p = sp->string_value;
+    MUTATE(string);
     for (i = 0; i < len; i++)
 	p[pos + i] = substring[i];
     assert(sp->string_value[sp->string_len] == '\0');

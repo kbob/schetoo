@@ -130,5 +130,6 @@ void vector_set(obj_t obj, size_t index, obj_t elem)
     vector_obj_t *vec = (vector_obj_t *)obj;
     //XXX CHECK(is_mutable(obj), "must be mutable", pair);
     CHECK(index < vec->v_size, "index out of range", obj, make_fixnum(index));
+    MUTATE(obj);
     *elem_addr(vec, index) = elem;
 }
