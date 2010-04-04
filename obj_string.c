@@ -74,6 +74,20 @@ const char_t *string_value(obj_t string)
     return ((string_obj_t *)string)->string_value;
 }
 
+const char_t *string_value_nc(obj_t string)
+{
+    CHECK_OBJ(string);
+    return ((string_obj_t *)string)->string_value;
+}
+
+void string_set_char_nc(obj_t string, size_t index, char_t c)
+{
+    CHECK_OBJ(string);
+    string_obj_t *sp = (string_obj_t *)string;
+    sp->string_value[index] = c;
+    assert(sp->string_value[sp->string_len] == L'\0');
+}
+
 void string_set_char(obj_t string, size_t index, char_t c)
 {
     CHECK_OBJ(string);
@@ -101,6 +115,16 @@ void string_set_substring(obj_t         string,
     for (i = 0; i < len; i++)
 	p[pos + i] = substring[i];
     assert(sp->string_value[sp->string_len] == '\0');
+}
+
+void string_set_len(obj_t str, size_t len)
+{
+    assert(is_string(str));
+    string_obj_t *sp = (string_obj_t *)str;
+    assert(len <= sp->string_len);
+    sp->string_len = len;
+    sp->string_value[len] = L'\0';
+    MUTATE(str);
 }
 
 int strings_cmp(obj_t str1, obj_t str2)

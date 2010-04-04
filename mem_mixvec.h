@@ -46,7 +46,7 @@ extern void mem_mixvec_create_ops(mem_ops_t *,
 				      intptr_t value)			\
     {									\
         assert(index < M);						\
-	/* MUTATE(mv); */						\
+	MUTATE(mv);							\
 	((mixvec_##MN##_t *)mv)->mv_##MN##_ints[index] = value;		\
     }									\
 									\

@@ -49,7 +49,7 @@ static obj_t readline_read(obj_t port)
 	const char *p = line;
 	charbuf_t buf;
 	wchar_t wc;
-	init_charbuf(&buf, L"");
+	init_charbuf(&buf);
 	while ((n = mbrtowc(&wc, p, len, &mbstate)) > 0) {
 	    charbuf_append_char(&buf, wc);
 	    p += n;
@@ -99,18 +99,18 @@ static size_t decode(charbuf_t *cbufp, const byte_t *bytes, size_t len)
 
 static obj_t text_file_read(obj_t port)
 {
+    obj_t  bbuf  = port_binary_buffer(port);
+    size_t bsize = bytevector_len(bbuf);
+    charbuf_t cbuf;
+    init_charbuf_size(&cbuf, bsize);
     while (1) {
-	obj_t bbuf = port_binary_buffer(port);
 	byte_t *bytes = bytevector_addr(bbuf);
-	size_t bpos = port_binary_pos(port);
-	size_t blen = port_binary_len(port);
-	charbuf_t cbuf;
-	init_charbuf(&cbuf, L"");
+	size_t bpos   = port_binary_pos(port);
+	size_t blen   = port_binary_len(port);
 	size_t nbytes = decode(&cbuf, bytes + bpos, blen - bpos);
 	if (nbytes) {
-	    // N.B., may fail.
-	    port_set_text_buffer(port, charbuf_make_string(&cbuf));
 	    // N.B., must not fail.
+	    port_set_text_buffer(port, charbuf_make_string(&cbuf));
 	    bpos += nbytes;
 	    memmove(bytes, bytes + bpos, blen - bpos);
 	    port_set_binary_pos(port, 0);
@@ -119,9 +119,8 @@ static obj_t text_file_read(obj_t port)
 	    return port;
 	}
 	int fd = port_fd(port);
-	size_t bsize = bytevector_len(bbuf);
 	ssize_t nb = read(fd, bytes + blen, bsize - blen);
-	//SIDE_EFFECT();
+	SIDE_EFFECT();
 	if (nb < 0)
 	    THROW(&io_read, "read failed");
 	if (nb == 0) {

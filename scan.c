@@ -193,7 +193,7 @@ static obj_t scan_identifier(const char_t *str, size_t length)
     for (i = 0; i < length; i++)
 	if (str[i] == L'\\') {
 	    charbuf_t cbuf;
-	    init_charbuf(&cbuf, L"");
+	    init_charbuf(&cbuf);
 	    for (j = 0; j < length; ) {
 		char_t ch = str[j];
 		if (ch != L'\\') {
@@ -290,7 +290,7 @@ static obj_t scan_string(const char_t *str, size_t length)
 {
     char_t ch;
     charbuf_t buf;
-    init_charbuf(&buf, L"");
+    init_charbuf(&buf);
     assert(str[0] == L'"');
     assert(str[length - 1] == L'"');
     size_t i;
