@@ -46,6 +46,7 @@ extern void mem_mixvec_create_ops(mem_ops_t *,
 				      intptr_t value)			\
     {									\
         assert(index < M);						\
+	/* MUTATE(mv); */						\
 	((mixvec_##MN##_t *)mv)->mv_##MN##_ints[index] = value;		\
     }									\
 									\
@@ -58,6 +59,7 @@ extern void mem_mixvec_create_ops(mem_ops_t *,
     static inline void MVMN##_set_ptr(obj_t mv, size_t index, obj_t ptr)\
     {									\
 	assert(index < N);						\
+	MUTATE(mv);							\
 	((mixvec_##MN##_t *)mv)->mv_##MN##_ptrs[index] = ptr;		\
     }
 

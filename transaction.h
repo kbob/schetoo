@@ -21,13 +21,13 @@
      */
 
     #define COMMIT()       (commit())
-    #define MUTATE(obj)    (mutate(obj))
-    #define SIDE_EFFECT()  (side_effect())
+    #define MUTATE(obj)    (mutate(obj, __func__, __LINE__))
+    #define SIDE_EFFECT()  (side_effect(__func__, __LINE__))
     #define COULD_RETRY()  (could_retry())
 
     extern void commit     (void);
-    extern void mutate     (obj_t);
-    extern void side_effect(void);
+    extern void mutate     (obj_t, const char *func, int line);
+    extern void side_effect(       const char *func, int line);
     extern void could_retry(void);
 
 #endif

@@ -4,13 +4,15 @@
 #include "obj.h"
 #include "mem_fixvec.h"
 
-extern obj_t        make_pair   (obj_t car, obj_t cdr);
+extern obj_t        make_pair      (obj_t car, obj_t cdr);
 
-static inline bool  is_pair     (obj_t);
-static inline obj_t pair_car    (obj_t);
-static inline obj_t pair_cdr    (obj_t);
-extern void         pair_set_car(obj_t pair, obj_t car);
-extern void         pair_set_cdr(obj_t pair, obj_t cdr);
+static inline bool  is_pair        (obj_t);
+static inline obj_t pair_car       (obj_t);
+static inline obj_t pair_cdr       (obj_t);
+extern void         pair_set_car   (obj_t pair, obj_t car);
+extern void         pair_set_car_nc(obj_t pair, obj_t car);
+extern void         pair_set_cdr   (obj_t pair, obj_t cdr);
+extern void         pair_set_cdr_nc(obj_t pair, obj_t cdr);
 
 OBJ_TYPE_PREDICATE(pair)		// bool is_pair(obj_t);
 

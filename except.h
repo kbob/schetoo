@@ -3,11 +3,13 @@
 
 #include "conditions.h"
 #include "noreturn.h"
+#include "transaction.h"
 
 // CHECK(expr, message, irritants...)
 // message may be either a wide or 8-bit string.
 #define CHECK(expr, ...)						\
-    ((expr) ? (void)0							\
+    (COULD_RETRY(),							\
+     (expr) ? (void)0						       	\
             : THROW(&assertion, __VA_ARGS__))
 
 // SYNTAX_ERROR(form, subform, message, irritants...)

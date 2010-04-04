@@ -92,6 +92,7 @@ void bytevector_set(obj_t obj, size_t index, byte_t elem)
     bytevector_obj_t *vec = (bytevector_obj_t *)obj;
     //XXX CHECK(is_mutable(obj), "must be mutable", obj);
     CHECK(index < vec->v_size, "index out of range", obj, make_fixnum(index));
+    MUTATE(obj);
     *elem_addr(vec, index) = elem;
 }
 

@@ -37,6 +37,7 @@
     {									\
 	CHECK_OBJ(obj);							\
 	assert(index < N);						\
+	MUTATE(obj);							\
 	((fixvec##N##_t *)obj)->fv##N##_ptrs[index] = ptr;		\
     }
 

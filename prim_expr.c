@@ -121,8 +121,9 @@ static cv_t c_continue_set(obj_t cont, obj_t values)
     EVAL_LOG("var=%O value=%O", var, value);
     /* N.B., allocate values list before mutating environment. */
     obj_t new_values = CONS(UNDEFINED_OBJ, cont5_arg2(cont));
+    obj_t ret = cont_cont(cont);
     binding_set_value(bdg, value);
-    return cv(cont_cont(cont), new_values);
+    return cv(ret, new_values);
 }
 
 DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)

@@ -310,6 +310,7 @@ void init_heap(void)
 heap_object_t *mem_alloc_obj(mem_ops_t *ops, size_t size_bytes)
 {
     assert(heap_is_initialized);
+    COULD_RETRY();
     verify_heap();
     remember_ops(ops);
     size_t alloc_size = aligned_size(size_bytes);

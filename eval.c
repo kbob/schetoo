@@ -141,7 +141,7 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	else {
 	    // N.B., call proc after all other allocations.
 	    obj_t new_values = CONS(UNDEFINED_OBJ, saved_values);
-	    pair_set_car(new_values, apply_proc(operator, arg_list));
+	    pair_set_car_nc(new_values, apply_proc(operator, arg_list));
 	    return cv(next, new_values);
 	}
     } else {
@@ -178,6 +178,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
     obj_t appl = cont4_arg(cont);
     obj_t operator = CAR(values);
     EVAL_LOG("appl=%O operator=%O", appl, operator);
+    COULD_RETRY();
     if (!is_procedure(operator))
 	SYNTAX_ERROR(operator, operator, "must be procedure");
     if (!procedure_args_evaluated(operator)) {

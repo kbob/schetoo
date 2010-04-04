@@ -121,6 +121,7 @@ static obj_t text_file_read(obj_t port)
 	int fd = port_fd(port);
 	size_t bsize = bytevector_len(bbuf);
 	ssize_t nb = read(fd, bytes + blen, bsize - blen);
+	//SIDE_EFFECT();
 	if (nb < 0)
 	    THROW(&io_read, "read failed");
 	if (nb == 0) {
@@ -226,9 +227,10 @@ static cv_t c_continue_read_char(obj_t cont, obj_t values)
     EVAL_LOG("port=%O ch=%O", port, ch);
     CHECK(is_port(port), "must be port");
     obj_t caller_values = CONS(ch, saved_values);
+    obj_t ret = cont_cont(cont);
     if (!is_eof(ch))
 	port_set_text_pos(port, port_text_pos(port) + 1);
-    return cv(cont_cont(cont), caller_values);
+    return cv(ret, caller_values);
 }
 
 DEFINE_EXTERN_RAW_PROC(c_read_char, L"read-char")(obj_t cont, obj_t values)

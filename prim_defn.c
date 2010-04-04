@@ -11,12 +11,13 @@ static cv_t c_continue_define(obj_t cont, obj_t values)
     EVAL_LOG("var=%O values=%O", cont5_arg1(cont), values);
     /* N.B., allocate new values before mutating environment. */
     obj_t new_values = CONS(UNDEFINED_OBJ, cont5_arg2(cont));
+    obj_t ret = cont_cont(cont);
     env_bind(cont_env(cont),
 	     cont5_arg1(cont),
 	     BT_LEXICAL,
 	     M_MUTABLE,
 	     CAR(values));
-    return cv(cont_cont(cont), new_values);
+    return cv(ret, new_values);
 }
 
 DEFINE_SPECIAL_FORM(L"define")(obj_t cont, obj_t values)

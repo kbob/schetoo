@@ -1166,3 +1166,23 @@ that is only accessible via the list and call its close proc.
 
 I'm thinking that weak pointers would make this easier.
 
+----------------------------------
+2010.04.03
+
+Big progress today.  Worked from 04:00 to 12:00.  Yesterday I'd gotten
+half of the unit test harness working with the new input system.
+Early this morning I fixed a conceptual problem in how the DFA decides
+tokens are complete, then that opened a logjam.  Fixed 8-10 scanner
+bugs.  Implemented the other half of the unit test harness.  Since
+that got me to feature parity with the old code, I went through with
+a big eraser and removed all the old code.  While I was there, I
+cleaned up where I could.  With unit tests (I wrote a third set
+while I was there) I could iterate very quickly.
+
+So now I'm back to looking at the transactional stuff.  I'm thinking
+I'll just implement the scheme described above under 2010.03.20.
+I'll turn on checks one by one, see what breaks, and fix as needed.
+
+In contrast to the optimism in today's first paragraph, the garbage
+collector seems to be broken.  It asserts whenever it runs.  Haven't
+looked at it yet.
