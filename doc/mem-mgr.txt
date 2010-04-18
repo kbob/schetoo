@@ -1,0 +1,195 @@
+I've been working on a Scheme interpreter.  It has progressed to the
+point where its core works and the basic design has been shown to be
+viable.  It's by no means finished -- can a project like this ever
+be finished?
+
+But it's at a coherent point, so it seems like a good time to pause
+and discuss.  This is the first in a planned series of articles
+that will give a grand tour Schetoo's design.  
+
+I'm planning to write about the memory manager/garbage collector,
+about the execution model and continuation passing, about exceptions,
+and finally about Schetoo's transactions, which are so weird I can't
+even define them here.
+
+But first, the memory manager.
+
+---
+
+Schetoo's memory manager undersits everything else.  The memory
+manager provides a safe interface to <i>typed memory</i>.
+User-defined types can be defined and instantiated at compile or run
+time.  The memory manager automatically deallocates memory objects
+that are no longer in use.
+
+By <dfn>typed memory</dfn>, I mean that instead of an undifferentiated
+array of bytes, the memory manager exports references to objects of
+various types, such as pair, vector, symbol, and character.  Some of
+the types allow access to their contents as arrays of bytes -- in
+fact, that's exactly what the bytevector type does.  But in general,
+objects are opaque.  They have to be accessed through their API.
+
+By <dfn>safe interface</dfn>, I mean that the so long as the memory
+manager's clients don't step outside the API, the heap will retain its
+integrity.
+
+For example, let's look at the pair type.  A Scheme pair is an object
+that holds two other objects, called the car and cdr.
+
+Here's the public interface.
+
+<pre>
+    extern obj_t        make_pair      (obj_t car, obj_t cdr);
+
+    static inline bool  is_pair        (obj_t);
+    static inline obj_t pair_car       (obj_t);
+    static inline obj_t pair_cdr       (obj_t);
+    extern void         pair_set_car   (obj_t pair, obj_t car);
+    extern void         pair_set_car_nc(obj_t pair, obj_t car);
+    extern void         pair_set_cdr   (obj_t pair, obj_t cdr);
+    extern void         pair_set_cdr_nc(obj_t pair, obj_t cdr);
+</pre>
+
+The constructor is make_pair().  All object constructors have names
+starting with make_.  Pairs just have one constructor, but some types
+have several.  make_pair() returns a <dfn>fresh</dfn> pair
+initialized with the given car and cdr.
+
+There is one type predicate, is_pair().  is_pair accepts any object
+and returns true if that object is a pair.
+
+There are two accessors, pair_car() and pair_cdr().  They will raise
+an exception if they're called on a non-pair object.
+
+There are two mutators, pair_set_car() and pair_set_cdr().  They also
+raise an exception if their first argument is not a pair.
+
+Finally, there are the _nc mutators.  nc stands for "no check".  Those
+are called internally by the interpreter when it is illegal to raise
+an exception.  The caller guarantees that the first argument is a
+pair, and the mutator checks anyway and aborts the world if it isn't.
+
+Wait, what?  "When it's illegal to raise an exception???"  I'll
+explain in a future article.
+
+What's missing from this interface?  Any knowledge of how the pair is
+laid out in memory.  That's the heap's business, not its clients'.
+
+What else is missing?  There's no destructor.  We don't need one,
+because the memory manager automatically deallocates unused objects.
+It does that through garbage collection (GC).
+
+When talking about garbage collection, it's common to think of the
+program as two actors.  The <dfn>collector</dfn> collects the garbage.
+The <dfn>mutator</dfn> manipulates the heap, creating, dereferencing,
+mutating, and forgeting objects.  In other words, the mutator is the
+rest of the system.
+
+The other useful term is <dfn>root</dfn>.  A root is an object
+reference, outside the heap, that points into the heap.  The collector
+preserves all objects reachable from a root, and collects all that
+aren't.  The mutator, at least while the collector is active, can't
+have any object references anywhere except in a root -- otherwise the
+collector might collect them while they're being used.
+
+Collector, mutator, and root are general terms for managed memory
+systems.  But back to Schetoo.
+
+Any constructor may, instead of creating an object, raise the
+HEAP_FULL exception.  When that happens, the mutator has to call
+collect_garbage() before constructing any more objects.  When
+collect_garbage() is called, all object references become invalid,
+except those stored in roots.
+
+These macros declare variables as roots.  Roots must be statically
+allocated.
+
+    ROOT(name1)	            // a root, initialized to undefined.
+
+    ROOT_CONSTRUCTOR(name2) // a root initialized to some value.
+    {
+	return [some value];
+    }
+
+That's about it.  Typed objects with procedural interfaces,
+automatically reclaimed, and a bunch of root objects.
+
+In the next article, I'll explain how the memory manager implements
+all this.
+
+----------------------------------
+
+This is the Nth article in the Schetoo tour.  Last time, I looked
+at the abstraction the memory manager provides.  Now it's time to see how
+that abstraction is implemented.
+
+Schetoo's memory manager is type-extensible.  Each type defines the
+memory layout of its objects, with a one-word common header.  New
+types can be defined either in C or in Scheme without modifying the
+memory manager core.  Small objects are stored as immediate values in
+their references.  The garbage collector uses a stop-and-copy algorithm.
+
+There are two kinds of objects: immediate objects and heap objects.
+Immediate objects are small and immutable.  They are stored directly
+in the object pointer.  Heap objects are stored in the heap.
+
+Heap objects are always stored at addresses that are multiples of
+eight.  That means the lowest three bits are always zero.  Immediate
+objects use the low three bits as a <dfn>tag</dfn> to identify the
+object.
+
+Fixnums are small integers.  On a 32 bit architecture, they can range
+from -(2**30) to +(2**30 - 1), or -1,073,741,824 to +1,073,741,823.  A
+small integer is stored in its pointer left-shifted by one bit, with a
+tag of 1 in the low-order bit.
+
+    typedef struct object *obj_t;
+
+    obj_t make_fixnum(int n)
+    {
+	return (obj_t)((n << 1) | 1);
+    }
+
+On a 64-bit architecture, a fixnum has 63 bits.
+
+
+
+
+Memory is allocated in units of words.  A word is big enough to hold a
+pointer.  Fortunately, C has a type for that.
+
+    #include <stdint.h>
+    typedef intptr_t word_t;
+    typedef uintptr_t uword_t;
+
+
+
+An object is a pointer.  Scheme is dynamically typed, so there's not a
+lot of static typing going on.  Everything is an object, and every
+object is a
+
+Some objects are stored in memory.  (We'll get to the ones that aren't
+later.)  Those are called heap objects, and they each start with a
+one-word header.
+
+    typedef struct heap_object {
+	mem_ops_t *ho_ops;
+    } heap_object_t;
+
+You can think of the header as a class pointer.  It points to a
+mem_ops_t structure which contains a class name, a superclass pointer,
+and some virtual function pointers.  The virtual functions will come
+into play during garbage collection.
+
+    typedef struct mem_ops {
+	obj_t                 mo_start_marker;
+	const wchar_t        *mo_name;	/* object class's name */
+	mem_ops_t            *mo_super;	/* superclass pointer */
+	mem_size_op          *mo_size;
+	mem_ptr_count_op     *mo_ptr_count;
+	mem_move_op          *mo_move;
+	mem_get_ptr_op       *mo_get_ptr;
+	mem_set_ptr_op       *mo_set_ptr;
+	mem_end_marker_t      mo_end_marker;
+    } mem_ops_t;
+

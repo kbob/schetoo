@@ -1,0 +1,66 @@
+re-derivatives.
+    story of how it was lost and re-found
+    intuitive explanation
+
+schetoo - three articles?
+
+    heap abstraction
+	types
+	safe interface
+	constructors, allocators, and mutators
+	roots
+	automatic deallocation
+	HEAP_FULL exception
+
+    heap implementation
+    	object format (w/ records and rtds)
+	immediate pointers
+	how GC operates
+	accessors and setters
+	root pointers
+
+    VM
+	continuation
+	trampoline
+	simple routines
+
+    Exceptions
+	what is an exception?
+	why we need them
+	what they need to do
+
+    Input subsystem - why it's a mess.
+	
+
+http://engineerwriting.jottit.com/
+
+Title. A memory manager for Scheme
+
+P1. Designed a memory manager for Scheme.  It is type-extensible, has
+    immediate values, has garbage collection.  It has a 100%
+    procedural interface so that details of memory layout are opaque
+    to higher-level software.
+
+define: immediate values
+	garbage collection
+	type-extensions
+	procedural interface
+	?records?	
+    
+Title. A VM for Scheme with transactional instructions
+
+P1. A virtual machine for Scheme is described which makes each
+    instruction a transaction.  Each instruction is executed
+    optimistically and either completes successfully or is rolled
+    back.  This approach has the benefits that it is not necessary
+    to track temporary root pointers, that exceptions are integrated
+    into the VM, and transaction semantics can be verified.
+
+expand:
+    what is the vm?
+    my transactions
+    rolling back
+    what is a temporary root pointer?
+    verifying semantics
+        define the four ops: COMMIT, SIDE_EFFECT, MUTATE, COULD_RETRY.
+	define committed memory.
