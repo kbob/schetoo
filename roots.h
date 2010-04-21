@@ -4,6 +4,22 @@
 #include "obj.h"
 #include "uniq.h"
 
+/*
+ * These macros declare an object to be a root pointer into the heap.
+ * Roots must be statically allocated.
+ *
+ * A root can either have STATIC or EXTERN storage class.  Those terms
+ * mean what they do in C: STATIC has file scope; EXTERN has global scope.
+ * STATIC is the default.
+ *
+ * A root can either be local to a THREAD or global to all threads.
+ * The interpreter is not (yet?) multi-threaded, so THREAD is a no-op.
+ *
+ * A root can be implicitly initialized to the undefined value, or
+ * explicitly initialized with a constructor.  The constructor will
+ * be invoked after the heap is initialized.
+ */
+
 #define ROOT             STATIC_ROOT
 #define ROOT_CONSTRUCTOR STATIC_ROOT_CONSTRUCTOR
 
