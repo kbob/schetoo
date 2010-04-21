@@ -15,6 +15,7 @@ void self_test()
 
 #include "env.h"
 #include "eval.h"
+#include "heap.h"
 #include "io.h"
 #include "list.h"
 #include "obj.h"
@@ -53,6 +54,7 @@ static int read_driver(const test_case_descriptor_t *tc)
 #if TEST_TRACE
     printf("%s:%d read %ls\n", tc->tcd_file, tc->tcd_lineno, tc->tcd_input);
 #endif
+    collect_garbage();
     obj_t input    = make_string_from_C_str(tc->tcd_input);
     obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
     obj_t read_sym = make_symbol_from_C_str(L"read");
@@ -102,6 +104,7 @@ static int eval_driver(const test_case_descriptor_t *tc)
         L"                    last					\n"
         L"                   (loop (read port) (eval form env)))))	\n"
 	L"   (loop (read port) #f))";
+    collect_garbage();
     obj_t test_proc;
     {
 	obj_t root_env = root_environment();
