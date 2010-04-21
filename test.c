@@ -67,6 +67,7 @@ static int read_driver(const test_case_descriptor_t *tc)
     wchar_t actual[out_size + 1];
     outstream_t *out = make_string_outstream(actual, out_size);
     princ(obj, out);
+    delete_outstream(out);
     size_t expected_bytes = sizeof (wchar_t) * (tc->tcd_expected_len + 1);
     if (memcmp(actual, tc->tcd_expected, expected_bytes)) {
 	int i;
@@ -101,23 +102,33 @@ static int eval_driver(const test_case_descriptor_t *tc)
         L"                    last					\n"
         L"                   (loop (read port) (eval form env)))))	\n"
 	L"   (loop (read port) #f))";
+    obj_t test_proc;
+    {
+	obj_t root_env = root_environment();
+	obj_t tsrc_str = make_string_from_C_str(test_source);
+	obj_t eval_sym = make_symbol_from_C_str(L"eval");
+	obj_t read_sym = make_symbol_from_C_str(L"read");
+	obj_t osip_sym = make_symbol_from_C_str(L"open-string-input-port");
+	obj_t renv_sym = make_symbol_from_C_str(L"root-environment");
+	/*
+	 * (eval (read (open-string-input-port "..."))
+	 *       (root-environment))
+	 */
+	obj_t form1    = MAKE_LIST(eval_sym,
+				   MAKE_LIST(read_sym,
+					     MAKE_LIST(osip_sym, tsrc_str)),
+				   MAKE_LIST(renv_sym));
+	test_proc = core_eval(form1, root_env);
+	// obj_t's are invalidated.  core_eval may have GC'd.
+    }
+    obj_t port;
+    {
+	obj_t root_env  = root_environment();
+	obj_t input_str = make_string_from_C_str(tc->tcd_input);
+	obj_t osip_sym  = make_symbol_from_C_str(L"open-string-input-port");
+	port            = core_eval(MAKE_LIST(osip_sym, input_str), root_env);
+    }
     obj_t root_env  = root_environment();
-    obj_t tsrc_str  = make_string_from_C_str(test_source);
-    obj_t eval_sym  = make_symbol_from_C_str(L"eval");
-    obj_t read_sym  = make_symbol_from_C_str(L"read");
-    obj_t osip_sym  = make_symbol_from_C_str(L"open-string-input-port");
-    obj_t renv_sym  = make_symbol_from_C_str(L"root-environment");
-    /*
-     * (eval (read (open-string-input-port "..."))
-     *       (root-environment))
-     */
-    obj_t form1     = MAKE_LIST(eval_sym,
-				MAKE_LIST(read_sym,
-					  MAKE_LIST(osip_sym, tsrc_str)),
-				MAKE_LIST(renv_sym));
-    obj_t test_proc = core_eval(form1, root_env);
-    obj_t input_str = make_string_from_C_str(tc->tcd_input);
-    obj_t port      = core_eval(MAKE_LIST(osip_sym, input_str), root_env);
     obj_t test_env  = make_env(root_env);
     obj_t test_args = MAKE_LIST(test_env, FALSE_OBJ, port);
     obj_t cont      = make_cont5(c_apply_proc,
