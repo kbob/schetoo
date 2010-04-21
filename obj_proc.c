@@ -9,7 +9,7 @@ static size_t proc_size_op(const heap_object_t *hobj)
 
 static size_t proc_ptr_count_op(const heap_object_t *hobj)
 {
-    return ((proc_obj_t *)hobj)->proc_flags & PF_COMPILED_C ? 2 : 3;
+    return ((proc_obj_t *)hobj)->proc_flags & PF_COMPILED_C ? 3 : 4;
 }
 
 static void proc_move_op(const heap_object_t *src, heap_object_t *dst)
@@ -21,10 +21,12 @@ static obj_t proc_get_ptr_op(const heap_object_t *hobj, size_t index)
 {
     proc_obj_t *proc = (proc_obj_t *)hobj;
     if (index == 0)
-	return proc->proc_args;
+	return proc->proc_name;
     if (index == 1)
+	return proc->proc_args;
+    if (index == 2)
 	return proc->proc_env;
-    if (index == 2 && !(proc->proc_flags & PF_COMPILED_C))
+    if (index == 3 && !(proc->proc_flags & PF_COMPILED_C))
 	return proc->proc_u.pu_body;
     assert(false && "index out of range");
 }
@@ -33,10 +35,12 @@ static void proc_set_ptr_op(heap_object_t *hobj, size_t index, obj_t ptr)
 {
     proc_obj_t *proc = (proc_obj_t *)hobj;
     if (index == 0)
-	proc->proc_args = ptr;
+	proc->proc_name = ptr;
     else if (index == 1)
+	proc->proc_args = ptr;
+    else if (index == 2)
 	proc->proc_env = ptr;
-    else if (index == 2 && !(proc->proc_flags & PF_COMPILED_C))
+    else if (index == 3 && !(proc->proc_flags & PF_COMPILED_C))
 	proc->proc_u.pu_body = ptr;
     else
 	assert(false && "index out of range");
