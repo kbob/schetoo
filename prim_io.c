@@ -3,6 +3,7 @@
 #include "obj_eof.h"
 #include "obj_port.h"
 #include "read.h"
+#include "record.h"
 #include "roots.h"
 #include "types.h"
 
@@ -14,10 +15,6 @@
 #include <unistd.h>
 #include <wchar.h>
 
-ROOT(readline_line);
-
-#include "record.h"
-
 DEFINE_STATIC_RECORD_TYPE(io_error, L"&i/o", &error, 0) = {
     { FM_END }
 };
@@ -25,8 +22,6 @@ DEFINE_STATIC_RECORD_TYPE(io_error, L"&i/o", &error, 0) = {
 DEFINE_STATIC_RECORD_TYPE(io_read, L"&i/o-read", &io_error, 0) = {
     { FM_END }
 };
-
-extern cv_t c_peek_char(obj_t cont, obj_t values);
 
 ROOT(standard_input);
 
