@@ -77,13 +77,16 @@ const char_t *string_value(obj_t string)
 const char_t *string_value_nc(obj_t string)
 {
     CHECK_OBJ(string);
+    assert(is_string(string));
     return ((string_obj_t *)string)->string_value;
 }
 
 void string_set_char_nc(obj_t string, size_t index, char_t c)
 {
     CHECK_OBJ(string);
+    assert(is_string(string));
     string_obj_t *sp = (string_obj_t *)string;
+    assert(index < sp->string_len);
     MUTATE(string);
     sp->string_value[index] = c;
     assert(sp->string_value[sp->string_len] == L'\0');

@@ -3,6 +3,8 @@
 
 /* rtd - record type descriptor */
 
+#include <assert.h>
+
 #include "except.h"
 #include "mem.h"
 

@@ -17,6 +17,7 @@ void pair_set_car_nc(obj_t pair, obj_t car)
 {
     CHECK_OBJ(pair);
     CHECK_OBJ(car);
+    assert(is_pair(pair));
     fixvec2_set_ptr(pair, 0, car);
 }
 
@@ -33,6 +34,7 @@ void pair_set_cdr_nc(obj_t pair, obj_t cdr)
 {
     CHECK_OBJ(pair);
     CHECK_OBJ(cdr);
+    assert(is_pair(pair));
     fixvec2_set_ptr(pair, 1, cdr);
 }
 
