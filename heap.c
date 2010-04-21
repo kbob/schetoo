@@ -22,13 +22,15 @@
 
 #define GROW_HEAP
 #ifdef GROW_HEAP
-#define INITIAL_HEAP_WORDS (1 << 22)
-#define MAX_HEAP_UTILIZATION (0.6)
-#define MIN_HEAP_UTILIZATION (0.1)
+#define INITIAL_HEAP_WORDS (1 << 13)
+#define MAX_HEAP_UTILIZATION (0.45)
+#define MIN_HEAP_UTILIZATION (0.03)
+#define MIN_HEAP_WORDS (1 << 13)
 #else
 #define INITIAL_HEAP_WORDS (1 << 17)
 #endif
 #define INITIAL_HEAP_BYTES (INITIAL_HEAP_WORDS * sizeof (word_t))
+#define MIN_HEAP_BYTES         (MIN_HEAP_WORDS * sizeof (word_t))
 
 #ifndef GROW_HEAP
 static void *the_heap;
@@ -187,19 +189,14 @@ static void flip()
     fromspace = tospace;
     fromspace_end = tospace_end;
 #ifdef GROW_HEAP
-    size_t orig_heap_size = heap_size_bytes;
     while (utilization > MAX_HEAP_UTILIZATION) {
 	heap_size_bytes *= 2;
 	utilization /= 2;
     }
-    while (utilization && utilization < MIN_HEAP_UTILIZATION) {
+    while (utilization && utilization < MIN_HEAP_UTILIZATION &&
+	   heap_size_bytes > MIN_HEAP_BYTES) {
 	heap_size_bytes /= 2;
 	utilization *= 2;
-    }
-    if (heap_size_bytes != orig_heap_size) {
-	printf("%sing heap from %d to %d bytes\n",
-	       (heap_size_bytes > orig_heap_size) ? "grow" : "shrink",
-	       orig_heap_size, heap_size_bytes);
     }
     tospace = create_region(heap_size_bytes);
     alloc_end = tospace_end = tospace + heap_size_bytes;
@@ -252,7 +249,7 @@ static void *scan_obj(heap_object_t *hobj)
 
 static void copy_heap()
 {
-    printf("copy_heap\n");
+    //fprintf(stderr, "copy_heap %d\n", heap_size_bytes);
     /* with lock */ {
 	verify_heap();
 	flip();
@@ -270,8 +267,10 @@ static void copy_heap()
 #ifdef GROW_HEAP
 	destroy_region(fromspace, fromspace_end - fromspace);
 	fromspace = fromspace_end = 0;
-	utilization = (float)(alloc_end - next_alloc) / (float)(tospace_end - tospace);
-	printf("%d of %d used, utilization = %g\n", alloc_end - next_alloc, tospace_end - tospace, utilization);
+	utilization = (float)(next_alloc - tospace) /
+	              (float)(tospace_end - tospace);
+	// fprintf(stderr, "%d of %d used, utilization = %g\n",
+	//	   next_alloc - tospace, tospace_end - tospace, utilization);
 #else
 	if (alloc_end - next_alloc < (tospace_end - tospace) / 2)
 	    fprintf(stderr, "increase heap size\n");
