@@ -24,7 +24,7 @@
 #ifdef GROW_HEAP
 #define INITIAL_HEAP_WORDS (1 << 13)
 #define MAX_HEAP_UTILIZATION (0.45)
-#define MIN_HEAP_UTILIZATION (0.03)
+#define MIN_HEAP_UTILIZATION (0.1)
 #define MIN_HEAP_WORDS (1 << 13)
 #else
 #define INITIAL_HEAP_WORDS (1 << 17)
@@ -249,7 +249,7 @@ static void *scan_obj(heap_object_t *hobj)
 
 static void copy_heap()
 {
-    //fprintf(stderr, "copy_heap %d\n", heap_size_bytes);
+    // fprintf(stderr, "copy_heap %d\n", heap_size_bytes);
     /* with lock */ {
 	verify_heap();
 	flip();
