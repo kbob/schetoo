@@ -57,8 +57,8 @@ all:	build test
 
 test:	tests
 	@$(foreach t, $(TESTS), \
-	    echo 'Test $(patsubst ./%,%,$t)'; \
-	    $t;)
+	    echo 'Test $(patsubst ./%,%,$t)' && \
+	    $t &&) :
 
 build:	Makefiles libs programs tests
 
