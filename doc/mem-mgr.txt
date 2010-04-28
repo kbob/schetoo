@@ -1,6 +1,6 @@
 I've been working on a Scheme interpreter.  It has progressed to the
 point where its core works and the basic design has been shown to be
-viable.  It's by no means finished -- can a project like this ever
+viable.  It's by no means finished &mdash; can a project like this ever
 be finished?
 
 But it's at a coherent point, so it seems like a good time to pause
@@ -17,7 +17,7 @@ But first, the memory manager.
 ---
 
 Schetoo's memory manager undersits everything else.  The memory
-manager provides a safe interface to <i>typed memory</i>.
+manager provides a safe interface to <dfn>typed memory</dfn>.
 User-defined types can be defined and instantiated at compile or run
 time.  The memory manager automatically deallocates memory objects
 that are no longer in use.
@@ -25,7 +25,7 @@ that are no longer in use.
 By <dfn>typed memory</dfn>, I mean that instead of an undifferentiated
 array of bytes, the memory manager exports references to objects of
 various types, such as pair, vector, symbol, and character.  Some of
-the types allow access to their contents as arrays of bytes -- in
+the types allow access to their contents as arrays of bytes &mdash; in
 fact, that's exactly what the bytevector type does.  But in general,
 objects are opaque.  They have to be accessed through their API.
 
@@ -81,7 +81,7 @@ It does that through garbage collection (GC).
 
 When talking about garbage collection, it's common to think of the
 program as two actors.  The <dfn>collector</dfn> collects the garbage.
-The <dfn>mutator</dfn> manipulates the heap, creating, dereferencing,
+The <dfn>mutator</dfn> manipulates the heap by creating, dereferencing,
 mutating, and forgeting objects.  In other words, the mutator is the
 rest of the system.
 
@@ -89,7 +89,7 @@ The other useful term is <dfn>root</dfn>.  A root is an object
 reference, outside the heap, that points into the heap.  The collector
 preserves all objects reachable from a root, and collects all that
 aren't.  The mutator, at least while the collector is active, can't
-have any object references anywhere except in a root -- otherwise the
+have any object references anywhere except in a root &mdash; otherwise the
 collector might collect them while they're being used.
 
 Collector, mutator, and root are general terms for managed memory
@@ -119,8 +119,8 @@ all this.
 
 ----------------------------------
 
-This is the Nth article in the Schetoo tour.  Last time, I looked
-at the abstraction the memory manager provides.  Now it's time to see how
+This is the Nth article in the Schetoo tour.  Last time, I looked at
+the abstraction the memory manager provides.  Now it's time to see how
 that abstraction is implemented.
 
 Schetoo's memory manager is type-extensible.  Each type defines the
@@ -131,26 +131,129 @@ their references.  The garbage collector uses a stop-and-copy algorithm.
 
 There are two kinds of objects: immediate objects and heap objects.
 Immediate objects are small and immutable.  They are stored directly
-in the object pointer.  Heap objects are stored in the heap.
+in the object reference.  Heap objects are stored in the heap.
 
 Heap objects are always stored at addresses that are multiples of
 eight.  That means the lowest three bits are always zero.  Immediate
 objects use the low three bits as a <dfn>tag</dfn> to identify the
-object.
+object type.
 
 Fixnums are small integers.  On a 32 bit architecture, they can range
 from -(2**30) to +(2**30 - 1), or -1,073,741,824 to +1,073,741,823.  A
-small integer is stored in its pointer left-shifted by one bit, with a
+small integer is stored in its reference left-shifted by one bit, with a
 tag of 1 in the low-order bit.
 
     typedef struct object *obj_t;
 
     obj_t make_fixnum(int n)
     {
-	return (obj_t)((n << 1) | 1);
+	return (obj_t)((n &lt;&lt; 1) | 1);
     }
 
 On a 64-bit architecture, a fixnum has 63 bits.
+
+That accounts for five of the eight tags.  000 is a heap object.  001,
+011, 101, and 111 are fixnums.  The remaining three tags are 010, 100
+and 110.  010 is used for a forward pointer, described below.  100 is
+reserved for future use.  And 110 is for all other immediate objects.
+
+An immediate object (other than a fixnum) has an eight bit tag.  The
+low three bits are 110, and the high five bits distinguish various
+types of immediate objects.  That leaves space for 32 types of
+immediates.  Currently, only four are defined.
+
+
+   00000 110 - character (Unicode code point)
+   00001 110 - Boolean
+   00010 110 - Read action
+   00011 110 - Special
+
+The rest of the word is used to distinguish immediate objects of
+that type.  So on a 32-bit architecture, there are 24 bits for
+each type.  There are 1.1 million Unicode code points, two
+Booleans, seven read actions, and currently six special values.
+
+Let's look at the special values.
+
+EMPTY_LIST, aka nil or null, is well-known in Scheme.
+
+UNDEFINED_OBJ is the result of any operation whose value is not
+specified.
+
+END_OF_FILE is returned by read procedures and by
+<code>eof-object</code>.
+
+MISSING_ARG is used internally by the interpreter.  It is passed to a
+primitive with optional arguments when those arguments are not
+supplied.
+
+MEM_OPS_PRIMITIVE is used by the memory manager.  It's described
+below.
+
+END_OF_ARGS is used by variadic C macros to mark the end of the
+argument list.
+
+The first three are sometimes visible to Scheme programs; the last
+three are not.
+
+That accounts for the immediate objects.  There are a lot of them, and
+they have a lot of different formats.  But that does not slow the
+interpreter down.  In every case, the interpreter needs to test for one
+or two types, and can ignore the rest.
+
+So let's go on to heap objects.  There are two kinds: primitive
+objects and user-defined objects or records.  Both kinds start
+with a pointer to a mem_ops_t structure which holds type-related
+information.  The rest of the object's memory is type-specific.
+
+There are three abstract types that primitive types can derive from.
+A mem_scalar is an object that has no object references.  For example,
+strings and bytevectors are scalars.  A fixvec is a fixed-size vector
+of object references.  For example, a pair is a fixvec of length 2.
+And a mixvec is a vector of a fixed number of references and and a
+fixed number of scalar words.  An I/O port is a mixvec of 5 scalars
+and 6 object references.
+
+A primitive object doesn't have to derive from any of those abstract
+types &mdash; they're just there for convenience.
+
+I mentioned a mem_ops_t structure.  Here is the definition.
+
+<pre>
+typedef struct mem_ops mem_ops_t;
+
+struct mem_ops {
+    obj_t                 mo_start_marker;
+    const wchar_t        *mo_name;	/* object class's name */
+    mem_ops_t            *mo_super;	/* superclass pointer */
+    mem_size_op          *mo_size;
+    mem_ptr_count_op     *mo_ptr_count;
+    mem_move_op          *mo_move;
+    mem_get_ptr_op       *mo_get_ptr;
+    mem_set_ptr_op       *mo_set_ptr;
+    mem_end_marker_t      mo_end_marker;
+};
+</pre>
+
+The various op members are functions that operate on the object.
+For example, here's the mem_move_op prototype.
+
+<pre>
+/* move the object to the new location. */
+typedef void mem_move_op(const heap_object_t *src, heap_object_t *dst);
+</pre>
+
+The only thing the memory manager knows about the object's memory
+layout is that the first word points to the mem_ops.  It manipulates
+the object through its mem_ops.  Clients of the object only manipulate
+it through its constructors, accessors, and mutators.  So the object's
+layout is thoroughly encapsulated.
+
+<dfn>Records</dfn> are 
+
+
+
+
 
 
 
