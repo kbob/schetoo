@@ -14,7 +14,8 @@
 #include "obj_rtd.h"
 #include "obj_string.h"
 #include "obj_symbol.h"
-#include "obj_undefined.h"
+#include "obj_uninit.h"
+#include "obj_unspec.h"
 #include "obj_vector.h"
 
 #endif /* !TYPES_INCLUDED */

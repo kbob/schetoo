@@ -61,7 +61,9 @@ DEFINE_RAW_PROC(L"call-with-current-continuation")(obj_t cont, obj_t values)
     obj_t saved_values = cont5_arg2(cont);
     obj_t closure = CONS((obj_t)cont_cont(cont),
 			 saved_values);
-    obj_t escape = make_raw_procedure(escape_callcc, UNDEFINED_OBJ, closure);
+    obj_t escape = make_raw_procedure(escape_callcc,
+				      make_unspecified(),
+				      closure);
     return cv(make_cont5(c_apply_proc,
 			 cont_cont(cont),
 			 cont_env(cont),

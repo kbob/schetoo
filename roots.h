@@ -9,15 +9,15 @@
  * Roots must be statically allocated.
  *
  * A root can either have STATIC or EXTERN storage class.  Those terms
- * mean what they do in C: STATIC has file scope; EXTERN has global scope.
- * STATIC is the default.
+ * mean what they do in C: STATIC has file scope; EXTERN has global
+ * scope.  STATIC is the default.
  *
  * A root can either be local to a THREAD or global to all threads.
  * The interpreter is not (yet?) multi-threaded, so THREAD is a no-op.
  *
- * A root can be implicitly initialized to the undefined value, or
- * explicitly initialized with a constructor.  The constructor will
- * be invoked after the heap is initialized.
+ * A root can be implicitly initialized to the uninitialized value, or
+ * explicitly initialized with a constructor.  The constructor will be
+ * invoked after the heap is initialized.
  */
 
 #define ROOT             STATIC_ROOT
@@ -42,7 +42,7 @@
     static obj_t init_root_##name(void)
 
 #define GENERAL_ROOT_(storage_class, name, init) 			\
-    storage_class obj_t name = UNDEFINED_OBJ;				\
+    storage_class obj_t name = UNINITIALIZED_OBJ;			\
     __attribute__((constructor)) 					\
     static void mem_record_root_ ## name(void) 				\
     { 									\

@@ -1,7 +1,7 @@
 #include "env.h"
 #include "list.h"
 #include "prim.h"
-#include "obj_undefined.h"
+#include "obj_unspec.h"
 #include "test.h"
 #include "types.h"
 
@@ -10,7 +10,7 @@ static cv_t c_continue_define(obj_t cont, obj_t values)
     assert(is_cont5(cont));
     EVAL_LOG("var=%O values=%O", cont5_arg1(cont), values);
     /* N.B., allocate new values before mutating environment. */
-    obj_t new_values = CONS(UNDEFINED_OBJ, cont5_arg2(cont));
+    obj_t new_values = CONS(make_unspecified(), cont5_arg2(cont));
     obj_t ret = cont_cont(cont);
     env_bind(cont_env(cont),
 	     cont5_arg1(cont),
@@ -39,4 +39,4 @@ DEFINE_SPECIAL_FORM(L"define")(obj_t cont, obj_t values)
 }
 
 TEST_EVAL(L"(define v0 3) v0",			L"3");
-TEST_EVAL(L"(define v5 1)",			UNDEFINED_REPR);
+TEST_EVAL(L"(define v5 1)",			UNSPECIFIED_REPR);

@@ -140,7 +140,7 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	    return ((cont_proc_t)procedure_code(operator))(cont, values);
 	else {
 	    // N.B., call proc after all other allocations.
-	    obj_t new_values = CONS(UNDEFINED_OBJ, saved_values);
+	    obj_t new_values = CONS(make_uninitialized(), saved_values);
 	    pair_set_car_nc(new_values, apply_proc(operator, arg_list));
 	    return cv(next, new_values);
 	}
@@ -167,7 +167,7 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	    env_bind(new_env, formal, BT_LEXICAL, M_MUTABLE, actual);
 	}
 	// Push a value for c_eval_seq to discard.
-	obj_t new_values = CONS(UNDEFINED_OBJ, saved_values);
+	obj_t new_values = CONS(make_uninitialized(), saved_values);
 	return cv(make_cont4(c_eval_seq, next, new_env, body), new_values);
     }
 }
@@ -188,7 +188,7 @@ static cv_t c_eval_operator(obj_t cont, obj_t values)
 	} else {
 	    // N.B., call proc after all other allocations.
 	    obj_t arg_list = application_operands(appl);
-	    obj_t new_values = CONS(UNDEFINED_OBJ, CDR(values));
+	    obj_t new_values = CONS(make_uninitialized(), CDR(values));
 	    pair_set_car(new_values, apply_proc(operator, arg_list));
 	    return cv(cont_cont(cont), new_values);
 	}
@@ -274,7 +274,7 @@ static cv_t default_handler(obj_t cont, obj_t values)
 	}
     }
     obj_t who_p = FALSE_OBJ;
-    obj_t irr_p = UNDEFINED_OBJ;
+    obj_t irr_p = make_uninitialized();
     for (i = 0; i < size; i++) {
 	obj_t p = vector_ref(parts, i);
 	obj_t rtd = record_rtd(p);
@@ -288,20 +288,20 @@ static cv_t default_handler(obj_t cont, obj_t values)
 	else if (rtd == irritants)
 	    irr_p = record_get_field(p, 0);
     }
-    if (who_p != FALSE_OBJ && irr_p != UNDEFINED_OBJ) {
+    if (who_p != FALSE_OBJ && !is_uninitialized(irr_p)) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, CONS(who_p, irr_p));
 	psn = "";
     } else if (who_p != FALSE_OBJ) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, who_p);
 	psn = "";
-    } else if (irr_p != UNDEFINED_OBJ) {
+    } else if (!is_uninitialized(irr_p)) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, irr_p);
 	psn = "";
     }
     if (*psn)
 	fprintf(stderr, "%s: unknown exception\n", psn);
     ofprintf(stderr, "\n");
-    return cv(EMPTY_LIST, CONS(UNDEFINED_OBJ, EMPTY_LIST));
+    return cv(EMPTY_LIST, CONS(make_uninitialized(), EMPTY_LIST));
 }
 
 static cv_t c_exception_returned(obj_t cont, obj_t values)
@@ -388,8 +388,8 @@ extern obj_t core_eval_cont(volatile obj_t cont,
 	    collect_garbage();
 	    cont        = cont_root;
 	    values      = values_root;
-	    cont_root   = UNDEFINED_OBJ;
-	    values_root = UNDEFINED_OBJ;
+	    cont_root   = make_uninitialized();
+	    values_root = make_uninitialized();
 	    break;
 
 	case LT_NO_EXCEPTION:
@@ -414,7 +414,7 @@ extern obj_t core_eval_cont(volatile obj_t cont,
 #endif
     }
     deregister_lowex_handler(handle_lowex);
-    eval_dyn_env = make_undefined();
+    eval_dyn_env = make_uninitialized();
     EVAL_LOG("END values=%O", values);
     assert(is_null(CDR(values)));
     return CAR(values);

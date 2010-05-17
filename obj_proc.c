@@ -2,6 +2,8 @@
 
 #include <assert.h>
 
+#include "obj_uninit.h"
+
 static size_t proc_size_op(const heap_object_t *hobj)
 {
     return sizeof (proc_obj_t);
@@ -75,7 +77,11 @@ obj_t make_procedure(obj_t body, obj_t arglist, obj_t env)
     CHECK_OBJ(body);
     CHECK_OBJ(arglist);
     CHECK_OBJ(env);
-    return make_proc(PF_ARGS_EVALUATED, body, UNDEFINED_OBJ, arglist, env);
+    return make_proc(PF_ARGS_EVALUATED,
+		     body,
+		     make_uninitialized(),
+		     arglist,
+		     env);
 }
 
 obj_t make_C_procedure(C_procedure_t code,
@@ -92,7 +98,7 @@ obj_t make_raw_procedure(cont_proc_t code, obj_t name, obj_t env)
 {
     CHECK_OBJ(env);
     proc_flags_t flags = PF_COMPILED_C | PF_RAW | PF_ARGS_EVALUATED;
-    return make_proc(flags, (obj_t)code, name, UNDEFINED_OBJ, env);
+    return make_proc(flags, (obj_t)code, name, make_uninitialized(), env);
 }
 
 obj_t make_special_form_procedure(obj_t body, obj_t env)
@@ -100,7 +106,11 @@ obj_t make_special_form_procedure(obj_t body, obj_t env)
     CHECK_OBJ(body);
     CHECK_OBJ(env);
     proc_flags_t flags = 0;
-    return make_proc(flags, body, UNDEFINED_OBJ, UNDEFINED_OBJ, env);
+    return make_proc(flags,
+		     body,
+		     make_uninitialized(),
+		     make_uninitialized(),
+		     env);
 }
 
 obj_t make_C_special_form_procedure(C_procedure_t code,
@@ -117,5 +127,5 @@ obj_t make_raw_special_form_procedure(cont_proc_t code, obj_t name, obj_t env)
 {
     CHECK_OBJ(env);
     proc_flags_t flags = PF_COMPILED_C | PF_RAW;
-    return make_proc(flags, (obj_t)code, name, UNDEFINED_OBJ, env);
+    return make_proc(flags, (obj_t)code, name, make_uninitialized(), env);
 }

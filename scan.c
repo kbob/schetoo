@@ -623,7 +623,7 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
     }
     if (is_eof(ch))
 	return cv(cont_cont(cont),
-		  MAKE_LIST(make_fixnum(TOK_EOF), UNDEFINED_OBJ));
+		  MAKE_LIST(make_fixnum(TOK_EOF), make_uninitialized()));
     const yy_delta_row_t *row = &yy_delta[state];
     yy_cc_t cc = char_class(character_value(ch));
     if (cc < row->yy_len)
@@ -680,7 +680,7 @@ static cv_t c_continue_read_token(obj_t cont, obj_t values)
 				     second,
 				     cont_env(cont),
 				     MISSING_ARG,
-				     UNDEFINED_OBJ);
+				     make_uninitialized());
 	    return cv(first, cont5_arg2(cont));
 	}
     }

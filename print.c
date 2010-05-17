@@ -213,9 +213,14 @@ static void print_record(obj_t obj, outstream_t *out)
     outstream_putwc(L'>', out);
 }
 
-static void print_undefined(obj_t obj, outstream_t *out)
+static void print_uninitialized(obj_t obj, outstream_t *out)
 {
-    outstream_printf(out, L"#<undefined>");
+    outstream_printf(out, UNINITIALIZED_REPR);
+}
+
+static void print_unspecified(obj_t obj, outstream_t *out)
+{
+    outstream_printf(out, UNSPECIFIED_REPR);
 }
 
 static void print_form(obj_t obj, outstream_t *out)
@@ -244,8 +249,10 @@ static void print_form(obj_t obj, outstream_t *out)
 	print_rtd(obj, out);
     } else if (is_record(obj)) {
 	print_record(obj, out);
-    } else if (is_undefined(obj)) {
-	print_undefined(obj, out);
+    } else if (is_uninitialized(obj)) {
+	print_uninitialized(obj, out);
+    } else if (is_unspecified(obj)) {
+	print_unspecified(obj, out);
     } else {
 	outstream_printf(out, L"#<%ls-%p>", obj_type_name(obj), obj);
     }
@@ -258,7 +265,7 @@ void princ(obj_t obj, outstream_t *out)
 
 void print(obj_t obj, outstream_t *out)
 {
-    if (!is_undefined(obj)) {
+    if (!is_unspecified(obj)) {
 	print_form(obj, out);
 	outstream_putwc(L'\n', out);
     }

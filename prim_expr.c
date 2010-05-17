@@ -76,7 +76,7 @@ static cv_t c_continue_if(obj_t cont, obj_t values)
 	return cv(make_cont4(c_eval, cont_cont(cont), env, consequent),
 		  CDR(values));
     } else if (is_null(CDDDR(form)))
-	return cv(cont_cont(cont), CONS(UNDEFINED_OBJ, CDR(values)));
+	return cv(cont_cont(cont), CONS(make_unspecified(), CDR(values)));
     else {
 	obj_t alternate = CADDDR(form);
 	return cv(make_cont4(c_eval, cont_cont(cont), env, alternate),
@@ -101,7 +101,7 @@ DEFINE_SPECIAL_FORM(L"if")(obj_t cont, obj_t values)
 TEST_EVAL(L"(if (= 0 0) 1 2)",		L"1");
 TEST_EVAL(L"(if (= 0 1) 1 2)",		L"2");
 TEST_EVAL(L"(if (= 0 0) 1)",		L"1");
-TEST_EVAL(L"(if (= 0 1) 1)",		UNDEFINED_REPR);
+TEST_EVAL(L"(if (= 0 1) 1)",		UNSPECIFIED_REPR);
 
 /* from r6rs */
 TEST_EVAL(L"(if (> 3 2) 'yes 'no)",	L"yes");
@@ -109,7 +109,7 @@ TEST_EVAL(L"(if (> 2 3) 'yes 'no)",	L"no");
 TEST_EVAL(L"(if (> 3 2)\n"
           L"    (- 3 2)\n"
           L"    (+ 3 2))",		L"1");
-TEST_EVAL(L"(if #f #f)",		UNDEFINED_REPR);
+TEST_EVAL(L"(if #f #f)",		UNSPECIFIED_REPR);
 
 static cv_t c_continue_set(obj_t cont, obj_t values)
 {
@@ -120,7 +120,7 @@ static cv_t c_continue_set(obj_t cont, obj_t values)
     obj_t bdg   = env_lookup(env, var);
     EVAL_LOG("var=%O value=%O", var, value);
     /* N.B., allocate values list before mutating environment. */
-    obj_t new_values = CONS(UNDEFINED_OBJ, cont5_arg2(cont));
+    obj_t new_values = CONS(make_unspecified(), cont5_arg2(cont));
     obj_t ret = cont_cont(cont);
     binding_set_value(bdg, value);
     return cv(ret, new_values);
@@ -144,7 +144,7 @@ DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)
 }
 
 TEST_EVAL(L"(define v1 '()) (set! v1 4) v1", L"4");
-TEST_EVAL(L"(define v2 '()) (set! v2 4)",    UNDEFINED_REPR);
+TEST_EVAL(L"(define v2 '()) (set! v2 4)",    UNSPECIFIED_REPR);
 TEST_EVAL(L"((lambda (x) (set! x #t) x) #f)", L"#t");
 
 /* from r6rs */

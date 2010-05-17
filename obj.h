@@ -44,11 +44,12 @@
 #define SPECIAL_OBJ(n)     ((obj_t)((n) << SPECIAL_SHIFT     | SPECIAL_TAG))
 
 #define EMPTY_LIST         (SPECIAL_OBJ(0))
-#define UNDEFINED_OBJ      (SPECIAL_OBJ(1))
-#define END_OF_FILE        (SPECIAL_OBJ(2))
-#define MISSING_ARG        (SPECIAL_OBJ(3))
-#define MEM_OPS_PRIMITIVE  (SPECIAL_OBJ(4))
-#define END_OF_ARGS        (SPECIAL_OBJ(5))
+#define UNINITIALIZED_OBJ  (SPECIAL_OBJ(1))
+#define UNSPECIFIED_OBJ    (SPECIAL_OBJ(2))
+#define END_OF_FILE        (SPECIAL_OBJ(3))
+#define MISSING_ARG        (SPECIAL_OBJ(4))
+#define MEM_OPS_PRIMITIVE  (SPECIAL_OBJ(5))
+#define END_OF_ARGS        (SPECIAL_OBJ(6))
 
 #define OBJ_TYPE_PREDICATE(type)					\
     static inline bool is_##type(obj_t obj)				\

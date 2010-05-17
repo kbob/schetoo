@@ -76,7 +76,7 @@ static obj_t make_readline_port(void)
 		     FALSE_OBJ,
 		     FALSE_OBJ,
 		     FALSE_OBJ,
-		     make_undefined(),
+		     make_uninitialized(),
 		     FALSE_OBJ);
 }
 
@@ -164,13 +164,13 @@ static obj_t make_text_file_input_port(int fd, bool close)
 		     FALSE_OBJ,		/* write proc */
 		     FALSE_OBJ,		/* seek proc */
 		     file_close_proc,
-		     make_undefined(),	/* text buffer */
+		     make_uninitialized(), /* text buffer */
 		     binary_buffer);	/* binary buffer */
 }
 
 static obj_t current_stdin(void)
 {
-    if (is_undefined(standard_input)) {
+    if (is_uninitialized(standard_input)) {
 	int ifd = fileno(stdin), ofd = fileno(stdout);
 	if (isatty(ifd) && isatty(ofd))
 	    standard_input = make_readline_port();
@@ -260,7 +260,7 @@ DEFINE_EXTERN_RAW_PROC(c_peek_char, L"peek-char")(obj_t cont, obj_t values)
     EVAL_LOG("values=%O port=%O", values, port);
     CHECK(is_port(port), "must be port");
     obj_t rbuf = port_text_buffer(port);
-    if (!is_undefined(rbuf)) {
+    if (!is_uninitialized(rbuf)) {
 	if (is_eof(rbuf))
 	    return cv(cont_cont(cont), CONS(rbuf, saved_values));
 	size_t rpos = port_text_pos(port);

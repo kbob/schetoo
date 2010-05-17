@@ -13,7 +13,8 @@
 #include "obj_eof.h"
 #include "obj_fixnum.h"
 #include "obj_null.h"
-#include "obj_undefined.h"
+#include "obj_uninit.h"
+#include "obj_unspec.h"
 #include "roots.h"
 
 #if DEBUG_HEAP
@@ -339,8 +340,10 @@ const wchar_t *obj_type_name(const obj_t obj)
 	return L"forward";
     if (is_null(obj))
         return L"null";
-    if (is_undefined(obj))
-	return L"undefined";
+    if (is_uninitialized(obj))
+	return L"uninitialized";
+    if (is_unspecified(obj))
+	return L"unspecified";
     if (is_eof(obj))
 	return L"eof-object";
     if (is_read_action(obj))

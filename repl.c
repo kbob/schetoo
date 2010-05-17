@@ -7,15 +7,11 @@
 #include "io.h"				/* XXX */
 #include "obj.h"
 #include "obj_eof.h"
-#include "obj_proc.h"
-#include "obj_record.h"
-#include "obj_string.h"
-#include "obj_symbol.h"
-#include "obj_vector.h"
 #include "oprintf.h"
 #include "prim.h"
 #include "print.h"			/* XXX */
 #include "read.h"
+#include "types.h"
 
 /*
  * ((lambda ()
@@ -77,7 +73,7 @@ static cv_t c_handler(obj_t cont, obj_t values)
 	}
     }
     obj_t who_p = FALSE_OBJ;
-    obj_t irr_p = UNDEFINED_OBJ;
+    obj_t irr_p = make_uninitialized();
     for (i = 0; i < size; i++) {
 	obj_t p = vector_ref(parts, i);
 	obj_t rtd = record_rtd(p);
@@ -91,13 +87,13 @@ static cv_t c_handler(obj_t cont, obj_t values)
 	else if (rtd == irritants)
 	    irr_p = record_get_field(p, 0);
     }
-    if (who_p != FALSE_OBJ && irr_p != UNDEFINED_OBJ) {
+    if (who_p != FALSE_OBJ && !is_uninitialized(irr_p)) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, CONS(who_p, irr_p));
 	psn = "";
     } else if (who_p != FALSE_OBJ) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, who_p);
 	psn = "";
-    } else if (irr_p != UNDEFINED_OBJ) {
+    } else if (!is_uninitialized(irr_p)) {
 	ofprintf(stderr, "%*s  %O\n", psnl, psn, irr_p);
 	psn = "";
     }
