@@ -1,7 +1,7 @@
 #ifndef RANGE_INCLUDED
 #define RANGE_INCLUDED
 
-#include "bool.h"
+#include <stdbool.h>
 
 /*
  * Interval - too clever way of representing a numeric interval in a

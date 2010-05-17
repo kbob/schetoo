@@ -1,9 +1,9 @@
 #ifndef HEAP_INCLUDED
 #define HEAP_INCLUDED
 
+#include <stdbool.h>
 #include <stddef.h>
 
-#include "bool.h"
 #include "obj.h"
 
 #undef GROW_HEAP

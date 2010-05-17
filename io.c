@@ -5,9 +5,9 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
-#include "bool.h"
 #include "except.h"
 
 typedef void   (*in_delete_proc_t)(instream_t *);

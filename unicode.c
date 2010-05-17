@@ -1,8 +1,8 @@
 #include "unicode.h"
 
 #include <assert.h>
+#include <stdbool.h>
 
-#include "bool.h"
 #include "except.h"
 
 typedef struct unicode_data {

@@ -1,10 +1,9 @@
 #ifndef OBJ_INCLUDED
 #define OBJ_INCLUDED
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-
-#include "bool.h"
 
 /*
  * Globally visible memory manager definitions.
