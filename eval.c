@@ -362,7 +362,9 @@ static cv_t push_exception(obj_t cont, obj_t values)
     return cv(first, CONS(ex, values));
 }
 
-extern obj_t core_eval_cont(obj_t cont, obj_t values, obj_t handler)
+extern obj_t core_eval_cont(volatile obj_t cont,
+			    volatile obj_t values,
+			    obj_t handler)
 {
     eval_dyn_env = MAKE_RECORD(dyn_env, EMPTY_LIST, handler);
 

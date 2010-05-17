@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+//#define volatile
+
 #define REPS 1000000000
 
 /* First way: two args, env in cont. */
@@ -83,11 +85,11 @@ cv_t an_op_v1(cont4_t *cont, char *values)
 
 int dispatch_v1(void)
 {
-    char *values = 0;
-    cont4_t *cont = make_cont4(an_op_v1, NULL, NULL, NULL);
+    volatile char *values = 0;
+    volatile cont4_t *cont = make_cont4(an_op_v1, NULL, NULL, NULL);
     int i;
     for (i = 0; i < REPS; i++) {
-	cv_t reg = ((cont_proc_v1_t)cont->op)(cont, values);
+	cv_t reg = ((cont_proc_v1_t)cont->op)((cont4_t *)cont, (char *)values);
 	cont = reg.cont;
 	values = reg.values;
     }
@@ -106,12 +108,14 @@ cve_t an_op_v2(cont3_t *cont, void *values, void *env)
 
 int dispatch_v2(void)
 {
-    char *values = 0;
-    cont3_t *cont = make_cont3(an_op_v2, NULL, NULL);
-    void *env = 0;
+    volatile char *values = 0;
+    volatile cont3_t *cont = make_cont3(an_op_v2, NULL, NULL);
+    volatile void *env = 0;
     int i;
     for (i = 0; i < REPS; i++) {
-	cve_t reg = ((cont_proc_v2_t)cont->op)(cont, values, env);
+	cve_t reg = ((cont_proc_v2_t)cont->op)((cont3_t *)cont,
+					       (char    *)values,
+					       (void    *)env);
 	cont = reg.cont;
 	values = reg.values;
 	env = reg.env;
@@ -134,11 +138,11 @@ cv_t an_op_v3(cont3_t *cont, void *values, void *env)
 
 int dispatch_v3(void)
 {
-    char *values = 0;
-    cont3_t *cont = make_cont3(an_op_v3, NULL, NULL);
+    volatile char *values = 0;
+    volatile cont3_t *cont = make_cont3(an_op_v3, NULL, NULL);
     int i;
     for (i = 0; i < REPS; i++) {
-	cv_t reg = ((cont_proc_v3_t)cont->op)(cont, values);
+	cv_t reg = ((cont_proc_v3_t)cont->op)((cont3_t *)cont, (char *)values);
 	cont = reg.cont;
 	values = reg.values;
     }
