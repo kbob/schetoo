@@ -151,7 +151,7 @@ EOF
 
 case "$#$1" in
 
-    0)	cmp "$tmp_actual" "$tmp_expected" && echo "   17 simple tests passed"
+    0)	cmp "$tmp_actual" "$tmp_expected" && echo "   17 simple tests passed."
 	;;
 
     1-v) cmp -s "$tmp_actual" "$tmp_expected" || \
