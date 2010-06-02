@@ -53,7 +53,8 @@
 	    scheme_name,						\
 	    parent,							\
 	    fields,							\
-	    NULL							\
+	    NULL,							\
+	    false							\
         };								\
         register_record(&desc);						\
     }									\
@@ -79,6 +80,7 @@ struct rec_descriptor {
     obj_t                    *rd_parent;
     const field_descriptor_t *rd_fields;
     rec_descriptor_t         *rd_next;
+    bool		      rd_initialized;
 };
 
 extern void register_record(rec_descriptor_t *);

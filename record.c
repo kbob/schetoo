@@ -6,6 +6,7 @@
 #include "obj_boolean.h"
 #include "obj_pair.h"
 #include "obj_symbol.h"
+#include "obj_uninit.h"
 #include "obj_vector.h"
 
 static rec_descriptor_t *rec_descs;
@@ -66,12 +67,20 @@ static void init_rec(rec_descriptor_t *desc)
 
 void init_records(void)
 {
-    /*
-     * We got lucky.  The descriptors happen to be in the order they
-     * were declared, so superclasses are created before subclasses.
-     */
-
     rec_descriptor_t *desc;
-    for (desc = rec_descs; desc; desc = desc->rd_next)
-	init_rec(desc);
+    bool done;
+    do {
+	done = true;
+	for (desc = rec_descs; desc; desc = desc->rd_next) {
+	    if (desc->rd_initialized)
+		continue;
+	    if (desc->rd_parent && is_uninitialized(*desc->rd_parent)) {
+		done = false;
+		continue;
+	    } else {
+		init_rec(desc);
+		desc->rd_initialized = true;
+	    }
+	}
+    } while (!done);
 }
