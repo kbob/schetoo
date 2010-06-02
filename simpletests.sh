@@ -159,5 +159,3 @@ case "$#$1" in
                     "$tmp_actual" "$tmp_expected"
 	;;
 esac
-
-
