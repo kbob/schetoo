@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "env.h"
@@ -248,6 +249,7 @@ NORETURN static void handle_lowex(lowex_type_t type, obj_t ex)
     default:
 	assert(false);
     }
+    abort();
 }
 
 static cv_t default_handler(obj_t cont, obj_t values)
