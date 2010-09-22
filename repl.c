@@ -68,7 +68,7 @@ static cv_t c_handler(obj_t cont, obj_t values)
     for (i = 0; i < size; i++) {
 	obj_t rtd = record_rtd(vector_ref(parts, i));
 	if (rtd != message && rtd != irritants && rtd != who) {
-	    ofprintf(stderr, "%*s: %O\n", psnl, psn, rtd_name(rtd));
+	    ofprintf(stderr, "%*s: %O\n", (int)psnl, psn, rtd_name(rtd));
 	    psn = "";
 	}
     }
@@ -80,7 +80,7 @@ static cv_t c_handler(obj_t cont, obj_t values)
 	if (rtd == message) {
 	    obj_t msg = record_get_field(p, 0);
 	    const wchar_t *chars = string_value(msg);
-	    fprintf(stderr, "%*s  %ls\n", psnl, psn, chars);
+	    fprintf(stderr, "%*s  %ls\n", (int)psnl, psn, chars);
 	    psn = "";
 	} else if (rtd == who)
 	    who_p = record_get_field(p, 0);
@@ -88,13 +88,13 @@ static cv_t c_handler(obj_t cont, obj_t values)
 	    irr_p = record_get_field(p, 0);
     }
     if (who_p != FALSE_OBJ && !is_uninitialized(irr_p)) {
-	ofprintf(stderr, "%*s  %O\n", psnl, psn, CONS(who_p, irr_p));
+	ofprintf(stderr, "%*s  %O\n", (int)psnl, psn, CONS(who_p, irr_p));
 	psn = "";
     } else if (who_p != FALSE_OBJ) {
-	ofprintf(stderr, "%*s  %O\n", psnl, psn, who_p);
+	ofprintf(stderr, "%*s  %O\n", (int)psnl, psn, who_p);
 	psn = "";
     } else if (!is_uninitialized(irr_p)) {
-	ofprintf(stderr, "%*s  %O\n", psnl, psn, irr_p);
+	ofprintf(stderr, "%*s  %O\n", (int)psnl, psn, irr_p);
 	psn = "";
     }
     if (*psn)
