@@ -4,6 +4,8 @@
 #include "test.h"
 #include "types.h"
 
+static cv_t setq();			/* set! */
+
 DEFINE_COOKED_SPECIAL_FORM(L"quote", 1)(obj_t datum)
 {
     return datum;
@@ -27,14 +29,42 @@ TEST_EVAL(L"'(+ 1 2)",			L"(+ 1 2)");
 TEST_EVAL(L"'(quote a)",		L"(quote a)");
 TEST_EVAL(L"''a",			L"(quote a)");
 
+static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env);
+static obj_t mogrify_(obj_t expr, obj_t arglist, obj_t env)
+{
+#if 0
+    // var -> env-ref
+    if (is_symbol(expr)) {
+	return env_make_ref(env, expr);
+    }
+#endif
+    if (is_pair(expr)) {
+	obj_t a = mogrify(pair_car(expr), arglist, env);
+	obj_t d = mogrify(pair_cdr(expr), arglist, env);
+	return cons_if_changed(expr, a, d);
+    }
+    return expr;
+}
+
+static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env)
+{
+#include "oprintf.h"
+    oprintf("mogrify(%O)\n", expr);
+    obj_t m = mogrify_(expr, arglist, env);
+    oprintf("mogrify(%O) = %O\n", expr, m);
+    return m;
+}
+
 DEFINE_SPECIAL_FORM(L"lambda")(obj_t cont, obj_t values)
 {
     assert(is_cont4(cont));
     obj_t expr    = cont4_arg(cont);
     obj_t formals = CADR(expr);
+    obj_t env     = cont_env(cont);
     obj_t body    = CDDR(expr);
+    // body = mogrify(body, formals, env);
     return cv(cont_cont(cont),
-	      CONS(make_procedure(body, formals, cont_env(cont)), CDR(values)));
+	      CONS(make_procedure(body, formals, env), CDR(values)));
 }
 
 TEST_EVAL(L"((lambda (x) (+ x 3)) 4)",		L"7");
@@ -126,7 +156,7 @@ static cv_t c_continue_set(obj_t cont, obj_t values)
     return cv(ret, new_values);
 }
 
-DEFINE_SPECIAL_FORM(L"set!")(obj_t cont, obj_t values)
+DEFINE_STATIC_SPECIAL_FORM(setq, L"set!")(obj_t cont, obj_t values)
 {
     assert(is_cont4(cont));
     obj_t form = cont4_arg(cont);

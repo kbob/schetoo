@@ -146,27 +146,12 @@ extern cv_t c_apply_proc(obj_t cont, obj_t values)
 	    return cv(next, new_values);
 	}
     } else {
-	obj_t new_env = make_env(procedure_env(operator));
-	obj_t body    = procedure_body(operator);
+	obj_t env = procedure_env(operator);
 	obj_t formals = procedure_args(operator);
 	obj_t actuals = arg_list;
-	obj_t formal;
-	obj_t actual;
-	while (!is_null(formals) || !is_null(actuals)) {
-	    CHECK(!is_null(formals), "too many arguments");
-	    if (is_pair(formals)) {
-		CHECK(!is_null(actuals), "not enough arguments");
-		formal  = CAR(formals);
-		formals = CDR(formals);
-		actual  = CAR(actuals);
-		actuals = CDR(actuals);
-	    } else {
-		formal  = formals;
-		actual  = actuals;
-		formals = actuals = EMPTY_LIST;
-	    }
-	    env_bind(new_env, formal, BT_LEXICAL, M_MUTABLE, actual);
-	}
+	obj_t new_env = make_closed_env(env, formals, actuals);
+	obj_t body    = procedure_body(operator);
+
 	// Push a value for c_eval_seq to discard.
 	obj_t new_values = CONS(make_uninitialized(), saved_values);
 	return cv(make_cont4(c_eval_seq, next, new_env, body), new_values);
@@ -271,7 +256,7 @@ static cv_t default_handler(obj_t cont, obj_t values)
     for (i = 0; i < size; i++) {
 	obj_t rtd = record_rtd(vector_ref(parts, i));
 	if (rtd != message && rtd != irritants && rtd != who) {
-	    ofprintf(stderr, "%*s: %O\n", psnl, psn, rtd_name(rtd));
+	    ofprintf(stderr, "%*s: %O\n", (int)psnl, psn, rtd_name(rtd));
 	    psn = "";
 	}
     }
@@ -283,7 +268,7 @@ static cv_t default_handler(obj_t cont, obj_t values)
 	if (rtd == message) {
 	    obj_t msg = record_get_field(p, 0);
 	    const wchar_t *chars = string_value(msg);
-	    fprintf(stderr, "%*s  %ls\n", psnl, psn, chars);
+	    fprintf(stderr, "%*s  %ls\n", (int)psnl, psn, chars);
 	    psn = "";
 	} else if (rtd == who)
 	    who_p = record_get_field(p, 0);
@@ -291,13 +276,13 @@ static cv_t default_handler(obj_t cont, obj_t values)
 	    irr_p = record_get_field(p, 0);
     }
     if (who_p != FALSE_OBJ && !is_uninitialized(irr_p)) {
-	ofprintf(stderr, "%*s  %O\n", psnl, psn, CONS(who_p, irr_p));
+	ofprintf(stderr, "%*s  %O\n", (int)psnl, psn, CONS(who_p, irr_p));
 	psn = "";
     } else if (who_p != FALSE_OBJ) {
-	ofprintf(stderr, "%*s  %O\n", psnl, psn, who_p);
+	ofprintf(stderr, "%*s  %O\n", (int)psnl, psn, who_p);
 	psn = "";
     } else if (!is_uninitialized(irr_p)) {
-	ofprintf(stderr, "%*s  %O\n", psnl, psn, irr_p);
+	ofprintf(stderr, "%*s  %O\n", (int)psnl, psn, irr_p);
 	psn = "";
     }
     if (*psn)
