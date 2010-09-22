@@ -16,6 +16,13 @@ obj_t make_list_(obj_t first, ...)
     return reverse_list(list);
 }
 
+bool is_list(obj_t obj)
+{
+    while (is_pair(obj))
+	obj = pair_cdr(obj);
+    return is_null(obj);
+}
+
 size_t list_length(obj_t list)
 {
     size_t n = 0;
@@ -26,6 +33,16 @@ size_t list_length(obj_t list)
     return n;
 }
 
+size_t irregular_list_length(obj_t list)
+{
+    size_t n = 0;
+    while (is_pair(list)) {
+	n++;
+	list = CDR(list);
+    }
+    return n + !is_null(list);
+}
+
 obj_t reverse_list(obj_t list)
 {
     obj_t rev = EMPTY_LIST;
@@ -34,4 +51,12 @@ obj_t reverse_list(obj_t list)
 	list = CDR(list);
     }
     return rev;
+}
+
+obj_t cons_if_changed(obj_t old_pair, obj_t new_car, obj_t new_cdr)
+{
+    assert(is_pair(old_pair));
+    if (new_car == pair_car(old_pair) && new_cdr == pair_cdr(old_pair))
+	return old_pair;
+    return make_pair(new_car, new_cdr);
 }
