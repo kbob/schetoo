@@ -22,7 +22,7 @@ DEFINE_STATIC_RECORD_TYPE(scan_ctx, L"scan-context", NULL, 0) = {
     { FM_IMMUTABLE, L"state" },
     { FM_MUTABLE, L"buf" },
     { FM_MUTABLE, L"pos" },
-    { FM_END },
+    { FM_END }
 };
 
 static inline yy_state_t scan_ctx_state(obj_t ctx)
