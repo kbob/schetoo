@@ -46,9 +46,9 @@ static obj_t mogrify_(obj_t expr, obj_t arglist, obj_t env)
     return expr;
 }
 
+#include "oprintf.h"
 static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env)
 {
-#include "oprintf.h"
     oprintf("mogrify(%O)\n", expr);
     obj_t m = mogrify_(expr, arglist, env);
     oprintf("mogrify(%O) = %O\n", expr, m);
