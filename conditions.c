@@ -64,13 +64,13 @@ DEFINE_EXTERN_RECORD_TYPE(implementation_restriction,
 };
 
 DEFINE_EXTERN_RECORD_TYPE(lexical,   L"&lexical",   &violation, 0) = {
-    { FM_END },
+    { FM_END }
 };
 
 DEFINE_EXTERN_RECORD_TYPE(syntax,    L"&syntax",    &violation, 0) = {
     { FM_IMMUTABLE, L"form" },
     { FM_IMMUTABLE, L"subform" },
-    { FM_END },
+    { FM_END }
 };
 
 DEFINE_EXTERN_RECORD_TYPE(undefined, L"&undefined", &violation, 0) = {
