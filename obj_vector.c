@@ -137,7 +137,9 @@ void vector_set(obj_t obj, size_t index, obj_t elem)
 void vector_set_nc(obj_t obj, size_t index, obj_t elem)
 {
     CHECK_OBJ(obj);
+    assert(is_vector(obj));
     vector_obj_t *vec = (vector_obj_t *)obj;
+    assert(index < vec->v_size);
     MUTATE(obj);
     *elem_addr(vec, index) = elem;
 }
