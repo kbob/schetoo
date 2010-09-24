@@ -202,8 +202,7 @@ extern cv_t c_eval(obj_t cont, obj_t values)
 	return cv(cont_cont(cont), CONS(expr, values));
     else if (is_symbol(expr)) {
 	obj_t env = cont_env(cont);
-	obj_t bdg = env_lookup(env, expr);
-	obj_t val = binding_value(bdg);
+	obj_t val = env_lookup(env, expr);
 	return cv(cont_cont(cont), CONS(val, values));
     } else if (is_application(expr)) {
 	obj_t operator = application_operator(expr);

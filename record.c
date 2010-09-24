@@ -40,7 +40,6 @@ static void init_rec(rec_descriptor_t *desc)
     }
 
     /* Construct the rtd. */
-    obj_t env = root_environment();
     obj_t nsym = make_symbol_from_C_str(desc->rd_name);
     obj_t parent = desc->rd_parent ? *desc->rd_parent : FALSE_OBJ;
     obj_t rtd = make_rtd(desc->rd_flags,
@@ -57,6 +56,7 @@ static void init_rec(rec_descriptor_t *desc)
     }
 
     /* Bind the rtd to name. */
+    obj_t env = root_environment();
     env_bind(env, nsym, BT_LEXICAL, M_IMMUTABLE, rtd);
 
     /* Construct the constructor descriptor, constructor, predicate,

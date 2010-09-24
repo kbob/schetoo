@@ -133,3 +133,11 @@ void vector_set(obj_t obj, size_t index, obj_t elem)
     MUTATE(obj);
     *elem_addr(vec, index) = elem;
 }
+
+void vector_set_nc(obj_t obj, size_t index, obj_t elem)
+{
+    CHECK_OBJ(obj);
+    vector_obj_t *vec = (vector_obj_t *)obj;
+    MUTATE(obj);
+    *elem_addr(vec, index) = elem;
+}

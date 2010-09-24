@@ -14,5 +14,3 @@ DEFINE_PROC(L"root-environment", 0)(void)
 {
     return root_environment();
 }
-
-TEST_EVAL(L"(pair? (interaction-environment))",	L"#t");

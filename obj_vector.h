@@ -11,5 +11,6 @@ extern obj_t  make_vector_from_list    (obj_t list);
 extern size_t vector_len               (obj_t);
 extern obj_t  vector_ref               (obj_t, size_t index);
 extern void   vector_set               (obj_t vec, size_t index, obj_t elem);
+extern void   vector_set_nc            (obj_t vec, size_t index, obj_t elem);
 
 #endif /* !OBJ_VECTOR_INCLUDED */

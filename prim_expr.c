@@ -147,12 +147,11 @@ static cv_t c_continue_set(obj_t cont, obj_t values)
     obj_t env   = cont_env(cont);
     obj_t var   = cont5_arg1(cont);
     obj_t value = CAR(values);
-    obj_t bdg   = env_lookup(env, var);
     EVAL_LOG("var=%O value=%O", var, value);
     /* N.B., allocate values list before mutating environment. */
     obj_t new_values = CONS(make_unspecified(), cont5_arg2(cont));
     obj_t ret = cont_cont(cont);
-    binding_set_value(bdg, value);
+    env_set(env, var, value);
     return cv(ret, new_values);
 }
 

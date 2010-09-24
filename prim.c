@@ -87,8 +87,7 @@ extern void register_primitives(void)
 
 	for (desc = alias_descs; desc; desc = desc->ad_next) {
 	    obj_t old_sym = make_symbol_from_C_str(desc->ad_old_name);
-	    obj_t binding = env_lookup(root_env, old_sym);
-	    obj_t value = binding_value(binding);
+	    obj_t value   = env_lookup(root_env, old_sym);
 	    obj_t new_sym = make_symbol_from_C_str(desc->ad_new_name);
 	    env_bind(root_env, new_sym, BT_LEXICAL, M_MUTABLE, value);
 	}
