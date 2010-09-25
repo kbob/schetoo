@@ -56,7 +56,7 @@ obj_t reverse_list(obj_t list)
 obj_t cons_if_changed(obj_t old_pair, obj_t new_car, obj_t new_cdr)
 {
     assert(is_pair(old_pair));
-    if (new_car == pair_car(old_pair) && new_cdr == pair_cdr(old_pair))
+    if (new_car == CAR(old_pair) && new_cdr == CDR(old_pair))
 	return old_pair;
-    return make_pair(new_car, new_cdr);
+    return CONS(new_car, new_cdr);
 }
