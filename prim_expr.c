@@ -29,40 +29,88 @@ TEST_EVAL(L"'(+ 1 2)",			L"(+ 1 2)");
 TEST_EVAL(L"'(quote a)",		L"(quote a)");
 TEST_EVAL(L"''a",			L"(quote a)");
 
+#if 0 && !OLD_ENV
+
+#include "oprintf.h"
+
+static cv_t lambda();
+
+static obj_t mogrify_local(obj_t sym)
+{
+    return sym;
+}
+
+static obj_t mogrify_symbol_(obj_t sym, obj_t arglist, obj_t env)
+{
+    while (is_pair(arglist)) {
+	if (sym == CAR(arglist))
+	    return mogrify_local(sym);
+	arglist = CDR(arglist);
+    }
+    if (sym == arglist)
+	return mogrify_local(sym);
+    return env_make_ref(env, sym);
+}
+
+static obj_t mogrify_symbol(obj_t sym, obj_t arglist, obj_t env)
+{
+    oprintf("mogrify_symbol(%O)\n", sym);
+    obj_t m = mogrify_symbol_(sym, arglist, env);
+    oprintf("mogrify_symbol(%O) => %O\n", sym, m);
+    return m;
+}
+
+static bool pair_is_lambda(obj_t pair, obj_t env)
+{
+    obj_t operator = CAR(pair);
+    if (is_symbol(operator)) {
+	obj_t value = env_lookup(env, operator);
+	return is_procedure(value) &&
+	       (cont_proc_t)procedure_code(value) == lambda;
+    }
+    return false;
+}
+
 static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env);
 static obj_t mogrify_(obj_t expr, obj_t arglist, obj_t env)
 {
-#if 0
     // var -> env-ref
     if (is_symbol(expr)) {
-	return env_make_ref(env, expr);
+	return mogrify_symbol(expr, arglist, env);
     }
-#endif
     if (is_pair(expr)) {
-	obj_t a = mogrify(pair_car(expr), arglist, env);
-	obj_t d = mogrify(pair_cdr(expr), arglist, env);
-	return cons_if_changed(expr, a, d);
+	if (pair_is_lambda(expr, env)) {
+	    return CONS(mogrify(CAR(expr), arglist, env),
+			CONS(CADR(expr), 
+			     mogrify(CDDR(expr), arglist, env)));
+	} else {
+	    obj_t a = mogrify(pair_car(expr), arglist, env);
+	    obj_t d = mogrify(pair_cdr(expr), arglist, env);
+	    return cons_if_changed(expr, a, d);
+	}
     }
     return expr;
 }
 
-#include "oprintf.h"
 static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env)
 {
     oprintf("mogrify(%O)\n", expr);
     obj_t m = mogrify_(expr, arglist, env);
-    oprintf("mogrify(%O) = %O\n", expr, m);
+    oprintf("mogrify(%O) => %O\n", expr, m);
     return m;
 }
+#endif
 
-DEFINE_SPECIAL_FORM(L"lambda")(obj_t cont, obj_t values)
+DEFINE_STATIC_SPECIAL_FORM(lambda, L"lambda")(obj_t cont, obj_t values)
 {
     assert(is_cont4(cont));
     obj_t expr    = cont4_arg(cont);
     obj_t formals = CADR(expr);
     obj_t env     = cont_env(cont);
     obj_t body    = CDDR(expr);
-    // body = mogrify(body, formals, env);
+#if 0 && !OLD_ENV
+    body = mogrify(body, formals, env);
+#endif
     return cv(cont_cont(cont),
 	      CONS(make_procedure(body, formals, env), CDR(values)));
 }

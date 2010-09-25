@@ -33,13 +33,15 @@ extern obj_t env_lookup(obj_t env, obj_t name);
 
 extern void  env_set(obj_t env, obj_t name, obj_t value);
 
-extern obj_t env_make_ref(obj_t env, obj_t var);
+#if !OLD_ENV
+    extern obj_t env_ref;
 
-extern obj_t env_ref_lookup(obj_t env_ref);
+    extern obj_t env_make_ref(obj_t env, obj_t var);
 
-extern void  env_ref_set(obj_t env_ref, obj_t new_value);
+    extern obj_t env_ref_lookup(obj_t env_ref);
 
-extern obj_t frame_defines(obj_t frame, obj_t name);
+    extern void  env_ref_set(obj_t env_ref, obj_t new_value);
+#endif
 
 extern obj_t root_environment(void);
 

@@ -9,6 +9,7 @@
 #if !OLD_ENV
     #include "list.h"
     #include "obj_env_rec.h"
+    #include "record.h"
 #endif
 
 #if OLD_ENV
@@ -262,6 +263,43 @@ void env_set(obj_t env, obj_t name, obj_t value)
 	env = env_rec_parent(env);
     }
     THROW(&undefined, "unbound variable");
+}
+
+#endif
+
+#if !OLD_ENV
+
+DEFINE_EXTERN_RECORD_TYPE(env_ref, L"env-ref", NULL, RF_SEALED | RF_OPAQUE) = {
+    { FM_IMMUTABLE, L"env" },
+    { FM_IMMUTABLE, L"index" },
+    { FM_END }
+};
+
+obj_t env_make_ref(obj_t env, obj_t var)
+{
+    while (!is_null(env)) {
+	int pos = formals_lookup(env_rec_formals(env), env_rec_nvar(env), var);
+	if (pos >= 0)
+	    return MAKE_RECORD(env_ref, env, make_fixnum(pos));
+	env = env_rec_parent(env);
+    }
+    THROW(&undefined, "unbound variable");
+}
+
+obj_t env_ref_lookup(obj_t env_ref)
+{
+    obj_t env = record_get_field(env_ref, 0);
+    obj_t actuals = env_rec_actuals(env);
+    int pos = fixnum_value(record_get_field(env_ref, 1));
+    return vector_ref(actuals, pos);
+}
+
+void env_ref_set(obj_t env_ref, obj_t new_value)
+{
+    obj_t env = record_get_field(env_ref, 0);
+    obj_t actuals = env_rec_actuals(env);
+    int pos = fixnum_value(record_get_field(env_ref, 1));
+    vector_set(actuals, pos, new_value);
 }
 
 #endif
