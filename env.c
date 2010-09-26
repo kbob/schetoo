@@ -237,6 +237,17 @@ int formals_lookup(obj_t formals, word_t nvar, obj_t var)
     return -1;
 }
 
+obj_t env_try_lookup(obj_t env, obj_t name)
+{
+    while (!is_null(env)) {
+	int pos = formals_lookup(env_rec_formals(env), env_rec_nvar(env), name);
+	if (pos >= 0)
+	    return vector_ref(env_rec_actuals(env), pos);
+	env = env_rec_parent(env);
+    }
+    return FALSE_OBJ;
+}
+
 obj_t env_lookup(obj_t env, obj_t name)
 {
     while (!is_null(env)) {
@@ -283,20 +294,31 @@ obj_t env_make_ref(obj_t env, obj_t var)
 	    return MAKE_RECORD(env_ref, env, make_fixnum(pos));
 	env = env_rec_parent(env);
     }
-    THROW(&undefined, "unbound variable");
+    return var;
 }
 
-obj_t env_ref_lookup(obj_t env_ref)
+obj_t env_make_local_ref(obj_t arglist, obj_t var)
 {
-    obj_t env = record_get_field(env_ref, 0);
+    int pos = formals_lookup(arglist, irregular_list_length(arglist), var);
+    assert(pos >= 0);
+    return MAKE_RECORD(env_ref, FALSE_OBJ, make_fixnum(pos));
+}
+
+obj_t env_ref_lookup(obj_t env, obj_t env_ref)
+{
+    obj_t the_env = record_get_field(env_ref, 0);
+    if (the_env != FALSE_OBJ)
+	env = the_env;
     obj_t actuals = env_rec_actuals(env);
     int pos = fixnum_value(record_get_field(env_ref, 1));
     return vector_ref(actuals, pos);
 }
 
-void env_ref_set(obj_t env_ref, obj_t new_value)
+void env_ref_set(obj_t env, obj_t env_ref, obj_t new_value)
 {
-    obj_t env = record_get_field(env_ref, 0);
+    obj_t the_env = record_get_field(env_ref, 0);
+    if (the_env != FALSE_OBJ)
+	env = the_env;
     obj_t actuals = env_rec_actuals(env);
     int pos = fixnum_value(record_get_field(env_ref, 1));
     vector_set(actuals, pos, new_value);

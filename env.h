@@ -5,6 +5,7 @@
 
 #include "obj_binding.h"
 #include "obj_pair.h"
+#include "obj_record.h"
 #include "obj.h"
 
 #if OLD_ENV
@@ -31,16 +32,26 @@ extern void  env_bind  (obj_t          env,
 
 extern obj_t env_lookup(obj_t env, obj_t name);
 
+extern obj_t env_try_lookup(obj_t env, obj_t name);
+
 extern void  env_set(obj_t env, obj_t name, obj_t value);
 
 #if !OLD_ENV
-    extern obj_t env_ref;
+
+    static inline bool is_env_ref(obj_t obj)
+    {
+	extern obj_t env_ref;
+	return is_record(obj) && is_instance(obj, env_ref);
+    }
 
     extern obj_t env_make_ref(obj_t env, obj_t var);
 
-    extern obj_t env_ref_lookup(obj_t env_ref);
+    extern obj_t env_make_local_ref(obj_t arglist, obj_t var);
 
-    extern void  env_ref_set(obj_t env_ref, obj_t new_value);
+    extern obj_t env_ref_lookup(obj_t env, obj_t env_ref);
+
+    extern void  env_ref_set(obj_t env, obj_t env_ref, obj_t new_value);
+
 #endif
 
 extern obj_t root_environment(void);

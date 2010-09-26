@@ -26,11 +26,20 @@ scheme_ldlibs := -lreadline
 
 
      CPPFLAGS := -ansi -std=c99 -D_XOPEN_SOURCE -iquote. $(FEATURES)
-       CFLAGS := -g -Wall -Werror -Winline -O0
+       CFLAGS := -Wall -Werror -Winline
       libtype := static
 
+# debug
+#       CFLAGS += -g -O0
+
+# optimize
+    CPPFLAGS += -DNDEBUG -DNOTEST
+      CFLAGS := -O2
+
+# gprof
 #    CPPFLAGS += -DNDEBUG -DNOTEST
-#      CFLAGS := -O2
+#      CFLAGS := -O2 -pg
+#     LDFLAGS += -pg
 
 default: all
 

@@ -4,6 +4,7 @@
 #include "test.h"
 #include "types.h"
 
+static cv_t lambda();
 static cv_t setq();			/* set! */
 
 DEFINE_COOKED_SPECIAL_FORM(L"quote", 1)(obj_t datum)
@@ -29,76 +30,78 @@ TEST_EVAL(L"'(+ 1 2)",			L"(+ 1 2)");
 TEST_EVAL(L"'(quote a)",		L"(quote a)");
 TEST_EVAL(L"''a",			L"(quote a)");
 
-#if 0 && !OLD_ENV
+#if !OLD_ENV
 
-#include "oprintf.h"
+static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env);
 
-static cv_t lambda();
-
-static obj_t mogrify_local(obj_t sym)
+static obj_t mogrify_local(obj_t sym, obj_t arglist)
 {
-    return sym;
+    return env_make_local_ref(arglist, sym);
 }
 
-static obj_t mogrify_symbol_(obj_t sym, obj_t arglist, obj_t env)
+static bool is_in_arglist(obj_t sym, obj_t arglist)
 {
     while (is_pair(arglist)) {
 	if (sym == CAR(arglist))
-	    return mogrify_local(sym);
+	    return true;
 	arglist = CDR(arglist);
     }
-    if (sym == arglist)
-	return mogrify_local(sym);
-    return env_make_ref(env, sym);
+    return sym == arglist;
 }
 
 static obj_t mogrify_symbol(obj_t sym, obj_t arglist, obj_t env)
 {
-    oprintf("mogrify_symbol(%O)\n", sym);
-    obj_t m = mogrify_symbol_(sym, arglist, env);
-    oprintf("mogrify_symbol(%O) => %O\n", sym, m);
-    return m;
+    if (is_in_arglist(sym, arglist))
+	return mogrify_local(sym, arglist);
+    return env_make_ref(env, sym);
 }
 
-static bool pair_is_lambda(obj_t pair, obj_t env)
+static bool pair_is_lambda(obj_t pair, obj_t arglist, obj_t env)
 {
     obj_t operator = CAR(pair);
     if (is_symbol(operator)) {
-	obj_t value = env_lookup(env, operator);
+	if (is_in_arglist(operator, arglist))
+	    return false;
+	obj_t value = env_try_lookup(env, operator);
 	return is_procedure(value) &&
+	       procedure_is_C(value) &&
 	       (cont_proc_t)procedure_code(value) == lambda;
     }
     return false;
 }
 
-static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env);
-static obj_t mogrify_(obj_t expr, obj_t arglist, obj_t env)
+static obj_t mogrify_rest(obj_t expr, obj_t arglist, obj_t env)
 {
     // var -> env-ref
     if (is_symbol(expr)) {
 	return mogrify_symbol(expr, arglist, env);
     }
     if (is_pair(expr)) {
-	if (pair_is_lambda(expr, env)) {
-	    return CONS(mogrify(CAR(expr), arglist, env),
-			CONS(CADR(expr), 
-			     mogrify(CDDR(expr), arglist, env)));
-	} else {
-	    obj_t a = mogrify(pair_car(expr), arglist, env);
-	    obj_t d = mogrify(pair_cdr(expr), arglist, env);
-	    return cons_if_changed(expr, a, d);
-	}
+	obj_t a = mogrify(CAR(expr), arglist, env);
+	obj_t d = mogrify_rest(CDR(expr), arglist, env);
+	return cons_if_changed(expr, a, d);
     }
     return expr;
 }
 
 static obj_t mogrify(obj_t expr, obj_t arglist, obj_t env)
 {
-    oprintf("mogrify(%O)\n", expr);
-    obj_t m = mogrify_(expr, arglist, env);
-    oprintf("mogrify(%O) => %O\n", expr, m);
-    return m;
+    // var -> env-ref
+    if (is_symbol(expr)) {
+	return mogrify_symbol(expr, arglist, env);
+    }
+    if (is_pair(expr)) {
+	if (pair_is_lambda(expr, arglist, env)) {
+	    return expr;
+	} else {
+	    obj_t a = mogrify(CAR(expr), arglist, env);
+	    obj_t d = mogrify_rest(CDR(expr), arglist, env);
+	    return cons_if_changed(expr, a, d);
+	}
+    }
+    return expr;
 }
+
 #endif
 
 DEFINE_STATIC_SPECIAL_FORM(lambda, L"lambda")(obj_t cont, obj_t values)
@@ -108,7 +111,7 @@ DEFINE_STATIC_SPECIAL_FORM(lambda, L"lambda")(obj_t cont, obj_t values)
     obj_t formals = CADR(expr);
     obj_t env     = cont_env(cont);
     obj_t body    = CDDR(expr);
-#if 0 && !OLD_ENV
+#if !OLD_ENV
     body = mogrify(body, formals, env);
 #endif
     return cv(cont_cont(cont),
@@ -145,7 +148,6 @@ static cv_t c_continue_if(obj_t cont, obj_t values)
 {
     assert(is_cont4(cont));
     EVAL_LOG("values=%O", values);
-    //oprintf("c_continue_if: values = %O\n", values);
     bool success = CAR(values) != FALSE_OBJ;
     obj_t form   = cont4_arg(cont);
     obj_t env    = cont_env(cont);
@@ -199,7 +201,14 @@ static cv_t c_continue_set(obj_t cont, obj_t values)
     /* N.B., allocate values list before mutating environment. */
     obj_t new_values = CONS(make_unspecified(), cont5_arg2(cont));
     obj_t ret = cont_cont(cont);
+#if !OLD_ENV
+    if (is_env_ref(var))
+	env_ref_set(env, var, value);
+    else
+	env_set(env, var, value);
+#else
     env_set(env, var, value);
+#endif
     return cv(ret, new_values);
 }
 

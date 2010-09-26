@@ -23,10 +23,15 @@
 
 #define GROW_HEAP
 #ifdef GROW_HEAP
-#define INITIAL_HEAP_WORDS (1 << 13)
+#ifdef NDEBUG
+    #define INITIAL_HEAP_WORDS (1 << 20)
+    #define MIN_HEAP_WORDS (1 << 20)
+#else
+    #define INITIAL_HEAP_WORDS (1 << 13)
+    #define MIN_HEAP_WORDS (1 << 13)
+#endif
 #define MAX_HEAP_UTILIZATION (0.45)
 #define MIN_HEAP_UTILIZATION (0.1)
-#define MIN_HEAP_WORDS (1 << 13)
 #else
 #define INITIAL_HEAP_WORDS (1 << 17)
 #endif

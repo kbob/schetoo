@@ -1,4 +1,5 @@
-(define fib
+(define fib #f)
+(set! fib
   (lambda (n)
     (if (< n 2)
 	1

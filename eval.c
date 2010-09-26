@@ -204,8 +204,11 @@ extern cv_t c_eval(obj_t cont, obj_t values)
 	obj_t env = cont_env(cont);
 	obj_t val = env_lookup(env, expr);
 	return cv(cont_cont(cont), CONS(val, values));
-    } else if (is_record(expr) && is_instance(expr, env_ref)) {
-	return cv(cont_cont(cont), CONS(env_ref_lookup(expr), values));
+#if !OLD_ENV
+    } else if (is_env_ref(expr)) {
+	return cv(cont_cont(cont),
+		  CONS(env_ref_lookup(cont_env(cont), expr), values));
+#endif
     } else if (is_application(expr)) {
 	obj_t operator = application_operator(expr);
 	obj_t env = cont_env(cont);
