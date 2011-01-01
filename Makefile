@@ -30,11 +30,11 @@ scheme_ldlibs := -lreadline
       libtype := static
 
 # debug
-#       CFLAGS += -g -O0
+       CFLAGS += -g -O0
 
 # optimize
-    CPPFLAGS += -DNDEBUG -DNOTEST
-      CFLAGS := -O2
+#    CPPFLAGS += -DNDEBUG -DNOTEST
+#      CFLAGS := -O2
 
 # gprof
 #    CPPFLAGS += -DNDEBUG -DNOTEST
