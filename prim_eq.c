@@ -5,6 +5,9 @@
  * pointers, eqv? and eq? share the same implementation.
  *
  * This leads to the amusing result that (eq? eq? eqv?) returns #t.
+ *
+ * If/when the numeric tower is implemented, eqv? must compare numbers'
+ * values, not their addresses.
  */
 
 DEFINE_PROC(L"eqv?", 2)(obj_t obj1, obj_t obj2)
