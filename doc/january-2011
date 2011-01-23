@@ -1,0 +1,113 @@
+A Safer Scheme Interpreter
+
+In the first half of 2010, I wrote a Scheme interpreter which I called
+Schetoo.  It is a sequel to an interpreter called kbscheme, which I
+worked on off-and-on in 2008 and 2009.  Both are written in C.
+
+You can see them both on github.
+  https://github.com/kbob/kbscheme
+  https://github.com/kbob/schetoo
+
+I undertook these projects to learn more about Scheme, interpreters,
+and garbage collection.  Along the way, I came up with an interesting
+technique to make interpreter implementation less error-prone.  That's
+what I want to write about today.
+
+Any interpreter with garbage collection needs some way to find all the
+live objects in the heap.  That generally means they need to keep
+track of all the "root pointers", pointers that live outside the heap
+but point into it.  When you write C code, you generate a lot of root
+pointers.
+
+For example, here is kbscheme's implementation of string->list.
+string->list is a primitive procedure that returns the characters
+in a string as a linked list.
+
+    DEFINE_PROC(L"string->list")
+    {
+	AUTO_ROOT(str, pair_car(F_SUBJ));
+	AUTO_ROOT(list, NIL);
+	AUTO_ROOT(chr, NIL);
+	size_t pos;
+	for (pos = string_len(str); pos; --pos) {
+	    chr = make_character(string_value(str)[pos - 1]);
+	    list = make_pair(chr, list);
+	}
+	RETURN(list);
+    }
+
+AUTO_ROOT is a macro that declares and initializes a local variable,
+then pushes it onto a global linked list of root pointers.  RETURN
+pops all the roots allocated in the current function before returning.
+
+That's a lot of runtime overhead.  That's also a lot of noise in the
+source code.  And root pointers were the source of several bugs where
+roots either were not recorded, contained invalid pointers at GC time,
+or were pushed onto the root stack more than once.  Each bug was a
+heap corruption Heisenbug, of course, since memory is only corrupted
+if the garbage collector runs while the function is active, and it
+only shows up later when the object's memory is reused.  That is the
+very worst kind of problem to debug.
+
+For those reasons, one of my goals for Schetoo was to eliminate manual
+tracking of root pointers.  Here is the same procedure in Schetoo.
+
+    DEFINE_PROC(L"string->list", 1)(obj_t string)
+    {
+	const char_t *chars = string_value(string);
+	obj_t list = EMPTY_LIST;
+	for (size_t pos = string_len(string); pos; --pos)
+	    list = make_pair(make_character(chars[pos - 1]), list);
+	return list;
+    }
+
+No root bookkeeping.  No macros, aside from the weird function name.
+A whole class of bugs eliminated.  I'd like to say no runtime
+overhead, but that's not quite true, as you'll see.
+
+Schetoo has a simple rule.
+
+  Rule 1.  Any instruction of the interpreter may be abandoned and
+  restarted.
+
+In this example, if make_pair() triggers a garbage collection, it
+signals an exception using longjmp(), and string->list is restarted
+after the collection.
+
+Schetoo uses the same mechanism for user exceptions.  In this example,
+both string_value() and string_len() check that they are passed a
+string.  If not, they raise an exception which also longjmps back to
+the interpreter's main loop, so string->list doesn't need any error
+checking logic.
+
+Why is there no error checking the kbscheme example?  In kbscheme, any
+error at all was fatal and terminated the whole interpreter.  D'oh!
+
+There's more to it than that, of course.  Now there is a new rule
+that every procedure has to follow: 
+
+   Rule 2.  Do everything that might fail before doing anything with
+   side effects.
+
+There are two kinds of side effects in Schetoo: modifying memory and
+I/O.  We won't talk about I/O here except to mention that we have to
+be careful to follow Rule 2 when we do it.
+
+string->list doesn't have any side effects, so it follows Rule 2
+trivially.
+
+What about all those calls to make_list()?  Don't they modify the
+heap?  Aren't they side effects?  Yes, but they only modify freshly
+allocated memory.  That doesn't count, because with no root pointers,
+that memory will be instantly turned back into garbage when the GC
+runs.
+
+   Rule 2a.  "Side effects" only means memory that was already
+   reachable before the current instruction (and I/O).
+
+Is this an improvement?  We have replaced kbscheme's tricky rule,
+"Always track local variables that are root pointers", with Rule
+2, which also looks tricky.
+
+Yes, this is better, because Schetoo can verify Rule 2 at runtime.  In
+my next post, I'll explain how it works.

@@ -1,0 +1,76 @@
+A Safer Scheme Interpreter, Part 2
+
+In <a href=...>my last post</a>, I promised to explain how my Scheme
+interpreter, <a href=...>Schetoo</a>, can automatically verify that
+its instructions are restartable.  But first, some background.
+
+In the last post, I proposed Rules 1, 2 and 2a.
+
+   Rule 1.  Any instruction of the interpreter may be abandoned and
+   restarted.
+
+   Rule 2.  Do everything that might fail before doing anything with
+   side effects.
+
+   Rule 2a.  "Side effects" only means memory that was already
+   reachable before the current instruction (and I/O).
+
+Schetoo allocates memory sequentially.  The pointer next_alloc points
+to the beginning of free memory to allocate.  Here's the allocator,
+somewhat simplified.
+
+    void *next_alloc, *alloc_end;
+
+    heap_object_t *mem_alloc_obj(size_t alloc_size)
+    {
+	if (next_alloc + alloc_size > alloc_end)
+	    send_heap_full();      /* calls longjmp() */
+	heap_object_t *fresh_object = next_alloc;
+	next_alloc += alloc_size;
+	return fresh_object;
+    }
+
+That means that memory allocated by the current instruction is
+contiguous.  Before each instruction starts, the interpreter calls a
+macro called COMMIT(), which saves a copy of next_alloc in a variable
+called committed.  Any object whose address is between committed and
+next_alloc must have been freshly allocated in the current
+instruction.  As the name implies, COMMIT() commits the freshly
+created objects after the instruction successfully completes.
+
+When memory allocation fails, we raise an "exception".  C doesn't have
+real exceptions, but the setjmp/longjmp facility is good enough.
+
+An instruction has two phases: Can Fail and Can't Fail.  In
+the former, the instruction can check arguments and allocate memory,
+and any of those operations can raise an exception that fails the
+instruction.  As soon as the instruction has a side effect, it moves
+into Can't Fail phase.
+
+Schetoo has a global flag, retry_okay, that records which phase the
+current instruction is in.  (The name is a little misleading.  Think
+of it as failure_okay, since some failures don't lead to retry.)
+
+Side effects occur in a small number of places.  Each of
+those places sets the current phase to Can't Fail and records the
+current function and line number.  This is done through a macro,
+SIDE_EFFECT().
+
+Object mutations use a higher-level macro, MUTATE(obj).  MUTATE calls
+SIDE_EFFECT(), but only if the object is committed.
+
+Failures can occur in an even smaller number of places.  One is the
+allocator.  Another is a macro called CHECK that is used for all
+argument checking.  Those call a macro called COULD_RETRY().
+COULD_RETRY verifies that the instruction is in Can Fail phase, and
+if it isn't, it raises an assertion error immediately, with the
+function and line number where the previous side effect occurred.
+(Once again, the name isn't right.  It should be called COULD_FAIL,
+I think.)
+
+All of these checks happen in a debug build.  In a "production" build,
+the four macros, COMMIT, SIDE_EFFECT, MUTATE, and COULD_RETRY, are all
+redefined to do nothing, and no checking is done.
+
+I've mentioned that exceptions use longjmp().  In my next post, I'll
+explain how the interpreter's main loop catches them.

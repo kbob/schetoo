@@ -1,0 +1,171 @@
+A Safer Scheme Interpreter, Part 3.
+
+In Part 1, I explained why my Scheme interpreter, Schetoo, has the
+ability to fail or restart any instruction.  In Part 2, I showed
+how it automatically checks that instructions do all necessary checks
+before they have any side effects.  Those two posts described raising
+exceptions with longjmp, but didn't really explain how the interpreter
+catches exceptions.
+
+C has a poverty-stricken exception mechanism called setjmp/longjmp.
+setjmp saves the current machine registers in a structure called a
+jmp_buf.  Then it returns 0.  When longjmp is called, it restores the
+registers to their saved values, and returns whatever you passed as
+its second argument.  Except that because it restored the stack, the
+place it returns to is setjmp's caller.  So setjmp's caller checks
+the return value to know whether setjmp returned normally or longjmp
+has raised an exception.
+
+<i>(You see what they did there?  jmp_buf is spelled with a U.  So
+much for the theory that the guy who designed this stuff had no U key
+on his keyboard.  Hey, it was the 1970s.  Sideburns were long, and
+identifiers were short.  They would have needed $10,000 for an
+additional kilobyte of core memory if they used one vowel too many.)</i>
+
+Here is an example.
+
+    jmp_buf foo;
+
+    void f()
+    {
+        if (the_moon_is_full())
+	    longjmp(foo, 1);
+    }
+
+    void main()
+    {
+        if (setjmp(foo) == 0)
+	    printf("I just called setjmp\n");
+        else
+            printf("Got here from longjmp\n");
+        f();
+    }
+    
+It doesn't really work very well because compilers do far more
+optimizations than they did in 1977 when setjmp/longjmp were invented.
+Here's what the C99 standard says.
+
+    An invocation of the setjmp macro shall appear only in one of the
+    following contexts:
+
+    — the entire controlling expression of a selection or iteration
+      statement;
+
+    — one operand of a relational or equality operator with the other
+      operand an integer constant expression, with the resulting
+      expression being the entire controlling expression of a
+      selection or iteration statement;
+
+    — the operand of a unary ! operator with the resulting expression
+      being the entire controlling expression of a selection or
+      iteration statement; or
+
+    — the entire expression of an expression statement (possibly cast
+      to void).
+
+    If the invocation appears in any other context, the behavior is
+    undefined.
+
+In other words, you can use setjmp in one of these ways.  Otherwise,
+your program may not work.
+
+    if (setjmp(...)) ...
+
+    while (setjmp(...)) ...
+
+    switch (setjmp(...)) ...
+
+    if/while (setjmp(...) == N) ...
+
+    if/while (!setjmp(...)) ...
+
+    (void)setjmp(...);
+
+So that's setjmp.  Now back to Schetoo.
+
+Schetoo's interpreter keeps its state in two registers between
+instructions: cont and values.  It's not importand to understand how
+the registers are used, just that each instruction modifies them, and
+instructions communicate primarily through these two registers.
+
+We have a structure that holds the two registers, cv_t.
+
+    typedef struct cv {
+	obj_t cv_cont;
+	obj_t cv_values;
+    } cv_t;
+
+And we have two static root pointers that contain the current values.
+Note that these are only valid during a garbage collection.  Most of
+the time they hold garbage values.
+
+    obj_t cont_root   = UNINITIALIZED_OBJ;
+    obj_t values_root = UNINITIALIZED_OBJ;
+
+Here is the main loop of the interpreter.  cont_proc() returns a
+pointer to the C function that implements the next instruction.  That
+function is called with the two registers as values, and it returns
+the two registers' new values in a cv_t structure.  Then the registers
+are copied back, the instruction is committed (debug build only,
+see previous post), and we go on to the next instruction.
+
+
+     while (!is_null(cont)) {
+	 cv_t ret = cont_proc(cont)(cont, values);
+	 cont   = ret.cv_cont;
+	 values = ret.cv_values;
+	 COMMIT();
+     }
+
+Now let's look at whole function that implements the main loop.  (This
+is simplified.)  It starts with handlers for two kinds of exceptions,
+then falls into the main loop.
+
+See how the two registers are copied into the root pointers before GC,
+then copied back afterwards.
+
+    obj_t core_eval_cont(volatile obj_t cont, volatile obj_t values)
+    {
+	switch (setjmp(eval_restart)) {
+
+	case 0:
+	    break;
+
+	case LT_THROWN:
+	    {
+		cv_t ret = push_exception(cont, values);
+		cont     = ret.cv_cont;
+		values   = ret.cv_values;
+	    }
+	    break;
+
+	case LT_HEAP_FULL:
+	    cont_root   = cont;
+	    values_root = values;
+	    collect_garbage();
+	    cont        = cont_root;
+	    values      = values_root;
+	    cont_root   = UNINITIALIZED_OBJ;
+	    values_root = UNINITIALIZED_OBJ;
+	    break;
+	}
+	while (!is_null(cont)) {
+	    cv_t ret = cont_proc(cont)(cont, values);
+	    cont   = ret.cv_cont;
+	    values = ret.cv_values;
+	    COMMIT();
+	}
+	return CAR(values);
+    }
+
+So there it is.  The skeleton of an interpreter where any instruction
+can be restarted, and the need for GC is treated as an exception.
+
+What is the overhead?  Every instruction is invoked through an
+indirect function call.  The registers are copied three times for
+every instruction.  (Fortunately, there are only two registers.)
+In exchange, there is no bookkeeping overhead for local root pointers,
+and each exception only requires a single test and branch in the
+case where it isn't raised.
+
+But more importantly, it's easier to write correct code.
