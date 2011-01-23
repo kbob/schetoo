@@ -1,4 +1,4 @@
-# Examples from http://matt.might.net/articles/programming-with-continuations--exceptions-backtracking-search-threads-generators-coroutines/
+; Examples from http://matt.might.net/articles/programming-with-continuations--exceptions-backtracking-search-threads-generators-coroutines/
 
 ; right-now : -> moment
 (define right-now
